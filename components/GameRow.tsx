@@ -10,8 +10,8 @@ interface GameRowProps {
 
 export default function GameRow({ game, isLive }: GameRowProps) {
   const handleGameClick = () => {
-    // TODO: Navigate to game details page
-    console.log('Navigate to game:', game.id);
+    // Navigate to game details page
+    window.location.href = `/game/${game.id}`;
   };
 
   // Format team name to fit in smaller spaces

@@ -1,287 +1,105 @@
-# Product Requirements Document: Game Details Page
+# Task List: Game Details Page Implementation
 
-## Overview
-**Feature**: Game Details Page  
-**Route**: `/game/[id]`  
-**Priority**: HIGH  
-**Estimated Effort**: Medium  
-**Dependencies**: Existing GameDisplayData types, fetchGameById API  
+*Generated from: `prd-game-details.md`*
 
-## Problem Statement
-Users clicking on games from the homepage currently land on a 404 page. We need a comprehensive game details page that provides live scoring, game context, and detailed information about ongoing or completed games.
+## Relevant Files
 
-## Success Metrics
-- **User Engagement**: Users spend >30 seconds on game details page
-- **Navigation**: >80% of users navigate back to homepage or other sections
-- **Performance**: Page loads in <2 seconds
-- **Mobile Usage**: >60% of traffic is mobile, page must be fully responsive
-- **Error Rate**: <5% of game detail page loads result in errors
+- `app/game/[id]/page.tsx` - Main game details page component with dynamic routing
+- `app/game/[id]/loading.tsx` - Loading state for game details page
+- `app/game/[id]/error.tsx` - Error boundary for game details page
+- `components/GameHeader.tsx` - Game header component displaying teams, scores, and status
+- `components/GameHeader.test.tsx` - Unit tests for GameHeader component
+- `components/LiveGameInfo.tsx` - Live game information component (conditional rendering)
+- `components/LiveGameInfo.test.tsx` - Unit tests for LiveGameInfo component
+- `components/ScoreBoard.tsx` - Inning-by-inning scoreboard component
+- `components/ScoreBoard.test.tsx` - Unit tests for ScoreBoard component
+- `components/GameContext.tsx` - Game context and navigation component
+- `components/GameContext.test.tsx` - Unit tests for GameContext component
+- `components/GameRow.tsx` - Modified to include proper navigation links to game details (basic navigation added)
+- `lib/api.ts` - Modified to include caching strategy for fetchGameById
 
-## User Stories
+### Notes
 
-### Primary User Stories
-1. **As a tournament participant**, I want to see live game status so I can track my team's performance
-2. **As a spectator**, I want to see detailed scoring and inning information so I can follow the game remotely
-3. **As a tournament organizer**, I want to see comprehensive game data so I can track tournament progress
-4. **As a mobile user**, I want the game details to be easily readable on my phone during the event
+- Unit tests should be placed alongside the component files they are testing
+- Use `npx jest [optional/path/to/test/file]` to run tests
+- Follow existing component patterns from GameRow, TournamentCard, and NavBar
+- Maintain consistent Mauve color scheme throughout all components
+- Ensure mobile-first responsive design with breakpoints at 768px and 1024px
 
-### Secondary User Stories
-1. **As a stats enthusiast**, I want to see detailed game statistics and player performance
-2. **As a team member**, I want to see my team's batting order and individual stats
-3. **As a user**, I want to easily navigate back to the homepage or tournament view
+## Tasks
 
-## Functional Requirements
+- [x] 1.0 Setup Dynamic Route Structure
+  - [x] 1.1 Create `app/game/[id]/page.tsx` with basic Next.js dynamic route structure
+  - [x] 1.2 Add proper TypeScript interfaces for route params and props
+  - [x] 1.3 Implement basic game data fetching using existing `fetchGameById` API
+  - [x] 1.4 Add basic page layout with proper meta tags for SEO
+  - [x] 1.5 Test route navigation from homepage (verify /game/game1 works)
 
-### Core Features
-1. **Game Header**
-   - Team names with logos/initials
-   - Current score (large, prominent)
-   - Game status (Live, Final, Scheduled)
-   - Tournament context (if applicable)
+- [ ] 2.0 Implement Game Header Component
+  - [ ] 2.1 Create `components/GameHeader.tsx` with team display structure
+  - [ ] 2.2 Add team name display with visual identifiers (initials/logos)
+  - [ ] 2.3 Implement prominent score display with proper typography
+  - [ ] 2.4 Add game status badge (Live, Final, Scheduled) with appropriate styling
+  - [ ] 2.5 Include tournament context display when applicable
+  - [ ] 2.6 Ensure responsive design for mobile devices
+  - [ ] 2.7 Apply consistent Mauve color scheme
+  - [ ] 2.8 Create unit tests in `components/GameHeader.test.tsx`
 
-2. **Live Game Information** (for in-progress games)
-   - Current inning (▲/▼ indicator)
-   - Outs count
-   - Current batter information
-   - Base runners (if applicable)
-   - Live status indicator with pulse animation
+- [ ] 3.0 Implement Live Game Information Component
+  - [ ] 3.1 Create `components/LiveGameInfo.tsx` with conditional rendering logic
+  - [ ] 3.2 Add current inning display with ▲/▼ indicators for top/bottom
+  - [ ] 3.3 Implement outs counter with proper singular/plural handling
+  - [ ] 3.4 Add current batter information display
+  - [ ] 3.5 Include base runners display when applicable
+  - [ ] 3.6 Add live status indicator with CSS pulse animation
+  - [ ] 3.7 Ensure component only renders for in-progress games
+  - [ ] 3.8 Optimize layout for mobile devices
+  - [ ] 3.9 Create unit tests in `components/LiveGameInfo.test.tsx`
 
-3. **Inning-by-Inning Scoring**
-   - Traditional baseball scoreboard layout
-   - Runs per inning for both teams
-   - Total runs and hits summary
-   - Responsive design for mobile
+- [ ] 4.0 Implement Scoreboard Component
+  - [ ] 4.1 Create `components/ScoreBoard.tsx` with traditional baseball layout
+  - [ ] 4.2 Add inning headers (1, 2, 3, etc.) with responsive design
+  - [ ] 4.3 Implement runs per inning display for both teams
+  - [ ] 4.4 Add totals summary showing R-H format (runs and hits)
+  - [ ] 4.5 Handle variable inning counts (3, 5, 7, 9 innings)
+  - [ ] 4.6 Ensure mobile-first responsive design with proper scrolling
+  - [ ] 4.7 Apply consistent styling with existing components
+  - [ ] 4.8 Create unit tests in `components/ScoreBoard.test.tsx`
 
-4. **Game Context**
-   - Game type (Tournament vs Free Play)
-   - Tournament information and link (if applicable)
+- [ ] 5.0 Implement Game Context and Navigation
+  - [ ] 5.1 Create `components/GameContext.tsx` for game metadata
+  - [ ] 5.2 Add game type indicator (Tournament vs Free Play)
+  - [ ] 5.3 Include tournament information and stub navigation link
+  - [ ] 5.4 Add game date/time display when relevant
+  - [ ] 5.5 Implement back button to return to homepage
+  - [ ] 5.6 Add breadcrumb navigation showing current location
+  - [ ] 5.7 Ensure proper keyboard navigation and accessibility
+  - [ ] 5.8 Create unit tests in `components/GameContext.test.tsx`
 
-5. **Navigation**
-   - Back to homepage
-   - Link to tournament page (if applicable)
-   - Breadcrumb navigation
+- [ ] 6.0 Add Error Handling and Loading States
+  - [ ] 6.1 Create `app/game/[id]/loading.tsx` with skeleton screens
+  - [ ] 6.2 Create `app/game/[id]/error.tsx` for error boundary handling
+  - [ ] 6.3 Add 404 handling for non-existent game IDs
+  - [ ] 6.4 Implement API error states with retry functionality
+  - [ ] 6.5 Add loading states for all major page sections
+  - [ ] 6.6 Ensure graceful degradation for network issues
+  - [ ] 6.7 Test error scenarios and edge cases
 
-### Advanced Features (Future Phases)
-1. **Player Statistics**
-   - Batting averages for the game
-   - Individual at-bat results
+- [ ] 7.0 Integrate Components and Add Navigation Links
+  - [ ] 7.1 Integrate all components in main `app/game/[id]/page.tsx`
+  - [ ] 7.2 Modify `components/GameRow.tsx` to include proper navigation links
+  - [ ] 7.3 Add click handlers to navigate to `/game/[id]` from game rows
+  - [ ] 7.4 Implement proper component hierarchy and data flow
+  - [ ] 7.5 Add caching strategy implementation (1-hour cache)
+  - [ ] 7.6 Ensure consistent styling across all components
+  - [ ] 7.7 Test navigation flow from homepage to game details and back
 
-2. **Play-by-Play**
-   - Chronological list of game events
-   - At-bat outcomes
-   - Scoring plays
-
-3. **Real-time Updates**
-   - WebSocket connection for live games
-   - Auto-refresh capabilities
-   - Push notifications for score changes
-
-## Technical Requirements
-
-### Data Sources
-- **Primary**: `fetchGameById(gameId)` API function
-- **Secondary**: Tournament data (if game is part of tournament)
-- **Real-time**: Future WebSocket connection for live updates
-
-### URL Structure
-- **Route**: `/game/[id]` (Next.js dynamic route)
-- **Example**: `/game/game1`, `/game/game2`
-- **SEO**: Game title in meta tags for sharing
-
-### Performance Requirements
-- **Initial Load**: <2 seconds
-- **API Response**: <500ms for game data
-- **Mobile Performance**: Lighthouse score >90
-- **Accessibility**: WCAG 2.1 AA compliance
-
-### Error Handling
-- **Game Not Found**: 404 page with navigation back to homepage
-- **API Errors**: Error state with retry functionality
-- **Loading States**: Skeleton screens for all major sections
-- **Offline**: Graceful degradation with cached data
-
-## Design Requirements
-
-### Visual Design
-- **Color Scheme**: Consistent Mauve palette (#fdfcfe, #f9f8fc, #e4e2e8, #8b8a94, #696775, #1c1b20)
-- **Typography**: Consistent with existing components
-- **Layout**: Mobile-first responsive design
-- **Spacing**: 16px base unit, consistent with homepage
-
-### Component Architecture
-```
-GameDetailsPage
-├── GameHeader
-│   ├── TeamDisplay (home/away)
-│   ├── ScoreDisplay
-│   └── GameStatus
-├── LiveGameInfo (conditional)
-│   ├── InningDisplay
-│   ├── OutsCounter
-│   └── CurrentBatter
-├── ScoreBoard
-│   ├── InningHeaders
-│   ├── TeamScores
-│   └── TotalsSummary
-├── GameContext
-│   ├── GameInfo
-│   └── TournamentLink
-└── Navigation
-    ├── BackButton
-    └── Breadcrumbs
-```
-
-### Responsive Breakpoints
-- **Mobile**: <768px (single column, stacked layout)
-- **Tablet**: 768px-1024px (optimized spacing)
-- **Desktop**: >1024px (full layout with sidebar potential)
-
-## Implementation Plan
-
-### Phase 1: Core Game Details (MVP)
-**Estimated Time**: 2-3 days
-
-#### Task 1.1: Setup Dynamic Route
-- [ ] Create `app/game/[id]/page.tsx`
-- [ ] Setup route parameters and error handling
-- [ ] Add loading.tsx and error.tsx pages
-- [ ] Test route navigation from GameRow clicks
-
-#### Task 1.2: Game Header Component
-- [ ] Create `GameHeader` component
-- [ ] Team display with names and initials
-- [ ] Score display (large, prominent)
-- [ ] Game status badge
-- [ ] Tournament context link
-
-#### Task 1.3: Live Game Information
-- [ ] Create `LiveGameInfo` component (conditional rendering)
-- [ ] Current inning display with ▲/▼ indicators
-- [ ] Outs counter with proper singular/plural
-- [ ] Live status indicator with pulse animation
-- [ ] Mobile-optimized layout
-
-#### Task 1.4: Basic Scoreboard
-- [ ] Create `ScoreBoard` component
-- [ ] Inning-by-inning layout
-- [ ] Responsive design for mobile
-- [ ] Totals summary (R-H format)
-- [ ] Handle variable inning counts (3, 5, 7, 9)
-
-#### Task 1.5: Game Context & Navigation
-- [ ] Create `GameContext` component
-- [ ] Game type display
-- [ ] Tournament link (conditional)
-- [ ] Back navigation to homepage
-- [ ] Breadcrumb navigation
-
-#### Task 1.6: Error Handling & Loading States
-- [ ] Game not found (404) handling
-- [ ] API error states with retry
-- [ ] Loading skeleton screens
-- [ ] Empty states
-
-#### Task 1.7: Testing
-- [ ] Unit tests for all components
-- [ ] Integration tests for page functionality
-- [ ] Mobile responsive testing
-- [ ] Accessibility testing
-- [ ] Error state testing
-
-### Phase 2: Enhanced Features (Future)
-**Estimated Time**: 3-4 days
-
-#### Task 2.1: Player Statistics
-- [ ] Player stats display
-- [ ] Batting averages
-- [ ] At-bat results
-
-#### Task 2.2: Play-by-Play
-- [ ] Chronological event list
-- [ ] At-bat outcomes
-- [ ] Scoring plays
-
-#### Task 2.3: Real-time Updates
-- [ ] WebSocket integration
-- [ ] Auto-refresh functionality
-- [ ] Live score updates
-
-## Acceptance Criteria
-
-### Functional Criteria
-- [ ] Page loads successfully for all valid game IDs
-- [ ] Displays correct game information (teams, scores, status)
-- [ ] Shows live game information for in-progress games
-- [ ] Responsive design works on mobile, tablet, and desktop
-- [ ] Navigation back to homepage works correctly
-- [ ] Tournament links work (when applicable)
-- [ ] Error handling for invalid game IDs
-
-### Performance Criteria
-- [ ] Page loads in <2 seconds on 3G connection
-- [ ] API calls complete in <500ms
-- [ ] Lighthouse performance score >90
-- [ ] No console errors or warnings
-
-### Accessibility Criteria
-- [ ] WCAG 2.1 AA compliance
-- [ ] Keyboard navigation support
-- [ ] Screen reader compatibility
-- [ ] Proper heading hierarchy
-- [ ] Color contrast ratios meet standards
-
-### Testing Criteria
-- [ ] Unit test coverage >90%
-- [ ] All user stories have corresponding tests
-- [ ] Mobile responsive tests pass
-- [ ] Cross-browser compatibility (Chrome, Safari, Firefox)
-
-## Technical Notes
-
-### Data Flow
-1. **Route Parameter**: Extract `gameId` from URL
-2. **API Call**: `fetchGameById(gameId)` on page load
-3. **Error Handling**: Handle API errors and missing games
-4. **Rendering**: Conditional rendering based on game status
-5. **Navigation**: Router.push for navigation actions
-
-### State Management
-- **Local State**: Game data, loading states, error states
-- **No Global State**: Keep component-level for simplicity
-- **Future**: Consider Zustand for real-time updates
-
-### SEO Considerations
-- **Meta Tags**: Dynamic title with team names and score
-- **Open Graph**: Game details for social sharing
-- **Structured Data**: Game schema markup for search engines
-
-## Future Enhancements
-1. **Real-time Updates**: WebSocket connection for live games
-2. **Player Profiles**: Links to individual player pages
-3. **Game Highlights**: Key moments and plays
-4. **Social Sharing**: Share game results and highlights
-5. **Notifications**: Score change alerts
-6. **Historical Comparison**: Compare with previous games
-7. **Export Features**: PDF game summaries
-8. **Commentary**: Live commentary or notes section
-
-## Dependencies
-- **Existing**: GameDisplayData types, fetchGameById API
-- **New**: None for MVP phase
-- **Future**: WebSocket infrastructure, player statistics API
-
-## Risks & Mitigation
-1. **Risk**: API performance issues
-   - **Mitigation**: Implement caching and loading states
-2. **Risk**: Mobile performance on slower devices
-   - **Mitigation**: Optimize bundle size and lazy loading
-3. **Risk**: Complex responsive design
-   - **Mitigation**: Mobile-first approach and thorough testing
-4. **Risk**: Real-time update complexity
-   - **Mitigation**: Start with polling, upgrade to WebSocket later
-
----
-
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-XX  
-**Next Review**: After Phase 1 completion 
+- [ ] 8.0 Comprehensive Testing and Mobile Optimization
+  - [ ] 8.1 Run all unit tests and ensure >90% coverage
+  - [ ] 8.2 Perform integration testing for complete user flows
+  - [ ] 8.3 Test responsive design on mobile devices (breakpoints 768px, 1024px)
+  - [ ] 8.4 Verify accessibility compliance (WCAG 2.1 AA)
+  - [ ] 8.5 Test performance on mobile devices (<2 second load time)
+  - [ ] 8.6 Validate SEO meta tags and social sharing
+  - [ ] 8.7 Test with various game states (scheduled, live, completed)
+  - [ ] 8.8 Verify error handling and edge cases work correctly 
