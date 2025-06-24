@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { fetchGameById } from '../../../lib/api';
 import { GameDisplayData } from '../../../lib/types';
 import GameHeader from '../../../components/GameHeader';
+import LiveGameInfo from '../../../components/LiveGameInfo';
 
 interface GamePageProps {
   params: Promise<{
@@ -88,6 +89,24 @@ export default async function GamePage({ params }: GamePageProps) {
             status={game.status as 'in_progress' | 'completed' | 'scheduled'}
             timeStatus={game.time_status}
             tournament={game.tournament ? { id: game.tournament.id, name: game.tournament.name, logo_url: game.tournament.logo_url } : undefined}
+          />
+        </section>
+
+        {/* Live game information section */}
+        <section className="w-full mb-8" aria-labelledby="live-info">
+          <LiveGameInfo
+            status={game.status as 'in_progress' | 'completed' | 'scheduled'}
+            awayTeam={{ name: game.away_team.name, score: game.away_score }}
+            homeTeam={{ name: game.home_team.name, score: game.home_score }}
+            currentInning={game.status === 'in_progress' ? 5 : undefined}
+            currentInningHalf={game.status === 'in_progress' ? 'bottom' : undefined}
+            outs={game.status === 'in_progress' ? 1 : undefined}
+            currentBatter={game.status === 'in_progress' ? { id: 'batter1', name: 'Mike Johnson' } : undefined}
+            runnerOnFirst={game.status === 'in_progress' ? true : undefined}
+            runnerOnSecond={game.status === 'in_progress' ? false : undefined}
+            runnerOnThird={game.status === 'in_progress' ? true : undefined}
+            balls={game.status === 'in_progress' ? 2 : undefined}
+            strikes={game.status === 'in_progress' ? 1 : undefined}
           />
         </section>
 

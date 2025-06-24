@@ -9,8 +9,8 @@ _Generated from: `prd-game-details.md`_
 - `app/game/[id]/error.tsx` - Error boundary for game details page
 - `components/GameHeader.tsx` - Displays the game header with team structure and visual identifiers (initials/logos); now used in the game details page
 - `components/GameHeader.test.tsx` - Unit tests for GameHeader component (comprehensive test coverage)
-- `components/LiveGameInfo.tsx` - Live game information component (conditional rendering)
-- `components/LiveGameInfo.test.tsx` - Unit tests for LiveGameInfo component
+- `components/LiveGameInfo.tsx` - Live game information component (conditional rendering, integrated into game details page)
+- `components/LiveGameInfo.test.tsx` - Unit tests for LiveGameInfo component (comprehensive test coverage with 27 test cases)
 - `components/ScoreBoard.tsx` - Inning-by-inning scoreboard component
 - `components/ScoreBoard.test.tsx` - Unit tests for ScoreBoard component
 - `components/GameContext.tsx` - Game context and navigation component
@@ -47,17 +47,17 @@ _Generated from: `prd-game-details.md`_
   - [x] 2.7 Apply consistent Mauve color scheme in the game details page
   - [x] 2.8 Create unit tests in `components/GameHeader.test.tsx` for the game details page
 
-- [ ] 3.0 Implement Live Game Information Component in the Game Details Page
+- [x] 3.0 Implement Live Game Information Component in the Game Details Page
 
-  - [ ] 3.1 Create `components/LiveGameInfo.tsx` with conditional rendering logic for the game details page
-  - [ ] 3.2 Add current inning display with ▲/▼ indicators for top/bottom in the game details page
-  - [ ] 3.3 Implement outs counter with proper singular/plural handling in the game details page
-  - [ ] 3.4 Add current batter information display in the game details page
-  - [ ] 3.5 Include base runners display when applicable in the game details page
-  - [ ] 3.6 Add live status indicator with CSS pulse animation in the game details page
-  - [ ] 3.7 Ensure component only renders for in-progress games in the game details page
-  - [ ] 3.8 Optimize layout for mobile devices in the game details page
-  - [ ] 3.9 Create unit tests in `components/LiveGameInfo.test.tsx` for the game details page
+  - [x] 3.1 Create `components/LiveGameInfo.tsx` with conditional rendering logic for the game details page
+  - [x] 3.2 Add current inning display with ▲/▼ indicators for top/bottom in the game details page
+  - [x] 3.3 Implement outs counter with proper singular/plural handling in the game details page
+  - [x] 3.4 Add current batter information display in the game details page
+  - [x] 3.5 Include base runners display when applicable in the game details page
+  - [x] 3.6 Add live status indicator with CSS pulse animation in the game details page
+  - [x] 3.7 Ensure component only renders for in-progress games in the game details page
+  - [x] 3.8 Optimize layout for mobile devices in the game details page
+  - [x] 3.9 Create unit tests in `components/LiveGameInfo.test.tsx` for the game details page
 
 - [ ] 4.0 Implement Scoreboard Component in the Game Details Page
 
