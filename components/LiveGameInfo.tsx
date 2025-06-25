@@ -24,18 +24,15 @@ interface LiveGameInfoProps {
   strikes?: number;
 }
 
-const mauve = {
-  50: '#faf8ff',
-  100: '#f3e8ff',
-  200: '#e9d5ff',
-  300: '#d6b4fa',
-  400: '#c084fc',
-  500: '#a56eff',
-  600: '#9333ea',
-  700: '#7c3aed',
-  800: '#6b21a8',
-  900: '#4b206b',
-  950: '#2e1065',
+// Consistent color scheme matching home page
+const colors = {
+  background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+  cardBackground: '#ffffff',
+  primaryText: '#1c1b20',
+  secondaryText: '#312f36',
+  tertiaryText: '#696775',
+  border: '#e5e3e8',
+  accent: '#696775',
 };
 
 const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
@@ -64,12 +61,12 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
     <div 
       className="live-game-info"
       style={{
-        background: mauve[100],
-        border: `1.5px solid ${mauve[300]}`,
+        background: colors.cardBackground,
+        border: `1.5px solid ${colors.border}`,
         borderRadius: 12,
         padding: 'clamp(8px, 2vw, 12px)',
         marginBottom: 16,
-        boxShadow: '0 2px 8px 0 rgba(80, 60, 120, 0.06)',
+        boxShadow: '0 2px 8px 0 rgba(105, 103, 117, 0.06)',
         maxWidth: '100%',
         overflow: 'hidden',
       }}
@@ -86,8 +83,8 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
         {/* Left Section: Team Scores */}
         <div
           style={{
-            background: mauve[50],
-            border: `1px solid ${mauve[300]}`,
+            background: '#f8f7fa',
+            border: `1px solid ${colors.border}`,
             borderRadius: 6,
             padding: 'clamp(4px, 1.5vw, 8px) clamp(3px, 1vw, 6px)',
             textAlign: 'center',
@@ -101,7 +98,7 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
             <div style={{
               fontSize: 'clamp(12px, 3.5vw, 16px)',
               fontWeight: 700,
-              color: mauve[800],
+              color: colors.primaryText,
               marginBottom: 'clamp(2px, 1vw, 4px)',
               lineHeight: 1,
             }}>
@@ -112,7 +109,7 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
             <div style={{
               fontSize: 'clamp(12px, 3.5vw, 16px)',
               fontWeight: 700,
-              color: mauve[800],
+              color: colors.primaryText,
               lineHeight: 1,
             }}>
               {homeTeam.name.substring(0, 3).toUpperCase()} {homeTeam.score}
@@ -123,8 +120,8 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
         {/* Middle Section: Outs, Ball-Strike Count, and Batter */}
         <div
           style={{
-            background: mauve[50],
-            border: `1px solid ${mauve[300]}`,
+            background: '#f8f7fa',
+            border: `1px solid ${colors.border}`,
             borderRadius: 6,
             padding: 'clamp(4px, 1.5vw, 6px) clamp(4px, 2vw, 8px)',
             textAlign: 'center',
@@ -135,7 +132,7 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
             <div style={{ 
               fontSize: 'clamp(10px, 2.5vw, 12px)', 
               fontWeight: 600, 
-              color: mauve[700],
+              color: colors.secondaryText,
               marginBottom: 'clamp(1px, 0.5vw, 2px)',
             }}>
               {outs} {outs === 1 ? 'OUT' : 'OUTS'}
@@ -147,7 +144,7 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
             <div style={{ 
               fontSize: 'clamp(12px, 3vw, 14px)', 
               fontWeight: 700, 
-              color: mauve[800],
+              color: colors.primaryText,
               marginBottom: 'clamp(1px, 0.5vw, 2px)',
             }}>
               {balls ?? 0} - {strikes ?? 0}
@@ -159,7 +156,7 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
             <div style={{ 
               fontSize: 'clamp(8px, 2vw, 10px)', 
               fontWeight: 600, 
-              color: mauve[600],
+              color: colors.tertiaryText,
               textTransform: 'uppercase',
             }}>
               {currentBatter.name}
@@ -170,8 +167,8 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
         {/* Right Section: Base Runners and Inning */}
         <div
           style={{
-            background: mauve[50],
-            border: `1px solid ${mauve[300]}`,
+            background: '#f8f7fa',
+            border: `1px solid ${colors.border}`,
             borderRadius: 6,
             padding: 'clamp(4px, 1.5vw, 6px) clamp(4px, 2vw, 8px)',
             display: 'flex',
@@ -194,86 +191,63 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
               style={{
                 width: 'clamp(16px, 4vw, 20px)',
                 height: 'clamp(16px, 4vw, 20px)',
-                background: runnerOnSecond ? '#FFD700' : mauve[300],
-                border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnSecond ? '#FFA500' : mauve[400]}`,
+                background: runnerOnSecond ? '#FFD700' : '#e5e3e8',
+                border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnSecond ? '#FFA500' : colors.border}`,
                 transform: 'rotate(45deg)',
                 transition: 'all 0.3s ease',
-                boxShadow: runnerOnSecond ? '0 0 8px rgba(255, 215, 0, 0.5)' : 'none',
               }}
             />
             
-            {/* Third and First Base */}
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                width: '100%',
-              }}
-            >
+            {/* First and Third Base Row */}
+            <div style={{ display: 'flex', gap: 'clamp(20px, 8vw, 32px)' }}>
+              {/* Third Base (Left) */}
               <div
                 style={{
                   width: 'clamp(16px, 4vw, 20px)',
                   height: 'clamp(16px, 4vw, 20px)',
-                  background: runnerOnThird ? '#FFD700' : mauve[300],
-                  border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnThird ? '#FFA500' : mauve[400]}`,
+                  background: runnerOnThird ? '#FFD700' : '#e5e3e8',
+                  border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnThird ? '#FFA500' : colors.border}`,
                   transform: 'rotate(45deg)',
                   transition: 'all 0.3s ease',
-                  boxShadow: runnerOnThird ? '0 0 8px rgba(255, 215, 0, 0.5)' : 'none',
                 }}
               />
               
+              {/* First Base (Right) */}
               <div
                 style={{
                   width: 'clamp(16px, 4vw, 20px)',
                   height: 'clamp(16px, 4vw, 20px)',
-                  background: runnerOnFirst ? '#FFD700' : mauve[300],
-                  border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnFirst ? '#FFA500' : mauve[400]}`,
+                  background: runnerOnFirst ? '#FFD700' : '#e5e3e8',
+                  border: `clamp(1px, 0.5vw, 2px) solid ${runnerOnFirst ? '#FFA500' : colors.border}`,
                   transform: 'rotate(45deg)',
                   transition: 'all 0.3s ease',
-                  boxShadow: runnerOnFirst ? '0 0 8px rgba(255, 215, 0, 0.5)' : 'none',
                 }}
               />
             </div>
           </div>
 
-          {/* Inning and Live Indicator */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'clamp(2px, 1vw, 4px)',
-          }}>
-            {/* Inning */}
-            {currentInning && currentInningHalf && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                fontSize: 'clamp(10px, 2.5vw, 12px)',
-                fontWeight: 700,
-                color: mauve[800],
+          {/* Inning Information */}
+          <div style={{ textAlign: 'right', marginLeft: 'clamp(4px, 2vw, 8px)' }}>
+            {currentInning && (
+              <div style={{ 
+                fontSize: 'clamp(10px, 2.5vw, 12px)', 
+                fontWeight: 600, 
+                color: colors.secondaryText,
+                marginBottom: 'clamp(1px, 0.5vw, 2px)',
               }}>
-                <div style={{ fontSize: 'clamp(12px, 3.5vw, 16px)' }}>
-                  {currentInningHalf === 'top' ? '▲' : '▼'}
-                </div>
-                <div>{currentInning}</div>
+                {currentInningHalf === 'top' ? '▲' : '▼'} {currentInning}
               </div>
             )}
-
-            {/* Live Indicator with Pulse Animation */}
-            <div
-              className="live-indicator"
-              style={{
-                fontSize: 'clamp(6px, 1.8vw, 8px)',
-                fontWeight: 700,
-                color: 'white',
+            
+            {/* Live Indicator */}
+            <div 
+              className="live-indicator" 
+              style={{ 
+                fontSize: 'clamp(8px, 2vw, 10px)', 
+                fontWeight: 700, 
+                color: '#15803d',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                background: '#FF4444',
-                padding: 'clamp(1px, 0.5vw, 2px) clamp(2px, 1vw, 4px)',
-                borderRadius: 3,
-                boxShadow: '0 0 8px rgba(255, 68, 68, 0.4)',
+                letterSpacing: 0.5,
               }}
             >
               LIVE
@@ -282,7 +256,24 @@ const LiveGameInfo: React.FC<LiveGameInfoProps> = ({
         </div>
       </div>
 
-      {/* TODO: Add live status indicator with CSS pulse animation */}
+      {/* Optional Footer for Enhanced Context */}
+      {hasRunners && (
+        <div 
+          style={{ 
+            fontSize: 'clamp(8px, 2vw, 10px)', 
+            color: colors.tertiaryText, 
+            textAlign: 'center', 
+            marginTop: 'clamp(4px, 1vw, 6px)',
+            fontWeight: 500,
+          }}
+        >
+          {[
+            runnerOnFirst && 'Runner on 1st',
+            runnerOnSecond && 'Runner on 2nd', 
+            runnerOnThird && 'Runner on 3rd'
+          ].filter(Boolean).join(' • ')}
+        </div>
+      )}
     </div>
   );
 };

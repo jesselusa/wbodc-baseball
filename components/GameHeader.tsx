@@ -22,18 +22,15 @@ interface GameHeaderProps {
   tournament?: Tournament;
 }
 
-const mauve = {
-  50: '#faf8ff',
-  100: '#f3e8ff',
-  200: '#e9d5ff',
-  300: '#d6b4fa',
-  400: '#c084fc',
-  500: '#a56eff',
-  600: '#9333ea',
-  700: '#7c3aed',
-  800: '#6b21a8',
-  900: '#4b206b',
-  950: '#2e1065',
+// Consistent color scheme matching home page
+const colors = {
+  background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+  cardBackground: '#ffffff',
+  primaryText: '#1c1b20',
+  secondaryText: '#312f36',
+  tertiaryText: '#696775',
+  border: '#e5e3e8',
+  accent: '#696775',
 };
 
 const statusStyles = {
@@ -48,8 +45,8 @@ const statusStyles = {
     label: 'Final',
   },
   scheduled: {
-    background: mauve[300],
-    color: mauve[900],
+    background: '#f3f2f4',
+    color: colors.secondaryText,
     label: 'Scheduled',
   },
 };
@@ -120,7 +117,7 @@ const TeamBlock: React.FC<{ team: Team; side: 'home' | 'away' }> = ({ team, side
         marginTop: 2, 
         fontWeight: 700, 
         fontSize: 'clamp(20px, 7vw, 28px)', 
-        color: mauve[900] 
+        color: colors.primaryText 
       }}
     >
       {team.score ?? ''}
@@ -142,9 +139,9 @@ const GameHeader: React.FC<GameHeaderProps> = ({ homeTeam, awayTeam, status = 's
         width: '100%',
         padding: 'clamp(16px, 4vw, 24px)',
         borderRadius: 16,
-        background: mauve[100],
-        boxShadow: '0 2px 12px 0 rgba(80, 60, 120, 0.08)',
-        border: `1.5px solid ${mauve[300]}`,
+        background: colors.cardBackground,
+        boxShadow: '0 2px 12px 0 rgba(105, 103, 117, 0.08)',
+        border: `1.5px solid ${colors.border}`,
         marginBottom: 16,
       }}
     >
@@ -154,8 +151,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({ homeTeam, awayTeam, status = 's
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          background: mauve[300],
-          color: mauve[900],
+          background: '#f3f2f4',
+          color: colors.secondaryText,
           borderRadius: 999,
           padding: '2px 14px',
           fontWeight: 600,
@@ -213,7 +210,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ homeTeam, awayTeam, status = 's
           style={{ 
             fontWeight: 600, 
             fontSize: 'clamp(16px, 5vw, 22px)', 
-            color: mauve[500], 
+            color: colors.tertiaryText, 
             minWidth: 'clamp(24px, 6vw, 40px)', 
             textAlign: 'center',
             flexShrink: 0,

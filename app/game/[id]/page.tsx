@@ -4,6 +4,7 @@ import { fetchGameById } from '../../../lib/api';
 import { GameDisplayData } from '../../../lib/types';
 import GameHeader from '../../../components/GameHeader';
 import LiveGameInfo from '../../../components/LiveGameInfo';
+import BackButton from '../../../components/BackButton';
 
 interface GamePageProps {
   params: Promise<{
@@ -55,32 +56,33 @@ export default async function GamePage({ params }: GamePageProps) {
 
   const game: GameDisplayData = response.data;
 
-  // Mauve color palette
-  const mauve = {
-    50: '#faf8ff',
-    100: '#f3e8ff',
-    200: '#e9d5ff',
-    300: '#d6b4fa',
-    400: '#c084fc',
-    500: '#a56eff',
-    600: '#9333ea',
-    700: '#7c3aed',
-    800: '#6b21a8',
-    900: '#4b206b',
-    950: '#2e1065',
-  };
-
   return (
-    <main className="min-h-screen flex flex-col items-center" style={{ backgroundColor: mauve[50] }}>
+    <main 
+      className="min-h-screen flex flex-col items-center"
+      style={{ 
+        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        color: '#1c1b20'
+      }}
+    >
       {/* Page header for accessibility */}
       <header className="sr-only">
         <h1>Game Details: {game.away_team.name} vs {game.home_team.name}</h1>
       </header>
 
-      <div className="w-full max-w-2xl px-4 py-8 flex flex-col items-center">
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '5rem 0.75rem 2rem',
+        width: '100%'
+      }}>
         {/* Game header section */}
         <section className="w-full mb-8 flex flex-col items-center" aria-labelledby="game-header">
-          <h2 id="game-header" className="text-2xl md:text-3xl font-bold text-center mb-6" style={{ color: mauve[900] }}>
+          <h2 
+            id="game-header" 
+            className="text-2xl md:text-3xl font-bold text-center mb-6" 
+            style={{ color: '#1c1b20' }}
+          >
             Game
           </h2>
           <GameHeader
@@ -112,17 +114,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
         {/* Navigation section */}
         <nav className="mt-8 text-center w-full" aria-label="Page navigation">
-          <a
-            href="/"
-            className="inline-block px-6 py-2 rounded-lg font-medium transition-colors hover:opacity-90"
-            style={{ 
-              backgroundColor: mauve[500], 
-              color: 'white',
-              boxShadow: `0 2px 8px 0 ${mauve[300]}40`,
-            }}
-          >
-            ← Back to Homepage
-          </a>
+          <BackButton />
         </nav>
       </div>
     </main>
