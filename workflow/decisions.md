@@ -38,7 +38,32 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D003: Hosting & Deployment
+### D003: Design System & Color Scheme
+**Date:** June 2025  
+**Decision:** Consistent neutral color palette across all pages  
+**Context:** Need visual consistency between home page and game details pages  
+**Color Palette:**
+- Background: `linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)` (light gray-purple gradient)
+- Primary text: `#1c1b20` (dark gray)
+- Secondary text: `#312f36` (medium gray)  
+- Tertiary text: `#696775` (lighter gray)
+- Accent/Button: `#696775` (matches tertiary text for subtle styling)
+
+**Typography:**
+- Font family: `system-ui, -apple-system, sans-serif`
+- Consistent font weights and sizing across components
+
+**Rationale:**
+- Maintains visual cohesion across all pages
+- Neutral palette provides good readability and accessibility
+- Subtle gradient background adds visual interest without distraction
+- System fonts ensure optimal rendering across devices
+
+**Status:** ✅ Approved
+
+---
+
+### D004: Hosting & Deployment
 **Date:** June 2025  
 **Decision:** Vercel for frontend deployment  
 **Context:** Need seamless deployment for Next.js app  
@@ -52,7 +77,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D004: Database Architecture
+### D005: Database Architecture
 **Date:** June 2025  
 **Decision:** Complex relational schema with event sourcing pattern  
 **Context:** WBDoc Baseball has intricate game mechanics (shot → flip cup → base running)  
@@ -73,7 +98,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D005: Real-time Strategy
+### D006: Real-time Strategy
 **Date:** June 2025  
 **Decision:** Supabase real-time subscriptions for live updates  
 **Context:** Need live score updates and flip cup results during games  
@@ -87,7 +112,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D006: Authentication Strategy
+### D007: Authentication Strategy
 **Date:** June 2025  
 **Decision:** Phased approach - start public, add auth for UGC features  
 **Context:** P0 features need rapid development, P1+ features need user accounts  
@@ -101,7 +126,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D007: Game Rules & Mechanics
+### D008: Game Rules & Mechanics
 **Date:** June 2025  
 **Decision:** Hybrid beer pong + flip cup + baseball format  
 **Context:** Custom tournament game combining multiple party game elements  
@@ -116,7 +141,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D008: Development Approach
+### D009: Development Approach
 **Date:** June 2025  
 **Decision:** Foundation-first with progressive enhancement  
 **Context:** Part-time development by 3 PMs with limited time before Halloweekend  
@@ -130,7 +155,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D009: Data Persistence Strategy
+### D010: Data Persistence Strategy
 **Date:** June 2025  
 **Decision:** Permanent archive with ongoing tournament support  
 **Context:** Want to preserve tournament history and support future reunions  
@@ -144,7 +169,7 @@ This document tracks all major architectural and technology decisions made for t
 
 ---
 
-### D010: Project Structure
+### D011: Project Structure
 **Date:** June 2025  
 **Decision:** Monorepo with organized file structure  
 **Context:** Team collaboration and code organization  
