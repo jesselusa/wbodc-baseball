@@ -64,15 +64,6 @@ This document outlines a comprehensive frontend architecture strategy for the WB
    - Provide TypeScript-safe styling APIs with autocomplete and error checking
    - Establish clear patterns and conventions for component styling
 
-8. **Accessibility Compliance**
-
-   - Ensure all components meet WCAG 2.1 AA standards
-   - Implement proper focus management and keyboard navigation patterns
-
-9. **Testing & Quality Assurance**
-   - Create testable styling patterns that support visual regression testing
-   - Establish style linting and automated quality checks
-
 ## Proposed Architecture
 
 ### 1. Design Token System
@@ -319,49 +310,7 @@ export const GameHeader = ({ homeTeam, awayTeam, themed = false }) => {
 
 ### Risk Mitigation
 
-- **Feature Flags**: Use feature flags to toggle between old and new components
 - **Automated Testing**: Maintain existing test suite throughout migration
-- **Visual Regression Testing**: Implement screenshot testing for UI consistency
-
-## Future Considerations
-
-### Scalability
-
-- **Component Library**: Potential extraction into separate npm package
-- **Multi-Brand Support**: Architecture supports multiple brand themes
-- **Design System Evolution**: Regular token updates and component additions
-
-### Performance
-
-- **Static Extraction**: Stitches enables CSS extraction at build time
-- **Bundle Optimization**: Tree-shaking and code splitting for styling code
-- **Runtime Performance**: Minimal runtime overhead with compiled styles
-
-### Developer Experience
-
-- **IDE Integration**: TypeScript autocomplete for all design tokens
-- **Linting**: Custom ESLint rules for design system usage
-- **Storybook**: Component documentation and testing environment
-
-## Success Metrics
-
-### Technical Metrics
-
-- **Bundle Size**: Reduce CSS bundle size by 30%
-- **Performance**: Maintain or improve Core Web Vitals scores
-- **Type Safety**: 100% TypeScript coverage for design system
-
-### Developer Experience Metrics
-
-- **Development Speed**: 25% faster component development
-- **Consistency**: 95% design system adoption across components
-- **Maintainability**: 50% reduction in style-related bugs
-
-### User Experience Metrics
-
-- **Accessibility**: WCAG 2.1 AA compliance across all components
-- **Responsiveness**: Consistent experience across all device sizes
-- **Visual Consistency**: Standardized spacing, typography, and color usage
 
 ## Conclusion
 
