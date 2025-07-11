@@ -20,7 +20,7 @@ export interface StateTransitionResult {
 }
 
 export interface StateTransitionSideEffect {
-  type: 'score_change' | 'inning_change' | 'lineup_advance' | 'game_end';
+  type: 'score_change' | 'inning_change' | 'lineup_advance' | 'game_end' | 'game_start';
   data: any;
 }
 
@@ -318,6 +318,10 @@ export class BaseballGameStateMachine {
     newSnapshot.score_away = 0;
     newSnapshot.umpire_id = payload.umpire_id;
 
+    // Set team IDs from the payload
+    newSnapshot.home_team_id = payload.home_team_id;
+    newSnapshot.away_team_id = payload.away_team_id;
+
     // Set up lineups
     newSnapshot.home_lineup = payload.lineups.home;
     newSnapshot.away_lineup = payload.lineups.away;
@@ -327,12 +331,25 @@ export class BaseballGameStateMachine {
     // Set first batter (away team bats first)
     newSnapshot.batter_id = payload.lineups.away[0];
 
+    // Set catcher (on deck batter - next in batting order)
+    newSnapshot.catcher_id = payload.lineups.away[1] || payload.lineups.away[0];
+
     // Clear base runners
     newSnapshot.base_runners = { first: null, second: null, third: null };
 
     newSnapshot.last_updated = new Date().toISOString();
 
-    return { snapshot: newSnapshot };
+    return { 
+      snapshot: newSnapshot,
+      sideEffects: [{ 
+        type: 'game_start', 
+        data: { 
+          home_team_id: payload.home_team_id,
+          away_team_id: payload.away_team_id,
+          started_at: newSnapshot.last_updated 
+        } 
+      }] 
+    };
   }
 
   /**
@@ -514,6 +531,15 @@ export class BaseballGameStateMachine {
       ? newSnapshot.away_lineup[newSnapshot.away_lineup_position]
       : newSnapshot.home_lineup[newSnapshot.home_lineup_position];
 
+    // Set catcher (on deck batter - next in batting order)
+    if (newSnapshot.is_top_of_inning) {
+      const nextAwayPosition = (newSnapshot.away_lineup_position + 1) % newSnapshot.away_lineup.length;
+      newSnapshot.catcher_id = newSnapshot.away_lineup[nextAwayPosition];
+    } else {
+      const nextHomePosition = (newSnapshot.home_lineup_position + 1) % newSnapshot.home_lineup.length;
+      newSnapshot.catcher_id = newSnapshot.home_lineup[nextHomePosition];
+    }
+
     sideEffects.push({
       type: 'inning_change',
       data: { 
@@ -539,6 +565,15 @@ export class BaseballGameStateMachine {
     newSnapshot.batter_id = newSnapshot.is_top_of_inning 
       ? newSnapshot.away_lineup[newSnapshot.away_lineup_position]
       : newSnapshot.home_lineup[newSnapshot.home_lineup_position];
+
+    // Update catcher (on deck batter - next in batting order)
+    if (newSnapshot.is_top_of_inning) {
+      const nextAwayPosition = (newSnapshot.away_lineup_position + 1) % newSnapshot.away_lineup.length;
+      newSnapshot.catcher_id = newSnapshot.away_lineup[nextAwayPosition];
+    } else {
+      const nextHomePosition = (newSnapshot.home_lineup_position + 1) % newSnapshot.home_lineup.length;
+      newSnapshot.catcher_id = newSnapshot.home_lineup[nextHomePosition];
+    }
 
     sideEffects.push({
       type: 'lineup_advance',

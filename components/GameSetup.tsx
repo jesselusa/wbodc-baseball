@@ -12,7 +12,7 @@ import {
 } from '../lib/api';
 
 export interface GameSetupProps {
-  gameId: string;
+  gameId: string | null;
   onGameStarted?: (gameData: GameSetupData) => void;
   onCancel?: () => void;
   className?: string;
@@ -139,29 +139,34 @@ export function GameSetup({
         umpire_id: umpireId
       };
 
-      // Submit game start event
-      const gameStartPayload: GameStartEventPayload = {
-        umpire_id: umpireId,
-        home_team_id: homeTeamId,
-        away_team_id: awayTeamId,
-        lineups: {
-          home: lineups.home,
-          away: lineups.away
-        },
-        innings
-      };
+      if (gameId) {
+        // If we have a gameId, submit the game start event directly
+        const gameStartPayload: GameStartEventPayload = {
+          umpire_id: umpireId,
+          home_team_id: homeTeamId,
+          away_team_id: awayTeamId,
+          lineups: {
+            home: lineups.home,
+            away: lineups.away
+          },
+          innings
+        };
 
-      const response = await submitEvent({
-        game_id: gameId,
-        type: 'game_start',
-        payload: gameStartPayload,
-        umpire_id: umpireId
-      });
+        const response = await submitEvent({
+          game_id: gameId,
+          type: 'game_start',
+          payload: gameStartPayload,
+          umpire_id: umpireId
+        });
 
-      if (response.success) {
-        onGameStarted?.(gameSetupData);
+        if (response.success) {
+          onGameStarted?.(gameSetupData);
+        } else {
+          setError(response.error || 'Failed to start game');
+        }
       } else {
-        setError(response.error || 'Failed to start game');
+        // If no gameId, let the parent component handle game creation
+        onGameStarted?.(gameSetupData);
       }
     } catch (err) {
       setError('Failed to start game');

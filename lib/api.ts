@@ -565,13 +565,60 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
       .eq('game_id', request.game_id)
       .single();
     
-    if (snapshotError || !snapshot) {
-      return {
-        event: {} as GameEvent,
-        snapshot: {} as GameSnapshot,
-        success: false,
-        error: 'Could not fetch current game state'
-      };
+    let currentSnapshot = snapshot;
+    
+    // For game_start events, if no snapshot exists yet, create a minimal one
+    // (This is normal for new games where we only created the games record initially)
+    if (snapshotError || !currentSnapshot) {
+      if (request.type === 'game_start') {
+        // Get the basic game info to create initial snapshot
+        const { data: gameInfo, error: gameError } = await supabase
+          .from('games')
+          .select('id, home_team_id, away_team_id')
+          .eq('id', request.game_id)
+          .single();
+        
+        if (gameError || !gameInfo) {
+          return {
+            event: {} as GameEvent,
+            snapshot: {} as GameSnapshot,
+            success: false,
+            error: 'Could not fetch game information'
+          };
+        }
+
+        // Create minimal initial snapshot for game_start processing
+        currentSnapshot = {
+          game_id: request.game_id,
+          current_inning: 1,
+          is_top_of_inning: true,
+          outs: 0,
+          balls: 0,
+          strikes: 0,
+          score_home: 0,
+          score_away: 0,
+          home_team_id: gameInfo.home_team_id || '',
+          away_team_id: gameInfo.away_team_id || '',
+          batter_id: null,
+          catcher_id: null,
+          base_runners: { first: null, second: null, third: null },
+          home_lineup: [],
+          away_lineup: [],
+          home_lineup_position: 0,
+          away_lineup_position: 0,
+          last_event_id: null,
+          umpire_id: null,
+          status: 'not_started',
+          last_updated: new Date().toISOString()
+        };
+      } else {
+        return {
+          event: {} as GameEvent,
+          snapshot: {} as GameSnapshot,
+          success: false,
+          error: 'Could not fetch current game state'
+        };
+      }
     }
     
     // Get previous event if needed
@@ -587,7 +634,7 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
     }
     
     // Validate the event
-    const validation = validateEvent(request.type, request.payload, snapshot, previousEvent);
+    const validation = validateEvent(request.type, request.payload, currentSnapshot, previousEvent);
     if (!validation.isValid) {
       return {
         event: {} as GameEvent,
@@ -620,7 +667,7 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
     }
     
     // Update game snapshot using the state machine
-    const updatedSnapshot = await updateGameSnapshotWithStateMachine(event, snapshot);
+    const updatedSnapshot = await updateGameSnapshotWithStateMachine(event, currentSnapshot);
     
     return {
       event,
@@ -722,6 +769,30 @@ export async function updateGameSnapshotWithStateMachine(
   }
   
   const newSnapshot = result.snapshot;
+  
+  // Handle side effects
+  if (result.sideEffects) {
+    for (const sideEffect of result.sideEffects) {
+      if (sideEffect.type === 'game_start') {
+        // Update the games table when game starts
+        const { error: gameUpdateError } = await supabase
+          .from('games')
+          .update({
+            home_team_id: sideEffect.data.home_team_id,
+            away_team_id: sideEffect.data.away_team_id,
+            status: 'active',
+            started_at: sideEffect.data.started_at
+          })
+          .eq('id', currentSnapshot.game_id);
+        
+        if (gameUpdateError) {
+          console.error('Error updating games table:', gameUpdateError);
+          // Don't throw here, just log the error
+        }
+      }
+      // Handle other side effects as needed
+    }
+  }
   
   // Save the updated snapshot to the database
   const { data, error } = await supabase
@@ -1092,14 +1163,35 @@ export async function fetchRecentGames(limit: number = 10): Promise<ApiResponse<
 // Team and Player API functions
 
 export async function fetchTeams(): Promise<ApiResponse<Team[]>> {
-  await delay(200);
-
   try {
+    const { data: teams, error } = await supabase
+      .from('teams')
+      .select('id, name, color, created_at')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching teams:', error);
+      return {
+        data: [],
+        success: false,
+        error: 'Failed to fetch teams from database',
+      };
+    }
+
+    const transformedTeams: Team[] = teams?.map(team => ({
+      id: team.id,
+      name: team.name,
+      logo_url: null, // teams table doesn't have logo_url column
+      created_at: team.created_at,
+      updated_at: team.created_at, // teams table doesn't have updated_at, use created_at
+    })) || [];
+
     return {
-      data: [...mockTeams],
+      data: transformedTeams,
       success: true,
     };
   } catch (error) {
+    console.error('Error in fetchTeams:', error);
     return {
       data: [],
       success: false,
@@ -1181,6 +1273,70 @@ export async function fetchPlayerById(playerId: string): Promise<ApiResponse<Pla
       data: null,
       success: false,
       error: 'Failed to fetch player',
+    };
+  }
+} 
+
+/**
+ * Create a new game record in the database
+ */
+export async function createNewGame(gameData: {
+  tournament_id?: string;
+  home_team_id?: string;
+  away_team_id?: string;
+  innings?: 3 | 5 | 7 | 9;
+  game_type?: 'tournament' | 'free_play';
+}): Promise<ApiResponse<{ game_id: string }>> {
+  try {
+    const gameType = gameData.game_type || 'free_play';
+    const innings = gameData.innings || 7;
+    
+    // Create the game record
+    const { data: game, error: gameError } = await supabase
+      .from('games')
+      .insert({
+        tournament_id: gameData.tournament_id || null,
+        home_team_id: gameData.home_team_id || null,
+        away_team_id: gameData.away_team_id || null,
+        home_score: 0,
+        away_score: 0,
+        current_inning: 1,
+        is_top_inning: true,
+        total_innings: innings,
+        status: 'scheduled',
+        started_at: null,
+        completed_at: null
+      })
+      .select('id')
+      .single();
+
+    if (gameError || !game) {
+      console.error('Error creating game:', gameError);
+      return {
+        data: null,
+        success: false,
+        error: gameError?.message || 'Failed to create game'
+      };
+    }
+
+    const gameId = game.id;
+
+    // Note: We don't create the game_snapshots record here because it requires
+    // home_team_id and away_team_id which are NOT NULL, but we don't know them yet.
+    // The game_snapshots record will be created when the game starts (game_start event).
+
+    console.log(`Successfully created new game with ID: ${gameId}`);
+    return {
+      data: { game_id: gameId },
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error in createNewGame:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to create new game'
     };
   }
 } 
