@@ -20,21 +20,20 @@ This document outlines the product requirements and technical design for the liv
 
 ### Umpire
 
+- As an umpire, I can set up game lineups for both teams before starting the game.
+- As an umpire, I can see who the current batter is and who is "on deck" next.
 - As an umpire, I can record the result of each pitch, including which cup (if any) was hit.
 - As an umpire, I am prompted to record flip cup results and errors when a cup is hit.
 - As an umpire, I am prompted to confirm the final result of the at-bat before submitting it.
+- As an umpire, the system automatically advances to the next batter after each completed at-bat.
 - As an umpire, I can undo or edit any previous event, with confirmation if this affects subsequent events.
 - As an umpire, I can see who the current assigned umpire is and take over if needed (with confirmation).
 
 ### Viewer
 
 - As a viewer, I can see the current state of any game in real time, without needing to log in.
+- As a viewer, I can see who is currently batting and who is "on deck" next.
 - As a viewer, I can see a live-updating dashboard of all games (with at-bat or inning-level granularity).
-
-### Admin/Tournament Staff
-
-- As an admin, I can assign umpires and authorize takeovers for tournament games.
-- As an admin, I can review the full event log for any game for audit or debugging purposes.
 
 ---
 
@@ -157,11 +156,13 @@ CREATE TABLE game_snapshots (
   score_away INT NOT NULL,
   home_team_id UUID NOT NULL,
   away_team_id UUID NOT NULL,
-  batting_team_id UUID NOT NULL,
-  fielding_team_id UUID NOT NULL,
   batter_id UUID,
   catcher_id UUID,
   base_runners JSONB, -- e.g., {"first": "player_id", "second": null, "third": "player_id"}
+  home_lineup UUID[], -- Array of player IDs in batting order
+  away_lineup UUID[], -- Array of player IDs in batting order
+  home_lineup_position INT DEFAULT 0, -- Current batter index (0-based)
+  away_lineup_position INT DEFAULT 0, -- Current batter index (0-based)
   last_event_id UUID,
   umpire_id UUID,
   status TEXT NOT NULL, -- "not_started", "in_progress", "paused", "completed"
@@ -171,14 +172,44 @@ CREATE TABLE game_snapshots (
 
 ---
 
+## Lineup Management & Batter Advancement
+
+The system automatically manages batting lineups and advances batters according to baseball rules:
+
+### Lineup Tracking
+
+- **Initial Setup**: Game start events include complete batting lineups for both teams as arrays of player IDs
+- **Position Tracking**: `home_lineup_position` and `away_lineup_position` track current batter indices (0-based)
+- **Current Batter**: System automatically determines current batter based on inning half and lineup position
+
+### Automatic Advancement Rules
+
+- **At-Bat Completion**: After any completed at-bat (hit, walk, out), advance to next batter in lineup
+- **Lineup Wrapping**: When reaching end of lineup, automatically wrap to first batter (position 0)
+- **Inning Changes**: When switching innings, system uses correct team's current lineup position
+- **Team Switching**: Top of inning = away team bats, bottom of inning = home team bats
+
+### Implementation Details
+
+- **Event Integration**: All event handlers (pitch, flip_cup, at_bat) properly advance lineups
+- **Runner Tracking**: Base runners use actual player IDs from current batter
+- **State Consistency**: Lineup positions maintained across undo/edit operations
+- **Error Handling**: Graceful fallbacks if lineups are missing or invalid
+
+This ensures realistic baseball gameplay where batters rotate through the lineup automatically, eliminating the need for manual batter selection during games.
+
+---
+
 ## UI/UX Flows
 
 ### Umpire UI
 
-- Assign umpire, select home/away teams, enter lineups, choose innings.
+- Assign umpire, select home/away teams, enter batting lineups in order, choose innings.
+- Display current batter name and "on deck" batter for clear lineup tracking.
 - Record pitch results (strike, ball, foul ball, or cup hit).
 - If a cup is hit, prompt for flip cup result and errors.
 - On strike 3, ball 4, or after flip cup, prompt umpire to confirm the at-bat result before submitting.
+- Automatically advance to next batter after each completed at-bat (no manual selection needed).
 - Allow undo/edit of any previous event, with confirmation if this affects subsequent events.
 - Show current umpire and allow authorized users to take over (with confirmation).
 

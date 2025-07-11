@@ -49,6 +49,7 @@ DECLARE
     tournament_uuid uuid;
     team_uuids uuid[];
     player_uuids uuid[];
+    team_uuid uuid;
     i integer := 1;
 BEGIN
     -- Get the tournament ID
@@ -60,18 +61,21 @@ BEGIN
     -- Get player IDs
     SELECT ARRAY(SELECT id FROM players ORDER BY name) INTO player_uuids;
     
-    -- Assign players to teams (2-3 players per team for 8 teams)
-    FOREACH team_uuid IN ARRAY team_uuids
-    LOOP
-        -- Add 2-3 players per team
-        FOR j IN 1..3 LOOP
-            IF i <= array_length(player_uuids, 1) THEN
-                INSERT INTO team_memberships (team_id, player_id, tournament_id) 
-                VALUES (team_uuid, player_uuids[i], tournament_uuid);
-                i := i + 1;
-            END IF;
+    -- Only proceed if we don't already have team memberships
+    IF NOT EXISTS (SELECT 1 FROM team_memberships WHERE tournament_id = tournament_uuid) THEN
+        -- Assign players to teams (2-3 players per team for 8 teams)
+        FOR j IN 1..array_length(team_uuids, 1) LOOP
+            team_uuid := team_uuids[j];
+            -- Add 2-3 players per team
+            FOR k IN 1..3 LOOP
+                IF i <= array_length(player_uuids, 1) THEN
+                    INSERT INTO team_memberships (team_id, player_id, tournament_id) 
+                    VALUES (team_uuid, player_uuids[i], tournament_uuid);
+                    i := i + 1;
+                END IF;
+            END LOOP;
         END LOOP;
-    END LOOP;
+    END IF;
 END $$;
 
 -- Sample Games (Tournament Bracket - First Round)
@@ -86,26 +90,37 @@ BEGIN
     -- Get team IDs
     SELECT ARRAY(SELECT id FROM teams ORDER BY name LIMIT 8) INTO team_uuids;
     
-    -- Create first round games
-    INSERT INTO games (tournament_id, home_team_id, away_team_id, total_innings, status) VALUES
-      (tournament_uuid, team_uuids[1], team_uuids[2], 7, 'scheduled'), -- Game 1
-      (tournament_uuid, team_uuids[3], team_uuids[4], 7, 'scheduled'), -- Game 2  
-      (tournament_uuid, team_uuids[5], team_uuids[6], 7, 'scheduled'), -- Game 3
-      (tournament_uuid, team_uuids[7], team_uuids[8], 7, 'scheduled'); -- Game 4
+    -- Only create games if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM games WHERE tournament_id = tournament_uuid) THEN
+        -- Create first round games
+        INSERT INTO games (tournament_id, home_team_id, away_team_id, total_innings, status) VALUES
+          (tournament_uuid, team_uuids[1], team_uuids[2], 7, 'scheduled'), -- Game 1
+          (tournament_uuid, team_uuids[3], team_uuids[4], 7, 'scheduled'), -- Game 2  
+          (tournament_uuid, team_uuids[5], team_uuids[6], 7, 'scheduled'), -- Game 3
+          (tournament_uuid, team_uuids[7], team_uuids[8], 7, 'scheduled'); -- Game 4
+    END IF;
 END $$;
 
 -- Update tournament standings for all teams
-INSERT INTO tournament_standings (tournament_id, team_id, wins, losses, runs_scored, runs_allowed)
-SELECT 
-  t.id as tournament_id,
-  teams.id as team_id,
-  0 as wins,
-  0 as losses, 
-  0 as runs_scored,
-  0 as runs_allowed
-FROM tournaments t
-CROSS JOIN teams
-WHERE t.name LIKE 'Halloweekend%';
+DO $$
+DECLARE
+    tournament_uuid uuid;
+BEGIN
+    SELECT id INTO tournament_uuid FROM tournaments WHERE name LIKE 'Halloweekend%' LIMIT 1;
+    
+    -- Only create standings if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM tournament_standings WHERE tournament_id = tournament_uuid) THEN
+        INSERT INTO tournament_standings (tournament_id, team_id, wins, losses, runs_scored, runs_allowed)
+        SELECT 
+          tournament_uuid,
+          teams.id as team_id,
+          0 as wins,
+          0 as losses, 
+          0 as runs_scored,
+          0 as runs_allowed
+        FROM teams;
+    END IF;
+END $$;
 
 -- Create game snapshots for each game
 DO $$
@@ -230,9 +245,9 @@ BEGIN
     WHERE game_id = sample_game_id;
     
     -- Add some sample events
-    INSERT INTO game_events (game_id, type, payload, umpire_id) VALUES
-    (sample_game_id, 'game_start', '{"message": "Game started"}', batter_id),
-    (sample_game_id, 'at_bat', '{"result": "single", "batter_id": "' || batter_id || '", "runs_scored": 1}', batter_id),
-    (sample_game_id, 'at_bat', '{"result": "out", "batter_id": "' || catcher_id || '", "runs_scored": 0}', batter_id);
+    INSERT INTO game_events (game_id, event_type, type, payload, umpire_id) VALUES
+    (sample_game_id, 'game_end', 'game_start', '{"message": "Game started"}'::jsonb, batter_id),
+    (sample_game_id, 'base_running', 'at_bat', ('{"result": "single", "batter_id": "' || batter_id || '", "runs_scored": 1}')::jsonb, batter_id),
+    (sample_game_id, 'base_running', 'at_bat', ('{"result": "out", "batter_id": "' || catcher_id || '", "runs_scored": 0}')::jsonb, batter_id);
     
 END $$; 

@@ -1,5 +1,11 @@
 -- WBDoc Baseball Initial Schema Migration
 -- Run this in Supabase SQL Editor
+--
+-- IMPORTANT: This migration includes fixes for common deployment issues:
+-- 1. RLS Policies: Uses public read access (true) instead of authenticated-only
+--    to allow anonymous frontend access with Supabase anon key
+-- 2. All tables have public SELECT policies to support viewer functionality
+-- 3. Write operations will be handled in subsequent migrations with proper auth
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -178,44 +184,48 @@ ALTER TABLE flip_cup_rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE player_game_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tournament_standings ENABLE ROW LEVEL SECURITY;
 
--- Basic RLS Policies (start with read access for all authenticated users)
--- You can modify these based on your auth requirements
+-- RLS Policies for public read access (anonymous users can view data)
+-- This allows the frontend to work with the anonymous Supabase key
+-- In production, you may want to restrict some of these policies
 
-CREATE POLICY "Allow read access for authenticated users" ON players 
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Core entities - public read access for viewers
+CREATE POLICY "Allow public read access" ON players 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON tournaments 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON tournaments 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON teams 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON teams 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON team_memberships 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON team_memberships 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON games 
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Game data - public read access for viewers  
+CREATE POLICY "Allow public read access" ON games 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON game_states 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON game_states 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON at_bats 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON at_bats 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON game_events 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON game_events 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON shots 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON shots 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON flip_cup_rounds 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON flip_cup_rounds 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON player_game_stats 
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Stats - public read access for leaderboards
+CREATE POLICY "Allow public read access" ON player_game_stats 
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow read access for authenticated users" ON tournament_standings 
-  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow public read access" ON tournament_standings 
+  FOR SELECT USING (true);
 
 -- Enable real-time subscriptions on key tables
 ALTER PUBLICATION supabase_realtime ADD TABLE games;

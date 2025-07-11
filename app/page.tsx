@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import PlayBallButton from "../components/PlayBallButton";
-import GameList from "../components/GameList";
+import LiveGameList from "../components/LiveGameList";
 import TournamentCard from "../components/TournamentCard";
 import { Tournament } from "../lib/types";
 import { fetchActiveTournament } from "../lib/api";
@@ -99,7 +99,7 @@ export default function Page() {
         padding: '0 0.75rem 2rem', // Reduced horizontal padding for mobile
         overflow: 'hidden' // Prevent any overflow
       }}>
-        <GameList limit={8} />
+        <LiveGameList limit={8} />
       </section>
     </div>
   );

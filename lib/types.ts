@@ -52,6 +52,145 @@ export interface Game {
   updated_at: string;
 }
 
+// Live scoring types for real-time event system
+export type EventType = 'pitch' | 'flip_cup' | 'at_bat' | 'undo' | 'edit' | 'takeover' | 'game_start' | 'game_end';
+
+export type PitchResult = 'strike' | 'foul ball' | 'ball' | 'first cup hit' | 'second cup hit' | 'third cup hit' | 'fourth cup hit';
+export type FlipCupResult = 'offense wins' | 'defense wins';
+export type AtBatResult = 'out' | 'walk' | 'single' | 'double' | 'triple' | 'homerun';
+export type GameSnapshotStatus = 'not_started' | 'in_progress' | 'paused' | 'completed';
+
+// Event payload types
+export interface PitchEventPayload {
+  result: PitchResult;
+  batter_id: string;
+  catcher_id: string;
+}
+
+export interface FlipCupEventPayload {
+  result: FlipCupResult;
+  batter_id: string;
+  catcher_id: string;
+  errors?: string[]; // player_ids who made errors
+}
+
+export interface AtBatEventPayload {
+  result: AtBatResult;
+  batter_id: string;
+  catcher_id: string;
+}
+
+export interface UndoEventPayload {
+  target_event_id: string;
+  reason?: string;
+}
+
+export interface EditEventPayload {
+  target_event_id: string;
+  new_data: Record<string, any>;
+}
+
+export interface TakeoverEventPayload {
+  previous_umpire_id: string;
+  new_umpire_id: string;
+}
+
+export interface GameStartEventPayload {
+  umpire_id: string;
+  home_team_id: string;
+  away_team_id: string;
+  lineups: {
+    home: string[]; // player_ids
+    away: string[]; // player_ids
+  };
+  innings: 3 | 5 | 7 | 9;
+}
+
+export interface GameEndEventPayload {
+  final_score_home: number;
+  final_score_away: number;
+  notes?: string;
+}
+
+export type EventPayload = 
+  | PitchEventPayload 
+  | FlipCupEventPayload 
+  | AtBatEventPayload 
+  | UndoEventPayload 
+  | EditEventPayload 
+  | TakeoverEventPayload 
+  | GameStartEventPayload 
+  | GameEndEventPayload;
+
+// Game event for the event log
+export interface GameEvent {
+  id: string;
+  game_id: string;
+  type: EventType;
+  umpire_id: string;
+  payload: EventPayload;
+  previous_event_id?: string;
+  sequence_number: number;
+  created_at: string;
+}
+
+// Base runners structure
+export interface BaseRunners {
+  first: string | null;  // player_id
+  second: string | null; // player_id
+  third: string | null;  // player_id
+}
+
+// Game snapshot for current state
+export interface GameSnapshot {
+  game_id: string;
+  current_inning: number;
+  is_top_of_inning: boolean;
+  outs: number;
+  balls: number;
+  strikes: number;
+  score_home: number;
+  score_away: number;
+  home_team_id: string;
+  away_team_id: string;
+  batter_id?: string;
+  catcher_id?: string;
+  base_runners: BaseRunners;
+  home_lineup: string[]; // Array of player IDs in batting order
+  away_lineup: string[]; // Array of player IDs in batting order
+  home_lineup_position: number; // Current batter index (0-based)
+  away_lineup_position: number; // Current batter index (0-based)
+  last_event_id?: string;
+  umpire_id?: string;
+  status: GameSnapshotStatus;
+  last_updated: string;
+}
+
+// Live game status view type
+export interface LiveGameStatus {
+  game_id: string;
+  current_inning: number;
+  is_top_of_inning: boolean;
+  outs: number;
+  balls: number;
+  strikes: number;
+  score_home: number;
+  score_away: number;
+  home_team_name: string;
+  home_team_color: string;
+  away_team_name: string;
+  away_team_color: string;
+  batter_name?: string;
+  catcher_name?: string;
+  base_runners: BaseRunners;
+  umpire_name?: string;
+  status: GameSnapshotStatus;
+  last_updated: string;
+  tournament_id?: string;
+  tournament_name?: string;
+}
+
+// Legacy GameState interface (deprecated, use GameSnapshot instead)
 export interface GameState {
   id: string;
   game_id: string;
@@ -129,6 +268,51 @@ export interface TournamentStanding {
   runs_scored: number;
   runs_allowed: number;
   games_played: number;
+}
+
+// Live scoring API types
+export interface EventSubmissionRequest {
+  game_id: string;
+  type: EventType;
+  payload: EventPayload;
+  umpire_id: string;
+  previous_event_id?: string;
+}
+
+export interface EventSubmissionResponse {
+  event: GameEvent;
+  snapshot: GameSnapshot;
+  success: boolean;
+  error?: string;
+}
+
+export interface UmpireAction {
+  type: 'pitch' | 'flip_cup' | 'at_bat_complete' | 'undo' | 'edit' | 'takeover';
+  data: any;
+  timestamp: string;
+}
+
+export interface GameSetupData {
+  home_team_id: string;
+  away_team_id: string;
+  home_lineup: string[]; // player_ids in batting order
+  away_lineup: string[]; // player_ids in batting order
+  innings: 3 | 5 | 7 | 9;
+  umpire_id: string;
+}
+
+// Real-time subscription types
+export interface RealtimeGameUpdate {
+  type: 'event' | 'snapshot' | 'error';
+  data: GameEvent | GameSnapshot | { message: string };
+  timestamp: string;
+}
+
+export interface RealtimeDashboardUpdate {
+  type: 'game_summary' | 'game_status_change';
+  game_id: string;
+  data: Partial<LiveGameStatus>;
+  timestamp: string;
 }
 
 // API response types
