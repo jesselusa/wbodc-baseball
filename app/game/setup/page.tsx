@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { GameSetup } from '../../../components/GameSetup';
 import BackButton from '../../../components/BackButton';
 import { GameSetupData, GameStartEventPayload } from '../../../lib/types';
-import { createNewGame, submitEvent } from '../../../lib/api';
+import { createNewGame, submitEvent, fetchTeamPlayers } from '../../../lib/api';
 
 /**
  * Game Setup Page - Provides setup interface, creates game when user submits
@@ -20,6 +20,17 @@ export default function GameSetupPage() {
       setCreatingGame(true);
       setError(undefined);
       
+      // Fetch team lineups before creating the game
+      const [homeTeamResponse, awayTeamResponse] = await Promise.all([
+        fetchTeamPlayers(gameData.home_team_id),
+        fetchTeamPlayers(gameData.away_team_id)
+      ]);
+
+      if (!homeTeamResponse.success || !awayTeamResponse.success) {
+        setError('Failed to fetch team lineups');
+        return;
+      }
+
       // Create the game with all the user-provided details
       const response = await createNewGame({
         home_team_id: gameData.home_team_id,
@@ -35,14 +46,14 @@ export default function GameSetupPage() {
 
       const gameId = response.data.game_id;
 
-      // Now submit the game start event
+      // Now submit the game start event with team lineups
       const gameStartPayload: GameStartEventPayload = {
         umpire_id: gameData.umpire_id,
         home_team_id: gameData.home_team_id,
         away_team_id: gameData.away_team_id,
         lineups: {
-          home: gameData.home_lineup,
-          away: gameData.away_lineup
+          home: homeTeamResponse.data.map(player => player.id),
+          away: awayTeamResponse.data.map(player => player.id)
         },
         innings: gameData.innings || 7
       };
@@ -127,28 +138,10 @@ export default function GameSetupPage() {
       style={{ 
         background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#1c1b20'
+        color: '#1c1b20',
+        paddingTop: '64px' // Account for fixed navbar
       }}
     >
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleCancel}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                ← Back to Homepage
-              </button>
-              <h1 className="text-xl font-bold text-gray-900">
-                New Game Setup
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <GameSetup

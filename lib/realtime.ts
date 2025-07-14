@@ -9,7 +9,7 @@ import {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -243,7 +243,7 @@ export class GameRealtimeManager {
       id: event.id,
       game_id: event.game_id,
       type: event.type,
-      timestamp: event.timestamp,
+      created_at: event.created_at,
       sequence_number: event.sequence_number
       // Exclude full payload for summary
     };

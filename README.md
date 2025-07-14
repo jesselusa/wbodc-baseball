@@ -84,7 +84,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env.local
-# Add your Supabase URL and anon key
+# Add your Supabase URL and publishable key
 
 # Start development server
 npm run dev

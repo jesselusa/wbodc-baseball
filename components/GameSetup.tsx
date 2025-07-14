@@ -7,7 +7,8 @@ import {
 } from '../lib/types';
 import { 
   fetchTeams, 
-  fetchPlayers, 
+  fetchPlayers,
+  fetchTeamPlayers,
   submitEvent 
 } from '../lib/api';
 
@@ -18,14 +19,9 @@ export interface GameSetupProps {
   className?: string;
 }
 
-interface LineupState {
-  home: string[];
-  away: string[];
-}
-
 /**
  * GameSetup component for initializing a new game
- * Handles team selection, lineup management, and game configuration
+ * Handles team selection and game configuration
  */
 export function GameSetup({ 
   gameId, 
@@ -36,6 +32,8 @@ export function GameSetup({
   // Data state
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [homeTeamPlayers, setHomeTeamPlayers] = useState<Player[]>([]);
+  const [awayTeamPlayers, setAwayTeamPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
@@ -43,12 +41,11 @@ export function GameSetup({
   // Form state
   const [homeTeamId, setHomeTeamId] = useState<string>('');
   const [awayTeamId, setAwayTeamId] = useState<string>('');
-  const [lineups, setLineups] = useState<LineupState>({ home: [], away: [] });
   const [innings, setInnings] = useState<3 | 5 | 7 | 9>(7);
   const [umpireId, setUmpireId] = useState<string>('');
 
   // UI state
-  const [activeTab, setActiveTab] = useState<'teams' | 'lineups' | 'settings'>('teams');
+  const [activeTab, setActiveTab] = useState<'teams' | 'settings'>('teams');
 
   // Load initial data
   useEffect(() => {
@@ -85,44 +82,38 @@ export function GameSetup({
     loadData();
   }, []);
 
+  // Load team players when a team is selected
+  useEffect(() => {
+    if (homeTeamId) {
+      fetchTeamPlayers(homeTeamId).then(response => {
+        if (response.success) {
+          setHomeTeamPlayers(response.data);
+        }
+      });
+    } else {
+      setHomeTeamPlayers([]);
+    }
+  }, [homeTeamId]);
+
+  useEffect(() => {
+    if (awayTeamId) {
+      fetchTeamPlayers(awayTeamId).then(response => {
+        if (response.success) {
+          setAwayTeamPlayers(response.data);
+        }
+      });
+    } else {
+      setAwayTeamPlayers([]);
+    }
+  }, [awayTeamId]);
+
   // Helper functions
   const getTeamById = (teamId: string) => teams.find(t => t.id === teamId);
   const getPlayerById = (playerId: string) => players.find(p => p.id === playerId);
 
-  const canProceedToLineups = homeTeamId && awayTeamId && homeTeamId !== awayTeamId;
-  const canProceedToSettings = canProceedToLineups && 
-    lineups.home.length >= 3 && lineups.away.length >= 3;
+  const canProceedToSettings = homeTeamId && awayTeamId && homeTeamId !== awayTeamId;
   const canStartGame = canProceedToSettings && umpireId;
 
-  // Lineup management
-  const addPlayerToLineup = (playerId: string, team: 'home' | 'away') => {
-    setLineups(prev => ({
-      ...prev,
-      [team]: [...prev[team], playerId]
-    }));
-  };
-
-  const removePlayerFromLineup = (playerId: string, team: 'home' | 'away') => {
-    setLineups(prev => ({
-      ...prev,
-      [team]: prev[team].filter(id => id !== playerId)
-    }));
-  };
-
-  const movePlayerInLineup = (team: 'home' | 'away', fromIndex: number, toIndex: number) => {
-    setLineups(prev => {
-      const lineup = [...prev[team]];
-      const [movedPlayer] = lineup.splice(fromIndex, 1);
-      lineup.splice(toIndex, 0, movedPlayer);
-      
-      return {
-        ...prev,
-        [team]: lineup
-      };
-    });
-  };
-
-  // Form submission
   const handleStartGame = async () => {
     if (!canStartGame) return;
 
@@ -130,43 +121,15 @@ export function GameSetup({
       setSubmitting(true);
       setError(undefined);
 
-      const gameSetupData: GameSetupData = {
+      const gameData: GameSetupData = {
         home_team_id: homeTeamId,
         away_team_id: awayTeamId,
-        home_lineup: lineups.home,
-        away_lineup: lineups.away,
         innings,
         umpire_id: umpireId
       };
 
-      if (gameId) {
-        // If we have a gameId, submit the game start event directly
-        const gameStartPayload: GameStartEventPayload = {
-          umpire_id: umpireId,
-          home_team_id: homeTeamId,
-          away_team_id: awayTeamId,
-          lineups: {
-            home: lineups.home,
-            away: lineups.away
-          },
-          innings
-        };
-
-        const response = await submitEvent({
-          game_id: gameId,
-          type: 'game_start',
-          payload: gameStartPayload,
-          umpire_id: umpireId
-        });
-
-        if (response.success) {
-          onGameStarted?.(gameSetupData);
-        } else {
-          setError(response.error || 'Failed to start game');
-        }
-      } else {
-        // If no gameId, let the parent component handle game creation
-        onGameStarted?.(gameSetupData);
+      if (onGameStarted) {
+        await onGameStarted(gameData);
       }
     } catch (err) {
       setError('Failed to start game');
@@ -177,384 +140,752 @@ export function GameSetup({
 
   if (loading) {
     return (
-      <div className={`p-6 ${className}`}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading game setup...</p>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '400px',
+        color: '#696775'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid #e4e2e8',
+            borderTop: '3px solid #8b8a94',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }}></div>
+          <p>Loading game setup...</p>
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div style={{
+        background: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid rgba(239, 68, 68, 0.2)',
+        borderRadius: '12px',
+        padding: '24px',
+        textAlign: 'center',
+        color: '#dc2626'
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>Setup Error</h3>
+        <p style={{ margin: '0 0 16px 0', color: '#696775' }}>{error}</p>
+        <button
+          onClick={() => setError(undefined)}
+          style={{
+            background: 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 24px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #696775 0%, #8b8a94 100%)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className={`bg-white rounded-lg shadow-lg ${className}`}>
+    <div className={className} style={{
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: '#1c1b20'
+    }}>
       {/* Header */}
-      <div className="px-6 py-4 border-b">
-        <h2 className="text-xl font-bold text-gray-900">Game Setup</h2>
-        <p className="text-sm text-gray-600">Configure teams, lineups, and game settings</p>
+      <div style={{
+        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+        borderRadius: '16px',
+        border: '1px solid #e4e2e8',
+        padding: '32px',
+        marginBottom: '32px',
+        textAlign: 'center',
+        boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)'
+      }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '32px',
+          margin: '0 auto 24px',
+          boxShadow: '0 4px 12px rgba(139, 138, 148, 0.3)'
+        }}>
+          ⚾
+        </div>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: '700',
+          margin: '0 0 12px 0',
+          color: '#1c1b20'
+        }}>
+          Game Setup
+        </h1>
+        <p style={{
+          fontSize: '16px',
+          color: '#696775',
+          margin: '0',
+          maxWidth: '500px',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
+          Configure teams and game settings to start your baseball game
+        </p>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-800">{error}</p>
-        </div>
-      )}
+      {/* Progress Steps */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '32px',
+        gap: '12px'
+      }}>
+        {(['teams', 'settings'] as const).map((step, index) => {
+          const isActive = activeTab === step;
+          const isCompleted = (step === 'teams' && canProceedToSettings) ||
+                             (step === 'settings' && canStartGame);
+          const isDisabled = (step === 'settings' && !canProceedToSettings);
 
-      {/* Tab Navigation */}
-      <div className="px-6 pt-4">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('teams')}
-            className={`
-              flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors
-              ${activeTab === 'teams' 
-                ? 'bg-white text-blue-700 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-              }
-            `}
-          >
-            1. Teams
-          </button>
-          <button
-            onClick={() => canProceedToLineups && setActiveTab('lineups')}
-            disabled={!canProceedToLineups}
-            className={`
-              flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors
-              ${activeTab === 'lineups' 
-                ? 'bg-white text-blue-700 shadow-sm' 
-                : canProceedToLineups
-                  ? 'text-gray-600 hover:text-gray-900'
-                  : 'text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            2. Lineups
-          </button>
-          <button
-            onClick={() => canProceedToSettings && setActiveTab('settings')}
-            disabled={!canProceedToSettings}
-            className={`
-              flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors
-              ${activeTab === 'settings' 
-                ? 'bg-white text-blue-700 shadow-sm' 
-                : canProceedToSettings
-                  ? 'text-gray-600 hover:text-gray-900'
-                  : 'text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            3. Settings
-          </button>
-        </div>
+          return (
+            <button
+              key={step}
+              onClick={() => !isDisabled && setActiveTab(step)}
+              disabled={isDisabled}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                border: isActive ? '2px solid #8b8a94' : '1px solid #e4e2e8',
+                background: isActive 
+                  ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
+                  : isCompleted 
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+                color: isActive || isCompleted ? 'white' : isDisabled ? '#d1cdd7' : '#1c1b20',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                textTransform: 'capitalize',
+                boxShadow: isActive ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (!isDisabled) {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 138, 148, 0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isDisabled) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = isActive ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none';
+                }
+              }}
+            >
+              <div style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: isActive || isCompleted ? 'rgba(255, 255, 255, 0.3)' : 'rgba(139, 138, 148, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700'
+              }}>
+                {isCompleted ? '✓' : index + 1}
+              </div>
+              {step}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tab Content */}
-      <div className="p-6">
+      {/* Main Content Card */}
+      <div style={{
+        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+        borderRadius: '16px',
+        border: '1px solid #e4e2e8',
+        padding: '32px',
+        boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)',
+        minHeight: '500px'
+      }}>
         {/* Teams Tab */}
         {activeTab === 'teams' && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Home Team
-              </label>
-              <select
-                value={homeTeamId}
-                onChange={(e) => setHomeTeamId(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select home team...</option>
-                {teams.map(team => (
-                  <option key={team.id} value={team.id} disabled={team.id === awayTeamId}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
+          <div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              margin: '0 0 24px 0',
+              color: '#1c1b20',
+              textAlign: 'center'
+            }}>
+              Select Teams
+            </h2>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '24px',
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}>
+              {/* Home Team */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '8px'
+                }}>
+                  Home Team
+                </label>
+                <select
+                  value={homeTeamId}
+                  onChange={(e) => setHomeTeamId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e4e2e8',
+                    background: 'white',
+                    fontSize: '16px',
+                    color: '#1c1b20',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#8b8a94';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e4e2e8';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <option value="">Select home team...</option>
+                  {teams.map(team => (
+                    <option key={team.id} value={team.id} disabled={team.id === awayTeamId}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Home Team Players */}
+                {homeTeamPlayers.length > 0 && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    background: 'rgba(249, 248, 252, 0.6)',
+                    borderRadius: '8px',
+                    border: '1px solid #f2f1f5'
+                  }}>
+                    <h4 style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#696775',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      margin: '0 0 12px 0'
+                    }}>
+                      Team Roster ({homeTeamPlayers.length} players)
+                    </h4>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
+                      {homeTeamPlayers.map(player => (
+                        <div
+                          key={player.id}
+                          style={{
+                            padding: '6px 12px',
+                            background: 'white',
+                            borderRadius: '16px',
+                            border: '1px solid #e4e2e8',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            color: '#1c1b20'
+                          }}
+                        >
+                          {player.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Away Team */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '8px'
+                }}>
+                  Away Team
+                </label>
+                <select
+                  value={awayTeamId}
+                  onChange={(e) => setAwayTeamId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e4e2e8',
+                    background: 'white',
+                    fontSize: '16px',
+                    color: '#1c1b20',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#8b8a94';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e4e2e8';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <option value="">Select away team...</option>
+                  {teams.map(team => (
+                    <option key={team.id} value={team.id} disabled={team.id === homeTeamId}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Away Team Players */}
+                {awayTeamPlayers.length > 0 && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    background: 'rgba(249, 248, 252, 0.6)',
+                    borderRadius: '8px',
+                    border: '1px solid #f2f1f5'
+                  }}>
+                    <h4 style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#696775',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      margin: '0 0 12px 0'
+                    }}>
+                      Team Roster ({awayTeamPlayers.length} players)
+                    </h4>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}>
+                      {awayTeamPlayers.map(player => (
+                        <div
+                          key={player.id}
+                          style={{
+                            padding: '6px 12px',
+                            background: 'white',
+                            borderRadius: '16px',
+                            border: '1px solid #e4e2e8',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            color: '#1c1b20'
+                          }}
+                        >
+                          {player.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Away Team
-              </label>
-              <select
-                value={awayTeamId}
-                onChange={(e) => setAwayTeamId(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select away team...</option>
-                {teams.map(team => (
-                  <option key={team.id} value={team.id} disabled={team.id === homeTeamId}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+            {/* Team Preview */}
             {homeTeamId && awayTeamId && (
-              <div className="mt-6 p-4 bg-green-50 rounded-md">
-                <h3 className="font-medium text-green-800 mb-2">Matchup Preview</h3>
-                <p className="text-green-700">
-                  <span className="font-medium">{getTeamById(awayTeamId)?.name}</span>
-                  {' vs '}
-                  <span className="font-medium">{getTeamById(homeTeamId)?.name}</span>
-                </p>
+              <div style={{
+                marginTop: '32px',
+                padding: '24px',
+                background: 'rgba(34, 197, 94, 0.05)',
+                borderRadius: '12px',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                textAlign: 'center'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  margin: '0 0 16px 0',
+                  color: '#1c1b20'
+                }}>
+                  Game Matchup
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '16px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: '#1c1b20'
+                }}>
+                  <span>{getTeamById(homeTeamId)?.name}</span>
+                  <span style={{ color: '#696775' }}>vs</span>
+                  <span>{getTeamById(awayTeamId)?.name}</span>
+                </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Lineups Tab */}
-        {activeTab === 'lineups' && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Away Team Lineup */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">
-                  {getTeamById(awayTeamId)?.name} Lineup (Away)
-                </h3>
-                <LineupBuilder
-                  players={players}
-                  lineup={lineups.away}
-                  onAddPlayer={(playerId) => addPlayerToLineup(playerId, 'away')}
-                  onRemovePlayer={(playerId) => removePlayerFromLineup(playerId, 'away')}
-                  onMovePlayer={(from, to) => movePlayerInLineup('away', from, to)}
-                  excludePlayerIds={lineups.home}
-                />
-              </div>
-
-              {/* Home Team Lineup */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">
-                  {getTeamById(homeTeamId)?.name} Lineup (Home)
-                </h3>
-                <LineupBuilder
-                  players={players}
-                  lineup={lineups.home}
-                  onAddPlayer={(playerId) => addPlayerToLineup(playerId, 'home')}
-                  onRemovePlayer={(playerId) => removePlayerFromLineup(playerId, 'home')}
-                  onMovePlayer={(from, to) => movePlayerInLineup('home', from, to)}
-                  excludePlayerIds={lineups.away}
-                />
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
-              <p><strong>Note:</strong> Each team needs at least 3 players in their lineup. 
-              Players will bat in the order shown, cycling through the lineup as needed.</p>
+            {/* Continue Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: '32px'
+            }}>
+              <button
+                onClick={() => setActiveTab('settings')}
+                disabled={!canProceedToSettings}
+                style={{
+                  background: canProceedToSettings 
+                    ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
+                    : 'linear-gradient(135deg, #d1cdd7 0%, #e4e2e8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: canProceedToSettings ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s ease',
+                  boxShadow: canProceedToSettings ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (canProceedToSettings) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #696775 0%, #8b8a94 100%)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (canProceedToSettings) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                Continue to Settings →
+              </button>
             </div>
           </div>
         )}
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Game Length
-              </label>
-              <select
-                value={innings}
-                onChange={(e) => setInnings(Number(e.target.value) as 3 | 5 | 7 | 9)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={3}>3 Innings (Quick Game)</option>
-                <option value={5}>5 Innings (Short Game)</option>
-                <option value={7}>7 Innings (Standard)</option>
-                <option value={9}>9 Innings (Full Game)</option>
-              </select>
-            </div>
+          <div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              margin: '0 0 32px 0',
+              color: '#1c1b20',
+              textAlign: 'center'
+            }}>
+              Game Settings
+            </h2>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Umpire
-              </label>
-              <select
-                value={umpireId}
-                onChange={(e) => setUmpireId(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select umpire...</option>
-                {players.map(player => (
-                  <option key={player.id} value={player.id}>
-                    {player.name} {player.nickname && `(${player.nickname})`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-md">
-              <h3 className="font-medium text-gray-900 mb-2">Game Summary</h3>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p><strong>Away:</strong> {getTeamById(awayTeamId)?.name} ({lineups.away.length} players)</p>
-                <p><strong>Home:</strong> {getTeamById(homeTeamId)?.name} ({lineups.home.length} players)</p>
-                <p><strong>Length:</strong> {innings} innings</p>
-                <p><strong>Umpire:</strong> {getPlayerById(umpireId)?.name}</p>
+            <div style={{
+              maxWidth: '600px',
+              margin: '0 auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '32px'
+            }}>
+              {/* Innings */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '16px'
+                }}>
+                  Number of Innings
+                </label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '12px'
+                }}>
+                  {[3, 5, 7, 9].map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setInnings(num as 3 | 5 | 7 | 9)}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: innings === num ? '2px solid #8b8a94' : '1px solid #e4e2e8',
+                        background: innings === num 
+                          ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
+                          : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+                        color: innings === num ? 'white' : '#1c1b20',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (innings !== num) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (innings !== num) {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }
+                      }}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Umpire */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '8px'
+                }}>
+                  Umpire
+                </label>
+                <select
+                  value={umpireId}
+                  onChange={(e) => setUmpireId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e4e2e8',
+                    background: 'white',
+                    fontSize: '16px',
+                    color: '#1c1b20',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#8b8a94';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#e4e2e8';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <option value="">Select umpire...</option>
+                  {players.map(player => (
+                    <option key={player.id} value={player.id}>
+                      {player.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Game Summary */}
+              <div style={{
+                padding: '24px',
+                background: 'rgba(34, 197, 94, 0.05)',
+                borderRadius: '12px',
+                border: '1px solid rgba(34, 197, 94, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  margin: '0 0 16px 0',
+                  color: '#1c1b20'
+                }}>
+                  Game Summary
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '16px',
+                  fontSize: '14px',
+                  color: '#696775'
+                }}>
+                  <div>
+                    <strong style={{ color: '#1c1b20' }}>Home:</strong><br />
+                    {getTeamById(homeTeamId)?.name} ({homeTeamPlayers.length} players)
+                  </div>
+                  <div>
+                    <strong style={{ color: '#1c1b20' }}>Away:</strong><br />
+                    {getTeamById(awayTeamId)?.name} ({awayTeamPlayers.length} players)
+                  </div>
+                  <div>
+                    <strong style={{ color: '#1c1b20' }}>Innings:</strong><br />
+                    {innings}
+                  </div>
+                  <div>
+                    <strong style={{ color: '#1c1b20' }}>Umpire:</strong><br />
+                    {getPlayerById(umpireId)?.name}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '16px',
+              marginTop: '32px'
+            }}>
+              <button
+                onClick={() => setActiveTab('teams')}
+                style={{
+                  background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+                  color: '#696775',
+                  border: '1px solid #e4e2e8',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                ← Back to Teams
+              </button>
+              
+              <button
+                onClick={handleStartGame}
+                disabled={!canStartGame || submitting}
+                style={{
+                  background: canStartGame && !submitting
+                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    : 'linear-gradient(135deg, #d1cdd7 0%, #e4e2e8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: canStartGame && !submitting ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s ease',
+                  boxShadow: canStartGame && !submitting ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  if (canStartGame && !submitting) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (canStartGame && !submitting) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Starting Game...
+                  </>
+                ) : (
+                  <>⚾ Start Game</>
+                )}
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="px-6 py-4 border-t bg-gray-50 flex justify-between">
+      {/* Cancel Button */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: '24px'
+      }}>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+          style={{
+            background: 'transparent',
+            color: '#696775',
+            border: 'none',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#1c1b20';
+            e.currentTarget.style.background = 'rgba(139, 138, 148, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#696775';
+            e.currentTarget.style.background = 'transparent';
+          }}
         >
-          Cancel
+          Cancel Setup
         </button>
-
-        <div className="flex space-x-3">
-          {activeTab === 'lineups' && (
-            <button
-              onClick={() => setActiveTab('teams')}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Back
-            </button>
-          )}
-          
-          {activeTab === 'settings' && (
-            <button
-              onClick={() => setActiveTab('lineups')}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Back
-            </button>
-          )}
-
-          {activeTab === 'teams' && canProceedToLineups && (
-            <button
-              onClick={() => setActiveTab('lineups')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
-            >
-              Next: Lineups
-            </button>
-          )}
-
-          {activeTab === 'lineups' && canProceedToSettings && (
-            <button
-              onClick={() => setActiveTab('settings')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
-            >
-              Next: Settings
-            </button>
-          )}
-
-          {activeTab === 'settings' && (
-            <button
-              onClick={handleStartGame}
-              disabled={!canStartGame || submitting}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-green-500"
-            >
-              {submitting ? 'Starting Game...' : 'Start Game'}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// LineupBuilder component for managing batting order
-interface LineupBuilderProps {
-  players: Player[];
-  lineup: string[];
-  onAddPlayer: (playerId: string) => void;
-  onRemovePlayer: (playerId: string) => void;
-  onMovePlayer: (fromIndex: number, toIndex: number) => void;
-  excludePlayerIds?: string[];
-}
-
-function LineupBuilder({
-  players,
-  lineup,
-  onAddPlayer,
-  onRemovePlayer,
-  onMovePlayer,
-  excludePlayerIds = []
-}: LineupBuilderProps) {
-  const availablePlayers = players.filter(p => 
-    !lineup.includes(p.id) && !excludePlayerIds.includes(p.id)
-  );
-
-  return (
-    <div className="space-y-3">
-      {/* Current Lineup */}
-      <div className="space-y-2">
-        {lineup.map((playerId, index) => {
-          const player = players.find(p => p.id === playerId);
-          if (!player) return null;
-
-          return (
-            <div 
-              key={playerId}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-gray-500 w-6">
-                  {index + 1}.
-                </span>
-                <div>
-                  <p className="font-medium text-gray-900">{player.name}</p>
-                  {player.nickname && (
-                    <p className="text-sm text-gray-600">({player.nickname})</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => index > 0 && onMovePlayer(index, index - 1)}
-                  disabled={index === 0}
-                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                >
-                  ↑
-                </button>
-                <button
-                  onClick={() => index < lineup.length - 1 && onMovePlayer(index, index + 1)}
-                  disabled={index === lineup.length - 1}
-                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                >
-                  ↓
-                </button>
-                <button
-                  onClick={() => onRemovePlayer(playerId)}
-                  className="p-1 text-red-400 hover:text-red-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
-      {/* Add Player */}
-      {availablePlayers.length > 0 && (
-        <div>
-          <select
-            onChange={(e) => e.target.value && onAddPlayer(e.target.value)}
-            value=""
-            className="w-full p-2 border border-gray-300 rounded-md text-sm"
-          >
-            <option value="">Add player to lineup...</option>
-            {availablePlayers.map(player => (
-              <option key={player.id} value={player.id}>
-                {player.name} {player.nickname && `(${player.nickname})`}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Status */}
-      <div className="text-xs text-gray-500">
-        {lineup.length} players in lineup 
-        {lineup.length < 3 && (
-          <span className="text-red-500"> (minimum 3 required)</span>
-        )}
-      </div>
+      {/* Loading Spinner Animation */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 } 

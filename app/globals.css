@@ -29,3 +29,25 @@
 .live-indicator {
   animation: pulse 2s infinite;
 }
+
+/* Spin animation for loading indicators */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card entrance animation */
+@keyframes cardEnter {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

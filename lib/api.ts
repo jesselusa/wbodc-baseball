@@ -209,7 +209,7 @@ function delay(ms: number): Promise<void> {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Event Validation Functions
@@ -1204,7 +1204,7 @@ export async function fetchPlayers(): Promise<ApiResponse<Player[]>> {
   try {
     const { data: players, error } = await supabase
       .from('players')
-      .select('id, name, nickname, email, created_at, updated_at')
+      .select('id, name, nickname, email, avatar_url, current_town, hometown, championships_won, created_at, updated_at')
       .order('name', { ascending: true });
 
     if (error) {
@@ -1221,6 +1221,10 @@ export async function fetchPlayers(): Promise<ApiResponse<Player[]>> {
       name: player.name,
       nickname: player.nickname,
       email: player.email,
+      avatar_url: player.avatar_url,
+      current_town: player.current_town,
+      hometown: player.hometown,
+      championships_won: player.championships_won,
       created_at: player.created_at,
       updated_at: player.updated_at,
     })) || [];
@@ -1235,6 +1239,52 @@ export async function fetchPlayers(): Promise<ApiResponse<Player[]>> {
       data: [],
       success: false,
       error: 'Failed to fetch players',
+    };
+  }
+}
+
+export async function fetchTeamPlayers(teamId: string, tournamentId?: string): Promise<ApiResponse<Player[]>> {
+  try {
+    // Build the query to fetch players for a specific team
+    let query = supabase
+      .from('team_memberships')
+      .select(`
+        players!inner(id, name, nickname, email, created_at, updated_at)
+      `)
+      .eq('team_id', teamId);
+
+    // If tournament ID is provided, filter by tournament
+    if (tournamentId) {
+      query = query.eq('tournament_id', tournamentId);
+    }
+
+    const { data: memberships, error } = await query;
+
+    if (error) {
+      console.error('Error fetching team players:', error);
+      return {
+        data: [],
+        success: false,
+        error: 'Failed to fetch team players from database',
+      };
+    }
+
+    // Extract players from the memberships
+    const players: Player[] = memberships?.map((membership: any) => membership.players).filter(Boolean) || [];
+
+    // Sort by name
+    players.sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      data: players,
+      success: true,
+    };
+  } catch (error) {
+    console.error('Error in fetchTeamPlayers:', error);
+    return {
+      data: [],
+      success: false,
+      error: 'Failed to fetch team players',
     };
   }
 }
@@ -1337,6 +1387,372 @@ export async function createNewGame(gameData: {
       data: null,
       success: false,
       error: 'Failed to create new game'
+    };
+  }
+}
+
+// Tournament Admin API Functions
+
+/**
+ * Save tournament configuration settings
+ */
+export async function saveTournamentConfig(config: {
+  tournament_id: string;
+  pool_play_games: number;
+  pool_play_innings: number;
+  bracket_type: 'single_elimination' | 'double_elimination';
+  bracket_innings: number;
+  final_innings: number;
+  team_size: number;
+  is_active?: boolean;
+  settings_locked?: boolean;
+}): Promise<ApiResponse<any>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournament_configurations')
+      .upsert({
+        tournament_id: config.tournament_id,
+        pool_play_games: config.pool_play_games,
+        pool_play_innings: config.pool_play_innings,
+        bracket_type: config.bracket_type,
+        bracket_innings: config.bracket_innings,
+        final_innings: config.final_innings,
+        team_size: config.team_size,
+        is_active: config.is_active || false,
+        settings_locked: config.settings_locked || false,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving tournament configuration:', error);
+      return {
+        data: null,
+        success: false,
+        error: error.message || 'Failed to save tournament configuration'
+      };
+    }
+
+    return {
+      data,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in saveTournamentConfig:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to save tournament configuration'
+    };
+  }
+}
+
+/**
+ * Load tournament configuration settings
+ */
+export async function loadTournamentConfig(tournamentId: string): Promise<ApiResponse<any>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournament_configurations')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error loading tournament configuration:', error);
+      return {
+        data: null,
+        success: false,
+        error: error.message || 'Failed to load tournament configuration'
+      };
+    }
+
+    // If no configuration exists, return default values
+    if (!data) {
+      return {
+        data: {
+          tournament_id: tournamentId,
+          pool_play_games: 1,
+          pool_play_innings: 7,
+          bracket_type: 'single_elimination',
+          bracket_innings: 7,
+          final_innings: 9,
+          team_size: 6,
+          is_active: false,
+          settings_locked: false
+        },
+        success: true
+      };
+    }
+
+    return {
+      data,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in loadTournamentConfig:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to load tournament configuration'
+    };
+  }
+}
+
+/**
+ * Save player data with enhanced tournament admin fields
+ */
+export async function savePlayerData(players: Array<{
+  id?: string;
+  name: string;
+  nickname?: string;
+  email?: string;
+  hometown?: string;
+  current_town?: string;
+  championships_won?: number;
+}>): Promise<ApiResponse<Player[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .upsert(players.map(player => ({
+        id: player.id,
+        name: player.name,
+        nickname: player.nickname,
+        email: player.email,
+        hometown: player.hometown,
+        current_town: player.current_town,
+        championships_won: player.championships_won || 0,
+        updated_at: new Date().toISOString()
+      })))
+      .select()
+      .order('name');
+
+    if (error) {
+      console.error('Error saving player data:', error);
+      return {
+        data: [],
+        success: false,
+        error: error.message || 'Failed to save player data'
+      };
+    }
+
+    return {
+      data: data || [],
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in savePlayerData:', error);
+    return {
+      data: [],
+      success: false,
+      error: 'Failed to save player data'
+    };
+  }
+}
+
+/**
+ * Save team assignments for tournament
+ */
+export async function saveTeamAssignments(assignments: Array<{
+  tournament_id: string;
+  team_id: string;
+  team_name: string;
+  player_ids: string[];
+  is_locked?: boolean;
+}>): Promise<ApiResponse<any[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('team_assignments')
+      .upsert(assignments.map(assignment => ({
+        tournament_id: assignment.tournament_id,
+        team_id: assignment.team_id,
+        team_name: assignment.team_name,
+        player_ids: assignment.player_ids,
+        is_locked: assignment.is_locked || false,
+        updated_at: new Date().toISOString()
+      })))
+      .select()
+      .order('team_name');
+
+    if (error) {
+      console.error('Error saving team assignments:', error);
+      return {
+        data: [],
+        success: false,
+        error: error.message || 'Failed to save team assignments'
+      };
+    }
+
+    return {
+      data: data || [],
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in saveTeamAssignments:', error);
+    return {
+      data: [],
+      success: false,
+      error: 'Failed to save team assignments'
+    };
+  }
+}
+
+/**
+ * Load team assignments for tournament
+ */
+export async function loadTeamAssignments(tournamentId: string): Promise<ApiResponse<any[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('team_assignments')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('team_name');
+
+    if (error) {
+      console.error('Error loading team assignments:', error);
+      return {
+        data: [],
+        success: false,
+        error: error.message || 'Failed to load team assignments'
+      };
+    }
+
+    return {
+      data: data || [],
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in loadTeamAssignments:', error);
+    return {
+      data: [],
+      success: false,
+      error: 'Failed to load team assignments'
+    };
+  }
+}
+
+/**
+ * Save individual player with tournament admin fields
+ */
+export async function savePlayer(player: {
+  id?: string;
+  name: string;
+  nickname?: string;
+  email?: string;
+  avatar_url?: string;
+  hometown?: string;
+  current_town?: string;
+  championships_won?: number;
+}): Promise<ApiResponse<Player>> {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .upsert({
+        id: player.id,
+        name: player.name,
+        nickname: player.nickname,
+        email: player.email,
+        avatar_url: player.avatar_url,
+        hometown: player.hometown,
+        current_town: player.current_town,
+        championships_won: player.championships_won || 0,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving player:', error);
+      return {
+        data: null,
+        success: false,
+        error: error.message || 'Failed to save player'
+      };
+    }
+
+    return {
+      data,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in savePlayer:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to save player'
+    };
+  }
+}
+
+/**
+ * Delete player
+ */
+export async function deletePlayer(playerId: string): Promise<ApiResponse<boolean>> {
+  try {
+    // Use MCP tools for database operations
+    const response = await fetch('/api/players/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ playerId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        data: false,
+        success: false,
+        error: errorData.error || 'Failed to delete player'
+      };
+    }
+
+    return {
+      data: true,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in deletePlayer:', error);
+    return {
+      data: false,
+      success: false,
+      error: 'Failed to delete player'
+    };
+  }
+}
+
+/**
+ * Clear all team assignments and reset teams back to square 1
+ */
+export async function clearAllTeams(): Promise<ApiResponse<boolean>> {
+  try {
+    const response = await fetch('/api/teams/clear-all', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        data: false,
+        success: false,
+        error: errorData.error || 'Failed to clear team assignments'
+      };
+    }
+
+    return {
+      data: true,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in clearAllTeams:', error);
+    return {
+      data: false,
+      success: false,
+      error: 'Failed to clear team assignments'
     };
   }
 } 

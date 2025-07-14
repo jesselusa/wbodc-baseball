@@ -2,27 +2,27 @@
 -- Run this after the initial schema migration
 
 -- Sample Players
-INSERT INTO players (name, nickname, email) VALUES
-  ('Jesse Lusa', 'JLus', 'jesse@example.com'),
-  ('Alex Johnson', 'AJ', 'alex@example.com'),
-  ('Sam Wilson', 'Sammy', 'sam@example.com'),
-  ('Taylor Brown', 'TB', 'taylor@example.com'),
-  ('Jordan Lee', 'JLee', 'jordan@example.com'),
-  ('Casey Davis', 'CD', 'casey@example.com'),
-  ('Riley Martinez', 'Riles', 'riley@example.com'),
-  ('Morgan Clark', 'MC', 'morgan@example.com'),
-  ('Avery Garcia', 'Ave', 'avery@example.com'),
-  ('Parker Smith', 'Parks', 'parker@example.com'),
-  ('Quinn Rodriguez', 'Q', 'quinn@example.com'),
-  ('Drew Thompson', 'DT', 'drew@example.com'),
-  ('Sage Anderson', 'Sage', 'sage@example.com'),
-  ('River Jackson', 'River', 'river@example.com'),
-  ('Phoenix White', 'Nix', 'phoenix@example.com'),
-  ('Rowan Harris', 'Row', 'rowan@example.com'),
-  ('Sky Miller', 'Sky', 'sky@example.com'),
-  ('Dakota Wilson', 'Kota', 'dakota@example.com'),
-  ('Cameron Moore', 'Cam', 'cameron@example.com'),
-  ('Emery Taylor', 'Em', 'emery@example.com');
+INSERT INTO players (name, nickname, email, current_town, hometown, championships_won, profile_picture) VALUES
+  ('Jesse Lusa', 'JLus', 'jesse@example.com', 'San Francisco, CA', 'Oakland, CA', 3, 'https://i.pravatar.cc/300?u=jesse'),
+  ('Alex Johnson', 'AJ', 'alex@example.com', 'New York, NY', 'Boston, MA', 2, 'https://i.pravatar.cc/300?u=alex'),
+  ('Sam Wilson', 'Sammy', 'sam@example.com', 'Los Angeles, CA', 'San Diego, CA', 1, 'https://i.pravatar.cc/300?u=sam'),
+  ('Taylor Brown', 'TB', 'taylor@example.com', 'Chicago, IL', 'Milwaukee, WI', 1, 'https://i.pravatar.cc/300?u=taylor'),
+  ('Jordan Lee', 'JLee', 'jordan@example.com', 'Austin, TX', 'Houston, TX', 0, 'https://i.pravatar.cc/300?u=jordan'),
+  ('Casey Davis', 'CD', 'casey@example.com', 'Seattle, WA', 'Portland, OR', 2, 'https://i.pravatar.cc/300?u=casey'),
+  ('Riley Martinez', 'Riles', 'riley@example.com', 'Miami, FL', 'Tampa, FL', 1, 'https://i.pravatar.cc/300?u=riley'),
+  ('Morgan Clark', 'MC', 'morgan@example.com', 'Denver, CO', 'Colorado Springs, CO', 0, 'https://i.pravatar.cc/300?u=morgan'),
+  ('Avery Garcia', 'Ave', 'avery@example.com', 'Phoenix, AZ', 'Tucson, AZ', 1, 'https://i.pravatar.cc/300?u=avery'),
+  ('Parker Smith', 'Parks', 'parker@example.com', 'Nashville, TN', 'Memphis, TN', 0, 'https://i.pravatar.cc/300?u=parker'),
+  ('Quinn Rodriguez', 'Q', 'quinn@example.com', 'Atlanta, GA', 'Savannah, GA', 2, 'https://i.pravatar.cc/300?u=quinn'),
+  ('Drew Thompson', 'DT', 'drew@example.com', 'Detroit, MI', 'Grand Rapids, MI', 1, 'https://i.pravatar.cc/300?u=drew'),
+  ('Sage Anderson', 'Sage', 'sage@example.com', 'Portland, OR', 'Eugene, OR', 0, 'https://i.pravatar.cc/300?u=sage'),
+  ('River Jackson', 'River', 'river@example.com', 'Minneapolis, MN', 'Duluth, MN', 1, 'https://i.pravatar.cc/300?u=river'),
+  ('Phoenix White', 'Nix', 'phoenix@example.com', 'Las Vegas, NV', 'Reno, NV', 3, 'https://i.pravatar.cc/300?u=phoenix'),
+  ('Rowan Harris', 'Row', 'rowan@example.com', 'Salt Lake City, UT', 'Provo, UT', 0, 'https://i.pravatar.cc/300?u=rowan'),
+  ('Sky Miller', 'Sky', 'sky@example.com', 'San Antonio, TX', 'Austin, TX', 1, 'https://i.pravatar.cc/300?u=sky'),
+  ('Dakota Wilson', 'Kota', 'dakota@example.com', 'Charlotte, NC', 'Raleigh, NC', 0, 'https://i.pravatar.cc/300?u=dakota'),
+  ('Cameron Moore', 'Cam', 'cameron@example.com', 'Pittsburgh, PA', 'Philadelphia, PA', 2, 'https://i.pravatar.cc/300?u=cameron'),
+  ('Emery Taylor', 'Em', 'emery@example.com', 'Kansas City, MO', 'St. Louis, MO', 1, 'https://i.pravatar.cc/300?u=emery');
 
 -- Sample Tournament
 INSERT INTO tournaments (name, description, start_date, end_date, status) VALUES

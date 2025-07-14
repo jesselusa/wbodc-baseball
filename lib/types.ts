@@ -5,8 +5,22 @@ export interface Player {
   name: string;
   nickname?: string;
   email?: string;
+  avatar_url?: string;
+  current_town?: string;
+  hometown?: string;
+  championships_won?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface PlayerFormData {
+  name: string;
+  nickname?: string;
+  email?: string;
+  avatar_url?: string;
+  current_town?: string;
+  hometown?: string;
+  championships_won?: number;
 }
 
 export interface Team {
@@ -15,6 +29,15 @@ export interface Team {
   logo_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+// Team management types for tournament admin
+export interface TeamDragDrop {
+  id: string;
+  name: string;
+  players: Player[];
+  isLocked: boolean;
+  color?: string;
 }
 
 export interface Tournament {
@@ -27,6 +50,80 @@ export interface Tournament {
   status: 'upcoming' | 'active' | 'completed';
   created_at: string;
   updated_at: string;
+}
+
+// Tournament Admin Types
+export type BracketType = 'single_elimination' | 'double_elimination';
+
+export interface TournamentConfig {
+  id?: string;
+  tournament_id: string;
+  pool_play_games: number;
+  pool_play_innings: number;
+  bracket_type: BracketType;
+  bracket_innings: number;
+  final_innings: number;
+  team_size: number;
+  is_active: boolean;
+  settings_locked: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TeamAssignment {
+  id?: string;
+  tournament_id: string;
+  team_id: string;
+  team_name: string;
+  player_ids: string[];
+  is_locked: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TournamentTeam {
+  id: string;
+  name: string;
+  players: Player[];
+  is_locked: boolean;
+}
+
+export interface TournamentAdminData {
+  tournament_id: string;
+  config: TournamentConfig;
+  players: Player[];
+  teams: TournamentTeam[];
+  team_assignments: TeamAssignment[];
+  is_tournament_active: boolean;
+  settings_locked: boolean;
+}
+
+export interface TeamFormData {
+  id: string;
+  name: string;
+  player_ids: string[];
+  is_locked: boolean;
+}
+
+export interface TournamentSettingsFormData {
+  pool_play_games: number;
+  pool_play_innings: number;
+  bracket_type: BracketType;
+  bracket_innings: number;
+  final_innings: number;
+  num_teams: number;
+}
+
+export interface BracketStanding {
+  team_id: string;
+  team_name: string;
+  wins: number;
+  losses: number;
+  runs_scored: number;
+  runs_allowed: number;
+  run_differential: number;
+  win_percentage: number;
+  seed: number;
 }
 
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
@@ -295,8 +392,6 @@ export interface UmpireAction {
 export interface GameSetupData {
   home_team_id: string;
   away_team_id: string;
-  home_lineup: string[]; // player_ids in batting order
-  away_lineup: string[]; // player_ids in batting order
   innings: 3 | 5 | 7 | 9;
   umpire_id: string;
 }

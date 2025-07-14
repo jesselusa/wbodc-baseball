@@ -13,7 +13,7 @@ This folder contains the database migrations for the WBDoc Baseball project. The
 
 **Problem**: Original migrations used `auth.role() = 'authenticated'` policies that blocked anonymous frontend access.
 
-**Solution**: Updated all policies to use `FOR SELECT USING (true)` for public read access. This allows the frontend to work with the Supabase anonymous key.
+**Solution**: Updated all policies to use `FOR SELECT USING (true)` for public read access. This allows the frontend to work with the Supabase publishable key.
 
 **Files affected**:
 
@@ -118,7 +118,7 @@ If migrations fail:
 
 If frontend can't read data:
 
-1. Verify you're using the correct Supabase anon key
+1. Verify you're using the correct Supabase publishable key
 2. Check that RLS policies allow `SELECT USING (true)`
 3. Confirm tables have public read policies
 

@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
   { href: "/stats", label: "Stats" },
+  { href: "/admin", label: "Admin" },
   { href: "/wiki", label: "Wiki" },
 ];
 
@@ -47,12 +48,14 @@ export function NavBar() {
         maxWidth: "100%", // Ensure content doesn't overflow
         overflow: "hidden" // Prevent any overflow
       }}>
-        <span style={{ 
+        <a href="/" style={{ 
           fontWeight: 700, 
           fontSize: 20, 
           color: "#1c1b20",
-          flexShrink: 0 // Prevent title from shrinking
-        }}>WBODC Baseball</span>
+          flexShrink: 0, // Prevent title from shrinking
+          textDecoration: 'none',
+          cursor: 'pointer'
+        }}>WBODC Baseball</a>
         
         {/* Desktop Nav */}
         <div className="desktop-nav" style={{ 
