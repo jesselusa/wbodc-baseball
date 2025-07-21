@@ -27,7 +27,14 @@ import {
   EventSubmissionRequest,
   EventSubmissionResponse,
   LiveGameStatus,
-  BaseRunners
+  BaseRunners,
+  TournamentRecord,
+  TournamentTeamRecord,
+  TournamentPlayerAssignment,
+  TournamentWithTeams,
+  TournamentTeamWithPlayers,
+  TeamDragDrop,
+  BracketType
 } from './types';
 
 // Import the state machine
@@ -1562,21 +1569,122 @@ export async function saveTeamAssignments(assignments: Array<{
   is_locked?: boolean;
 }>): Promise<ApiResponse<any[]>> {
   try {
+    // Handle empty assignments (clear all teams)
+    if (assignments.length === 0) {
+      return {
+        data: [],
+        success: true
+      };
+    }
+
+    // First, get the current tournament ID (we'll use the first assignment's tournament_id)
+    const tournamentId = assignments[0]?.tournament_id;
+    if (!tournamentId) {
+      return {
+        data: [],
+        success: false,
+        error: 'Tournament ID is required'
+      };
+    }
+
+    // Create or find teams in the database and get their UUIDs
+    const teamIdMap = new Map<string, string>(); // maps team_name -> database team UUID
+    
+    for (const assignment of assignments) {
+      if (assignment.player_ids.length === 0) continue; // Skip empty teams
+      
+      // Check if team already exists with this name
+      const { data: existingTeam, error: teamError } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('name', assignment.team_name)
+        .single();
+
+      if (teamError && teamError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing team:', teamError);
+        return {
+          data: [],
+          success: false,
+          error: `Failed to check existing team: ${teamError.message}`
+        };
+      }
+
+      let teamUuid;
+      if (existingTeam) {
+        // Use existing team
+        teamUuid = existingTeam.id;
+      } else {
+        // Create new team
+        const { data: newTeam, error: createError } = await supabase
+          .from('teams')
+          .insert({
+            name: assignment.team_name,
+            color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)` // Random color
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Error creating team:', createError);
+          return {
+            data: [],
+            success: false,
+            error: `Failed to create team ${assignment.team_name}: ${createError.message}`
+          };
+        }
+
+        teamUuid = newTeam.id;
+      }
+
+      teamIdMap.set(assignment.team_name, teamUuid);
+    }
+
+    // Delete existing team memberships for this tournament
+    const { error: deleteError } = await supabase
+      .from('team_memberships')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    if (deleteError) {
+      console.error('Error deleting existing team memberships:', deleteError);
+      return {
+        data: [],
+        success: false,
+        error: deleteError.message || 'Failed to clear existing team assignments'
+      };
+    }
+
+    // Create new team memberships for each player-team assignment
+    const memberships = [];
+    for (const assignment of assignments) {
+      if (assignment.player_ids.length === 0) continue; // Skip empty teams
+      
+      const teamUuid = teamIdMap.get(assignment.team_name);
+      if (!teamUuid) continue;
+
+      for (const playerId of assignment.player_ids) {
+        memberships.push({
+          tournament_id: assignment.tournament_id,
+          team_id: teamUuid,
+          player_id: playerId
+        });
+      }
+    }
+
+    if (memberships.length === 0) {
+      return {
+        data: [],
+        success: true
+      };
+    }
+
     const { data, error } = await supabase
-      .from('team_assignments')
-      .upsert(assignments.map(assignment => ({
-        tournament_id: assignment.tournament_id,
-        team_id: assignment.team_id,
-        team_name: assignment.team_name,
-        player_ids: assignment.player_ids,
-        is_locked: assignment.is_locked || false,
-        updated_at: new Date().toISOString()
-      })))
-      .select()
-      .order('team_name');
+      .from('team_memberships')
+      .insert(memberships)
+      .select('*, teams!inner(name, color), players!inner(name)');
 
     if (error) {
-      console.error('Error saving team assignments:', error);
+      console.error('Error saving team memberships:', error);
       return {
         data: [],
         success: false,
@@ -1755,4 +1863,478 @@ export async function clearAllTeams(): Promise<ApiResponse<boolean>> {
       error: 'Failed to clear team assignments'
     };
   }
-} 
+}
+
+// ================================
+// TOURNAMENT MANAGEMENT FUNCTIONS
+// ================================
+
+/**
+ * Create a new tournament record
+ */
+export async function createTournament(data: {
+  name: string;
+  start_date?: string;
+  end_date?: string;
+  location: string;
+  tournament_number: number;
+  status?: 'upcoming' | 'active' | 'completed';
+  pool_play_games?: number;
+  pool_play_innings?: number;
+  bracket_type?: BracketType;
+  bracket_innings?: number;
+  final_innings?: number;
+  num_teams?: number;
+}): Promise<ApiResponse<TournamentRecord>> {
+  try {
+    const { data: result, error } = await supabase
+      .from('tournaments')
+      .insert([{
+        ...data,
+        // Provide defaults if not specified
+        pool_play_games: data.pool_play_games || 2,
+        pool_play_innings: data.pool_play_innings || 3,
+        bracket_type: data.bracket_type || 'single_elimination',
+        bracket_innings: data.bracket_innings || 3,
+        final_innings: data.final_innings || 5,
+        num_teams: data.num_teams || 4
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        data: {} as TournamentRecord,
+        success: false,
+        error: error.message
+      };
+    }
+
+    return {
+      data: result,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error creating tournament:', error);
+    return {
+      data: {} as TournamentRecord,
+      success: false,
+      error: 'Failed to create tournament'
+    };
+  }
+}
+
+/**
+ * Update tournament settings
+ */
+export async function updateTournamentSettings(
+  tournamentId: string,
+  settings: {
+    pool_play_games?: number;
+    pool_play_innings?: number;
+    bracket_type?: BracketType;
+    bracket_innings?: number;
+    final_innings?: number;
+    num_teams?: number;
+    name?: string;
+    start_date?: string;
+    end_date?: string;
+    location?: string;
+    tournament_number?: number;
+    status?: 'upcoming' | 'active' | 'completed';
+  }
+): Promise<ApiResponse<TournamentRecord>> {
+  try {
+    const { data: result, error } = await supabase
+      .from('tournaments')
+      .update(settings)
+      .eq('id', tournamentId)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        data: {} as TournamentRecord,
+        success: false,
+        error: error.message
+      };
+    }
+
+    return {
+      data: result,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error updating tournament settings:', error);
+    return {
+      data: {} as TournamentRecord,
+      success: false,
+      error: 'Failed to update tournament settings'
+    };
+  }
+}
+
+/**
+ * Get the current active tournament
+ */
+export async function getCurrentTournament(): Promise<ApiResponse<TournamentRecord | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        data: null,
+        success: false,
+        error: error.message
+      };
+    }
+
+    return {
+      data: data,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error fetching current tournament:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to fetch current tournament'
+    };
+  }
+}
+
+/**
+ * Get all tournaments for historical view
+ */
+export async function getAllTournaments(): Promise<ApiResponse<TournamentRecord[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .order('year', { ascending: false })
+      .order('tournament_number', { ascending: false });
+
+    if (error) {
+      return {
+        data: [],
+        success: false,
+        error: error.message
+      };
+    }
+
+    return {
+      data: data || [],
+      success: true
+    };
+  } catch (error) {
+    console.error('Error fetching tournaments:', error);
+    return {
+      data: [],
+      success: false,
+      error: 'Failed to fetch tournaments'
+    };
+  }
+}
+
+/**
+ * Lock a tournament and save team assignments
+ */
+export async function lockTournament(
+  tournamentId: string,
+  teams: TeamDragDrop[]
+): Promise<ApiResponse<boolean>> {
+  try {
+    // Start a transaction-like operation
+    const { error: lockError } = await supabase
+      .from('tournaments')
+      .update({ locked_status: true })
+      .eq('id', tournamentId);
+
+    if (lockError) {
+      return {
+        data: false,
+        success: false,
+        error: lockError.message
+      };
+    }
+
+    // Clear existing team assignments for this tournament
+    await supabase
+      .from('tournament_teams')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    await supabase
+      .from('tournament_player_assignments')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    // Create new team records
+    const teamInserts = teams.map(team => ({
+      tournament_id: tournamentId,
+      team_name: team.name
+    }));
+
+    const { data: teamRecords, error: teamError } = await supabase
+      .from('tournament_teams')
+      .insert(teamInserts)
+      .select();
+
+    if (teamError) {
+      // Rollback the lock
+      await supabase
+        .from('tournaments')
+        .update({ locked_status: false })
+        .eq('id', tournamentId);
+      
+      return {
+        data: false,
+        success: false,
+        error: teamError.message
+      };
+    }
+
+    // Create player assignments
+    const playerAssignments: any[] = [];
+    teams.forEach((team, teamIndex) => {
+      const teamRecord = teamRecords?.[teamIndex];
+      if (teamRecord && team.players.length > 0) {
+        team.players.forEach(player => {
+          playerAssignments.push({
+            tournament_id: tournamentId,
+            player_id: player.id,
+            team_id: teamRecord.id
+          });
+        });
+      }
+    });
+
+    if (playerAssignments.length > 0) {
+      const { error: assignmentError } = await supabase
+        .from('tournament_player_assignments')
+        .insert(playerAssignments);
+
+      if (assignmentError) {
+        // Rollback everything
+        await supabase
+          .from('tournament_teams')
+          .delete()
+          .eq('tournament_id', tournamentId);
+        
+        await supabase
+          .from('tournaments')
+          .update({ locked_status: false })
+          .eq('id', tournamentId);
+        
+        return {
+          data: false,
+          success: false,
+          error: assignmentError.message
+        };
+      }
+    }
+
+    return {
+      data: true,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error locking tournament:', error);
+    return {
+      data: false,
+      success: false,
+      error: 'Failed to lock tournament'
+    };
+  }
+}
+
+/**
+ * Unlock a tournament (for making changes)
+ */
+export async function unlockTournament(tournamentId: string): Promise<ApiResponse<boolean>> {
+  try {
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ locked_status: false })
+      .eq('id', tournamentId);
+
+    if (error) {
+      return {
+        data: false,
+        success: false,
+        error: error.message
+      };
+    }
+
+    return {
+      data: true,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error unlocking tournament:', error);
+    return {
+      data: false,
+      success: false,
+      error: 'Failed to unlock tournament'
+    };
+  }
+}
+
+/**
+ * Get tournament with teams and players
+ */
+export async function getTournamentWithTeams(tournamentId: string): Promise<ApiResponse<TournamentWithTeams | null>> {
+  try {
+    // Get tournament details
+    const { data: tournament, error: tournamentError } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tournamentError) {
+      return {
+        data: null,
+        success: false,
+        error: tournamentError.message
+      };
+    }
+
+    // Get team memberships with team and player details for this tournament
+    const { data: memberships, error: membershipsError } = await supabase
+      .from('team_memberships')
+      .select(`
+        team_id,
+        player_id,
+        teams!inner (
+          id,
+          name,
+          color
+        ),
+        players!inner (
+          id,
+          name,
+          nickname,
+          avatar_url,
+          email,
+          current_town,
+          hometown,
+          championships_won
+        )
+      `)
+      .eq('tournament_id', tournamentId);
+
+    if (membershipsError) {
+      return {
+        data: null,
+        success: false,
+        error: membershipsError.message
+      };
+    }
+
+    // Group memberships by team to build teams with players
+    const teamMap = new Map<string, any>();
+    
+    memberships?.forEach((membership: any) => {
+      const teamId = membership.team_id;
+      const team = membership.teams;
+      const player = membership.players;
+
+      if (!teamMap.has(teamId)) {
+        teamMap.set(teamId, {
+          id: teamId,
+          team_id: teamId,
+          team_name: team.name,
+          team_color: team.color,
+          tournament_id: tournamentId,
+          players: []
+        });
+      }
+
+      teamMap.get(teamId).players.push(player);
+    });
+
+    // Convert map to array and sort by team name
+    const teamsWithPlayers: TournamentTeamWithPlayers[] = Array.from(teamMap.values())
+      .sort((a, b) => a.team_name.localeCompare(b.team_name));
+
+    return {
+      data: {
+        ...tournament,
+        teams: teamsWithPlayers
+      },
+      success: true
+    };
+  } catch (error) {
+    console.error('Error fetching tournament with teams:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to fetch tournament data'
+    };
+  }
+}
+
+/**
+ * Get player team assignments for current tournament
+ */
+export async function getPlayerTeamAssignments(): Promise<ApiResponse<Map<string, string>>> {
+  try {
+    // Get current tournament
+    const currentTournamentResponse = await getCurrentTournament();
+    
+    if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
+      return {
+        data: new Map(),
+        success: true
+      };
+    }
+
+    const tournamentId = currentTournamentResponse.data.id;
+
+    // Get player assignments from team_memberships table
+    const { data: assignments, error } = await supabase
+      .from('team_memberships')
+      .select(`
+        player_id,
+        teams!inner (
+          name
+        )
+      `)
+      .eq('tournament_id', tournamentId);
+
+    if (error) {
+      console.error('Error fetching player team assignments:', error);
+      return {
+        data: new Map(),
+        success: false,
+        error: error.message
+      };
+    }
+
+    // Create a map of player_id -> team_name
+    const playerTeamMap = new Map<string, string>();
+    assignments?.forEach((assignment: any) => {
+      if (assignment.teams?.name) {
+        playerTeamMap.set(assignment.player_id, assignment.teams.name);
+      }
+    });
+
+    return {
+      data: playerTeamMap,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error in getPlayerTeamAssignments:', error);
+    return {
+      data: new Map(),
+      success: false,
+      error: 'Failed to fetch player team assignments'
+    };
+  }
+}

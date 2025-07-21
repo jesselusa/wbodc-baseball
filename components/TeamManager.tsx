@@ -24,14 +24,22 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Player, TeamDragDrop } from '../lib/types';
+import { getCurrentTournament, getTournamentWithTeams } from '../lib/api';
 
 interface TeamManagerProps {
   players: Player[];
   teamSize?: number;
   onTeamSizeChange?: (teamSize: number) => void;
   numTeams?: number;
+  teams?: TeamDragDrop[];
+  onTeamsChange?: (teams: TeamDragDrop[]) => void;
   onClearAllPlayers?: () => void;
   onClearLocalTeams?: () => void;
+  onClearTeams?: () => Promise<void>;
+  onSaveTeams?: (teams: TeamDragDrop[]) => Promise<void>;
+  onLockTournament?: () => Promise<void>;
+  isLocked?: boolean;
+  savingTeams?: boolean;
 }
 
 interface PlayerDragItem {
@@ -41,20 +49,21 @@ interface PlayerDragItem {
   teamId?: string;
 }
 
-interface TeamStats {
-  playerCount: number;
-  avgChampionships: number;
-  totalChampionships: number;
-  locations: string[];
-}
+// Custom collision detection
+const customCollisionDetection: CollisionDetection = (args) => {
+  const pointerIntersections = pointerWithin(args);
+  if (pointerIntersections.length > 0) {
+    return pointerIntersections;
+  }
+  return rectIntersection(args);
+};
 
 // Sortable Player Component
 const SortablePlayer: React.FC<{
   player: Player;
   isInTeam: boolean;
-  teamId?: string;
   isDragging?: boolean;
-}> = ({ player, isInTeam, teamId, isDragging }) => {
+}> = ({ player, isInTeam, isDragging = false }) => {
   const {
     attributes,
     listeners,
@@ -76,78 +85,99 @@ const SortablePlayer: React.FC<{
       style={style}
       {...attributes}
       {...listeners}
-      className={`player-drag-item ${isInTeam ? 'in-team' : 'available'}`}
+      className="sortable-player"
     >
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
         padding: '12px 16px',
-        background: isInTeam ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' : 'white',
+        background: 'white',
         borderRadius: '8px',
-        border: `2px solid ${isInTeam ? '#0ea5e9' : '#e4e2e8'}`,
+        border: '1px solid #e4e2e8',
         cursor: 'grab',
+        userSelect: 'none',
         transition: 'all 0.2s ease',
-        boxShadow: isDragging ? '0 8px 25px rgba(0, 0, 0, 0.15)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+        boxShadow: isDragging ? '0 8px 20px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.1)',
       }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '8px',
-          background: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: 'white',
-          flexShrink: 0,
-        }}>
-          {!player.avatar_url && player.name.charAt(0).toUpperCase()}
-        </div>
+        {player.avatar_url ? (
+          <img
+            src={player.avatar_url}
+            alt={player.name}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: '600',
+          }}>
+            {player.name[0]}
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
+            fontSize: '14px',
             fontWeight: '600',
             color: '#1c1b20',
-            fontSize: '14px',
-            marginBottom: '2px',
+            whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}>
             {player.name}
           </div>
           <div style={{
             fontSize: '12px',
             color: '#696775',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}>
-            <span>{player.current_town || 'Unknown'}</span>
-            <span>•</span>
-            <span>
-              {player.championships_won === 0 ? '-' : 
-               '💍'.repeat(player.championships_won || 0)}
-            </span>
+            {player.current_town || 'Unknown location'}
           </div>
         </div>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: '8px',
+          fontSize: '12px',
           color: '#8b8a94',
-          flexShrink: 0,
         }}>
+          {player.championships_won && player.championships_won > 0 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+              </svg>
+              {player.championships_won}
+            </div>
+          )}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="9" cy="12" r="1"/>
-            <circle cx="9" cy="5" r="1"/>
-            <circle cx="9" cy="19" r="1"/>
-            <circle cx="15" cy="12" r="1"/>
-            <circle cx="15" cy="5" r="1"/>
-            <circle cx="15" cy="19" r="1"/>
+            <path d="M9 12l2 2 4-4"/>
+            <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+            <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+            <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+            <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
           </svg>
         </div>
       </div>
@@ -155,35 +185,27 @@ const SortablePlayer: React.FC<{
   );
 };
 
-// Droppable Team Zone
-const DroppableTeamZone: React.FC<{
+// Available Players Zone Component
+const AvailablePlayersZone: React.FC<{
   children: React.ReactNode;
-  teamId: string;
-  isLocked: boolean;
-}> = ({ children, teamId, isLocked }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: teamId,
-    disabled: isLocked,
+  isMobile: boolean;
+  numTeams: number;
+}> = ({ children, isMobile, numTeams }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'available-players',
   });
 
   return (
     <div
       ref={setNodeRef}
       style={{
-        background: isOver && !isLocked
-          ? 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)'
-          : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: `2px solid ${isLocked ? '#22c55e' : isOver && !isLocked ? '#0ea5e9' : '#e4e2e8'}`,
+        background: isOver ? 'rgba(59, 130, 246, 0.05)' : 'rgba(139, 138, 148, 0.05)',
+        borderRadius: '12px',
+        border: isOver ? '2px dashed #3b82f6' : '2px dashed #e4e2e8',
         padding: '20px',
-        boxShadow: isOver && !isLocked 
-          ? '0 4px 20px rgba(14, 165, 233, 0.2)'
-          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        position: 'relative',
-        minHeight: '300px',
-        display: 'flex',
-        flexDirection: 'column',
         transition: 'all 0.2s ease',
+        height: 'fit-content',
+        minHeight: isMobile ? '250px' : `${Math.max(400, numTeams * 120)}px`,
       }}
     >
       {children}
@@ -194,7 +216,7 @@ const DroppableTeamZone: React.FC<{
 // Team Card Component
 const TeamCard: React.FC<{
   team: TeamDragDrop;
-  stats: TeamStats;
+  stats: { playerCount: number; titleCount: number };
   isLocked: boolean;
   onToggleLock: (teamId: string) => void;
   onRenameTeam: (teamId: string, newName: string) => void;
@@ -203,8 +225,12 @@ const TeamCard: React.FC<{
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(team.name);
 
+  const { isOver, setNodeRef } = useDroppable({
+    id: team.id,
+  });
+
   const handleNameSubmit = () => {
-    if (editName.trim() && editName.trim() !== team.name) {
+    if (editName.trim() && editName !== team.name) {
       onRenameTeam(team.id, editName.trim());
     }
     setIsEditing(false);
@@ -213,276 +239,226 @@ const TeamCard: React.FC<{
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleNameSubmit();
-    } else if (e.key === 'Escape') {
+    }
+    if (e.key === 'Escape') {
       setEditName(team.name);
       setIsEditing(false);
     }
   };
 
   return (
-    <DroppableTeamZone teamId={team.id} isLocked={isLocked}>
-      {/* Team Header */}
+    <div
+      ref={setNodeRef}
+      style={{
+        background: isOver ? 'rgba(59, 130, 246, 0.02)' : 'white',
+        borderRadius: '12px',
+        border: isOver ? '2px dashed #3b82f6' : '1px solid #e4e2e8',
+        padding: '20px',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)',
+        height: 'fit-content',
+        minHeight: '300px',
+      }}
+    >
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: '16px',
-        paddingBottom: '12px',
-        borderBottom: '1px solid #e4e2e8',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          {isEditing ? (
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onBlur={handleNameSubmit}
-              onKeyDown={handleKeyPress}
-              style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#1c1b20',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                flex: 1,
-              }}
-              autoFocus
-            />
-          ) : (
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#1c1b20',
-                margin: 0,
-                cursor: isLocked ? 'default' : 'pointer',
-                flex: 1,
-              }}
-              onClick={() => !isLocked && setIsEditing(true)}
-            >
-              {team.name}
-            </h3>
-          )}
-          {!isLocked && (
-            <button
-              onClick={() => setIsEditing(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#8b8a94',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '4px',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 138, 148, 0.1)';
-                e.currentTarget.style.color = '#1c1b20';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'none';
-                e.currentTarget.style.color = '#8b8a94';
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-          )}
+        {isEditing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleNameSubmit}
+            onKeyDown={handleKeyPress}
+            autoFocus
+            style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1c1b20',
+              border: '1px solid #3b82f6',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              background: 'white',
+              outline: 'none',
+            }}
+          />
+        ) : (
+          <h3
+            onClick={() => setIsEditing(true)}
+            style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1c1b20',
+              margin: 0,
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(139, 138, 148, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            {team.name}
+          </h3>
+        )}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 12px',
+          background: team.isLocked ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 138, 148, 0.1)',
+          borderRadius: '20px',
+          fontSize: '12px',
+          color: team.isLocked ? '#ef4444' : '#8b8a94',
+          fontWeight: '600',
+        }}>
+          <div style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            background: team.isLocked ? '#ef4444' : '#8b8a94',
+          }}></div>
+          {team.isLocked ? 'Locked' : 'Unlocked'}
         </div>
-        <button
-          onClick={() => onToggleLock(team.id)}
-          style={{
-            background: isLocked ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          {isLocked ? (
-            <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              Locked
-            </>
-          ) : (
-            <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              Unlocked
-            </>
-          )}
-        </button>
       </div>
 
-      {/* Team Stats */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '8px',
+        gap: '16px',
         marginBottom: '16px',
-        padding: '12px',
-        background: 'rgba(139, 138, 148, 0.05)',
-        borderRadius: '8px',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '700', color: '#1c1b20' }}>
+          <div style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#1c1b20',
+            lineHeight: 1,
+          }}>
             {stats.playerCount}
           </div>
-          <div style={{ fontSize: '11px', color: '#696775', fontWeight: '600' }}>
+          <div style={{
+            fontSize: '12px',
+            color: '#8b8a94',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}>
             PLAYERS
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '700', color: '#1c1b20' }}>
-            {stats.totalChampionships}
+          <div style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#1c1b20',
+            lineHeight: 1,
+          }}>
+            {stats.titleCount}
           </div>
-          <div style={{ fontSize: '11px', color: '#696775', fontWeight: '600' }}>
+          <div style={{
+            fontSize: '12px',
+            color: '#8b8a94',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}>
             TITLES
           </div>
         </div>
       </div>
 
-      {/* Player List */}
       <div style={{
-        flex: 1,
-        minHeight: '120px',
-        padding: '12px',
-        background: team.players.length === 0 ? 'rgba(139, 138, 148, 0.05)' : 'transparent',
-        borderRadius: '8px',
-        border: team.players.length === 0 ? '2px dashed #e4e2e8' : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
+        maxHeight: '300px',
+        overflowY: 'auto',
       }}>
-        {team.players.length === 0 ? (
+        <SortableContext items={team.players.map(p => p.id)} strategy={verticalListSortingStrategy}>
+          {team.players.map((player) => (
+            <SortablePlayer
+              key={player.id}
+              player={player}
+              isInTeam={true}
+            />
+          ))}
+        </SortableContext>
+        
+        {team.players.length === 0 && (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
+            textAlign: 'center',
+            padding: '40px 20px',
             color: '#8b8a94',
             fontSize: '14px',
             fontWeight: '500',
+            border: '2px dashed #e4e2e8',
+            borderRadius: '8px',
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: '8px' }}>
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Drop players here
+            Drag players here
           </div>
-        ) : (
-          <SortableContext items={team.players.map(p => p.id)} strategy={verticalListSortingStrategy}>
-            {team.players.map((player) => (
-              <SortablePlayer
-                key={player.id}
-                player={player}
-                isInTeam={true}
-                teamId={team.id}
-              />
-            ))}
-          </SortableContext>
         )}
       </div>
-
-      {/* Team Size Indicator */}
-      <div style={{
-        marginTop: '12px',
-        padding: '8px 12px',
-        background: team.players.length === teamSize ? 'rgba(34, 197, 94, 0.1)' : 
-                   team.players.length > teamSize ? 'rgba(239, 68, 68, 0.1)' : 
-                   'rgba(139, 138, 148, 0.1)',
-        borderRadius: '6px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '12px',
-        fontWeight: '600',
-        color: team.players.length === teamSize ? '#22c55e' : 
-               team.players.length > teamSize ? '#ef4444' : '#8b8a94',
-      }}>
-        {team.players.length} / {teamSize} players
-      </div>
-    </DroppableTeamZone>
-  );
-};
-
-// Custom collision detection for better drag behavior
-const customCollisionDetection: CollisionDetection = (args) => {
-  const pointerIntersections = pointerWithin(args);
-  if (pointerIntersections.length > 0) {
-    return pointerIntersections;
-  }
-  return rectIntersection(args);
-};
-
-// Droppable Available Players Zone
-const AvailablePlayersZone: React.FC<{
-  children: React.ReactNode;
-  isMobile: boolean;
-  numTeams: number;
-}> = ({ children, isMobile, numTeams }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'available-players',
-  });
-
-  // Calculate height to match 2 stacked team cards with gap
-  // Team card minHeight: 300px + padding: 40px (20px top + 20px bottom) + border: 4px + shadow space: 10px = ~354px
-  // For 2 stacked cards: 2 × 354px + 20px gap = 728px
-  // This ensures the bottom of available players aligns with bottom of 2nd team card
-  const calculatedHeight = isMobile ? 'auto' : `${2 * 354 + 20}px`; // 728px
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        background: isOver 
-          ? 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)'
-          : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: isOver 
-          ? '2px solid #0ea5e9'
-          : '1px solid #e4e2e8',
-        padding: '20px',
-        boxShadow: isOver 
-          ? '0 4px 20px rgba(14, 165, 233, 0.2)'
-          : '0 1px 3px rgba(28, 27, 32, 0.1)',
-        position: 'sticky',
-        top: '20px',
-        height: calculatedHeight,
-        transition: 'all 0.2s ease',
-      }}
-    >
-      {children}
     </div>
   );
 };
 
-export default function TeamManager({ players, teamSize: propTeamSize = 4, onTeamSizeChange, numTeams = 4, onClearAllPlayers, onClearLocalTeams }: TeamManagerProps) {
-  const [teams, setTeams] = useState<TeamDragDrop[]>([]);
+// Main TeamManager Component
+export default function TeamManager({
+  players,
+  teamSize: propTeamSize = 5,
+  onTeamSizeChange,
+  numTeams = 4,
+  teams: propTeams,
+  onTeamsChange,
+  onClearTeams,
+  onSaveTeams,
+  onLockTournament,
+  isLocked = false,
+  savingTeams = false,
+}: TeamManagerProps) {
+  // State
+  const [internalTeams, setInternalTeams] = useState<TeamDragDrop[]>([]);
   const [teamSize, setTeamSize] = useState(propTeamSize);
-  const [isLocked, setIsLocked] = useState(false);
+  
+  // Use external teams if provided, otherwise use internal state
+  const teams = propTeams || internalTeams;
+  const setTeams = (newTeams: TeamDragDrop[] | ((prev: TeamDragDrop[]) => TeamDragDrop[])) => {
+    if (typeof newTeams === 'function') {
+      const updatedTeams = newTeams(teams);
+      if (onTeamsChange) {
+        onTeamsChange(updatedTeams);
+      } else {
+        setInternalTeams(updatedTeams);
+      }
+    } else {
+      if (onTeamsChange) {
+        onTeamsChange(newTeams);
+      } else {
+        setInternalTeams(newTeams);
+      }
+    }
+  };
+
   const [activePlayer, setActivePlayer] = useState<Player | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Save teams functionality
+  const handleSaveTeams = async () => {
+    if (!onSaveTeams) return;
+    await onSaveTeams(teams);
+  };
+
+  // DnD Setup
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -491,11 +467,10 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
     })
   );
 
-  // Ensure client-side rendering
+  // Effects
   useEffect(() => {
     setIsClient(true);
     
-    // Check for mobile on initial load
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -506,243 +481,138 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Sync prop teamSize with local state
   useEffect(() => {
-    setTeamSize(propTeamSize);
-  }, [propTeamSize]);
+    if (propTeamSize !== teamSize) {
+      setTeamSize(propTeamSize);
+    }
+  }, [propTeamSize, teamSize]);
 
-  // Generate initial teams based on desired number of teams
+  // Load existing teams on mount
   useEffect(() => {
-    if (!isClient) return;
-    
+    if (!isClient || propTeams) return;
+
+    const loadTeamsData = async () => {
+      try {
+        // First, try to load existing tournament teams
+        const currentTournamentResponse = await getCurrentTournament();
+        
+        if (currentTournamentResponse.success && currentTournamentResponse.data) {
+          const tournamentWithTeamsResponse = await getTournamentWithTeams(currentTournamentResponse.data.id);
+          
+          if (tournamentWithTeamsResponse.success && 
+              tournamentWithTeamsResponse.data && 
+              tournamentWithTeamsResponse.data.teams.length > 0) {
+            
+            // Convert tournament teams to TeamDragDrop format
+            const existingTeams: TeamDragDrop[] = tournamentWithTeamsResponse.data.teams.map((team, index) => ({
+              id: team.id,
+              name: team.team_name,
+              players: team.players || [],
+              isLocked: false,
+              color: (team as any).team_color || `hsl(${(index * 360) / tournamentWithTeamsResponse.data.teams.length}, 70%, 60%)`,
+            }));
+            
+            setTeams(existingTeams);
+            return; // Exit early if we loaded existing teams
+          }
+        }
+        
+        // Fallback: Generate empty teams if no existing teams found
+        const teamCount = Math.max(2, numTeams);
+        const initialTeams: TeamDragDrop[] = [];
+        
+        for (let i = 0; i < teamCount; i++) {
+          initialTeams.push({
+            id: `team-${i + 1}`,
+            name: `Team ${i + 1}`,
+            players: [],
+            isLocked: false,
+            color: `hsl(${(i * 360) / teamCount}, 70%, 60%)`,
+          });
+        }
+        
+        setTeams(initialTeams);
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        
+        // Fallback to empty teams on error
+        const teamCount = Math.max(2, numTeams);
+        const fallbackTeams: TeamDragDrop[] = [];
+        
+        for (let i = 0; i < teamCount; i++) {
+          fallbackTeams.push({
+            id: `team-${i + 1}`,
+            name: `Team ${i + 1}`,
+            players: [],
+            isLocked: false,
+            color: `hsl(${(i * 360) / teamCount}, 70%, 60%)`,
+          });
+        }
+        
+        setTeams(fallbackTeams);
+      }
+    };
+
+    loadTeamsData();
+  }, [isClient, numTeams, propTeams, setTeams]);
+
+  // Randomize teams functionality
+  const randomizeTeams = () => {
+    if (isLocked || players.length === 0) return;
+
+    const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
     const teamCount = Math.max(2, numTeams);
-    const initialTeams: TeamDragDrop[] = [];
-    
+    const playersPerTeam = Math.floor(shuffledPlayers.length / teamCount);
+    const remainderPlayers = shuffledPlayers.length % teamCount;
+
+    const newTeams: TeamDragDrop[] = [];
+    let playerIndex = 0;
+
     for (let i = 0; i < teamCount; i++) {
-      initialTeams.push({
+      const teamPlayers: Player[] = [];
+      const teamPlayerCount = playersPerTeam + (i < remainderPlayers ? 1 : 0);
+      
+      for (let j = 0; j < teamPlayerCount; j++) {
+        if (playerIndex < shuffledPlayers.length) {
+          teamPlayers.push(shuffledPlayers[playerIndex]);
+          playerIndex++;
+        }
+      }
+
+      newTeams.push({
         id: `team-${i + 1}`,
         name: `Team ${i + 1}`,
-        players: [],
+        players: teamPlayers,
         isLocked: false,
         color: `hsl(${(i * 360) / teamCount}, 70%, 60%)`,
       });
     }
-    
-    setTeams(initialTeams);
-  }, [players.length, numTeams, isClient]);
 
-  // Filter available players (not assigned to any team)
-  const availablePlayers = useMemo(() => {
-    const assignedPlayerIds = new Set(teams.flatMap(team => team.players.map(p => p.id)));
-    return players.filter(player => 
-      !assignedPlayerIds.has(player.id) && 
-      player.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [players, teams, searchQuery]);
-
-  // Calculate team statistics
-  const getTeamStats = (team: TeamDragDrop): TeamStats => {
-    const playerCount = team.players.length;
-    const totalChampionships = team.players.reduce((sum, player) => sum + (player.championships_won || 0), 0);
-    const avgChampionships = playerCount > 0 ? totalChampionships / playerCount : 0;
-    const locations = [...new Set(team.players.map(p => p.current_town).filter(Boolean))];
-    
-    return {
-      playerCount,
-      avgChampionships,
-      totalChampionships,
-      locations,
-    };
-  };
-
-  // Randomize teams functionality
-  const randomizeTeams = () => {
-    if (isLocked) return;
-    
-    const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-    const newTeams = teams.map(team => ({ ...team, players: [] }));
-    
-    shuffledPlayers.forEach((player, index) => {
-      const teamIndex = index % newTeams.length;
-      newTeams[teamIndex].players.push(player);
-    });
-    
     setTeams(newTeams);
   };
 
-  const clearLocalTeams = () => {
-    setTeams(prevTeams => 
-      prevTeams.map(team => ({ ...team, players: [] }))
-    );
-  };
-
-  const handleClearAllPlayers = () => {
-    // Check if any team has players assigned
-    const hasAssignedPlayers = teams.some(team => team.players.length > 0);
-    
-    if (hasAssignedPlayers && onClearLocalTeams) {
-      // Clear local state first
-      clearLocalTeams();
-      // Then call the local clear function if available
-      onClearLocalTeams();
-    } else if (onClearAllPlayers) {
-      // If no local assignments or no local clear function, use API
-      onClearAllPlayers();
-    }
-  };
-
-  // Handle drag start
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const player = players.find(p => p.id === active.id);
-    setActivePlayer(player || null);
-  };
-
-  // Handle drag over
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    // Find the player being dragged
-    const draggedPlayer = players.find(p => p.id === activeId);
-    if (!draggedPlayer) return;
-
-    // Find source and destination
-    const sourceTeam = teams.find(team => team.players.some(p => p.id === activeId));
-    const destinationTeam = teams.find(team => team.id === overId || team.players.some(p => p.id === overId));
-
-    if (sourceTeam && destinationTeam && sourceTeam.id !== destinationTeam.id) {
-      // Moving between teams
-      if (destinationTeam.isLocked) return;
-
-      setTeams(prevTeams => 
-        prevTeams.map(team => {
-          if (team.id === sourceTeam.id) {
-            return {
-              ...team,
-              players: team.players.filter(p => p.id !== activeId),
-            };
-          }
-          if (team.id === destinationTeam.id) {
-            return {
-              ...team,
-              players: [...team.players, draggedPlayer],
-            };
-          }
-          return team;
-        })
+  // Available players calculation
+  const availablePlayers = useMemo(() => {
+    const assignedPlayerIds = new Set(teams.flatMap(team => team.players.map(p => p.id)));
+    return players
+      .filter(player => !assignedPlayerIds.has(player.id))
+      .filter(player => 
+        searchQuery === '' || 
+        player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (player.current_town && player.current_town.toLowerCase().includes(searchQuery.toLowerCase()))
       );
-    } else if (!sourceTeam && destinationTeam) {
-      // Moving from available players to team
-      if (destinationTeam.isLocked) return;
+  }, [players, teams, searchQuery]);
 
-      setTeams(prevTeams => 
-        prevTeams.map(team => 
-          team.id === destinationTeam.id
-            ? { ...team, players: [...team.players, draggedPlayer] }
-            : team
-        )
-      );
-    }
+  // Team statistics
+  const getTeamStats = (team: TeamDragDrop) => {
+    const playerCount = team.players.length;
+    const titleCount = team.players.reduce((sum, player) => {
+      return sum + (player.championships_won || 0);
+    }, 0);
+    return { playerCount, titleCount };
   };
 
-  // Handle drag end
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActivePlayer(null);
-
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    // Find the dragged player
-    const draggedPlayer = players.find(p => p.id === activeId);
-    if (!draggedPlayer) return;
-
-    // Find source team (if player is in a team)
-    const sourceTeam = teams.find(team => team.players.some(p => p.id === activeId));
-    
-    // Find destination team
-    const destinationTeam = teams.find(team => team.id === overId);
-    const destinationTeamFromPlayer = teams.find(team => team.players.some(p => p.id === overId));
-
-    // If dropping on available players section
-    if (overId === 'available-players') {
-      if (sourceTeam) {
-        // Remove player from source team (return to available players)
-        setTeams(prevTeams => 
-          prevTeams.map(team => 
-            team.id === sourceTeam.id 
-              ? { ...team, players: team.players.filter(p => p.id !== activeId) }
-              : team
-          )
-        );
-      }
-      return;
-    }
-
-    // If dropping on a team area
-    if (destinationTeam) {
-      // Check if team is locked
-      if (destinationTeam.isLocked) return;
-
-      // Check team size limit
-      if (destinationTeam.players.length >= teamSize && !sourceTeam) return;
-
-      setTeams(prevTeams => {
-        return prevTeams.map(team => {
-          if (team.id === destinationTeam.id) {
-            // Add player to destination team (if not already there)
-            if (!team.players.some(p => p.id === activeId)) {
-              return { ...team, players: [...team.players, draggedPlayer] };
-            }
-            return team;
-          } else if (sourceTeam && team.id === sourceTeam.id) {
-            // Remove player from source team
-            return { ...team, players: team.players.filter(p => p.id !== activeId) };
-          }
-          return team;
-        });
-      });
-    }
-    // If dropping on a player within a team (reordering)
-    else if (destinationTeamFromPlayer && sourceTeam && destinationTeamFromPlayer.id === sourceTeam.id) {
-      const activeIndex = sourceTeam.players.findIndex(p => p.id === activeId);
-      const overIndex = sourceTeam.players.findIndex(p => p.id === overId);
-
-      if (activeIndex !== overIndex) {
-        setTeams(prevTeams => 
-          prevTeams.map(team => 
-            team.id === sourceTeam.id
-              ? { ...team, players: arrayMove(team.players, activeIndex, overIndex) }
-              : team
-          )
-        );
-      }
-    }
-    // If dropping on a player in a different team
-    else if (destinationTeamFromPlayer && sourceTeam && destinationTeamFromPlayer.id !== sourceTeam.id) {
-      if (destinationTeamFromPlayer.isLocked) return;
-      if (destinationTeamFromPlayer.players.length >= teamSize) return;
-
-      setTeams(prevTeams => {
-        return prevTeams.map(team => {
-          if (team.id === destinationTeamFromPlayer.id) {
-            return { ...team, players: [...team.players, draggedPlayer] };
-          } else if (team.id === sourceTeam.id) {
-            return { ...team, players: team.players.filter(p => p.id !== activeId) };
-          }
-          return team;
-        });
-      });
-    }
-  };
-
-  // Toggle team lock
+  // Team management functions
   const toggleTeamLock = (teamId: string) => {
     setTeams(prevTeams => 
       prevTeams.map(team => 
@@ -751,7 +621,6 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
     );
   };
 
-  // Rename team
   const renameTeam = (teamId: string, newName: string) => {
     setTeams(prevTeams => 
       prevTeams.map(team => 
@@ -760,57 +629,105 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
     );
   };
 
-  // Validate teams
+  // Drag and drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const player = players.find(p => p.id === active.id);
+    if (player) {
+      setActivePlayer(player);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activePlayerId = active.id as string;
+    const overId = over.id as string;
+
+    // Find source team (if any)
+    const activeTeam = teams.find(team => 
+      team.players.some(player => player.id === activePlayerId)
+    );
+
+    // Find target team
+    const overTeam = teams.find(team => team.id === overId);
+
+    if (overId === 'available-players') {
+      // Moving to available players
+      if (activeTeam) {
+        setTeams(prevTeams =>
+          prevTeams.map(team =>
+            team.id === activeTeam.id
+              ? { ...team, players: team.players.filter(p => p.id !== activePlayerId) }
+              : team
+          )
+        );
+      }
+    } else if (overTeam && (!activeTeam || activeTeam.id !== overTeam.id)) {
+      // Moving to a different team
+      const player = players.find(p => p.id === activePlayerId);
+      if (!player) return;
+
+      setTeams(prevTeams =>
+        prevTeams.map(team => {
+          if (team.id === overTeam.id) {
+            // Add to target team
+            return { ...team, players: [...team.players, player] };
+          } else if (activeTeam && team.id === activeTeam.id) {
+            // Remove from source team
+            return { ...team, players: team.players.filter(p => p.id !== activePlayerId) };
+          }
+          return team;
+        })
+      );
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActivePlayer(null);
+
+    if (!over) return;
+
+    const activePlayerId = active.id as string;
+    const overId = over.id as string;
+
+    // Handle reordering within the same container
+    const activeTeam = teams.find(team => 
+      team.players.some(player => player.id === activePlayerId)
+    );
+    const overTeam = teams.find(team => team.id === overId || 
+      team.players.some(player => player.id === overId)
+    );
+
+    if (activeTeam && overTeam && activeTeam.id === overTeam.id) {
+      // Reordering within the same team
+      const activeIndex = activeTeam.players.findIndex(p => p.id === activePlayerId);
+      const overIndex = activeTeam.players.findIndex(p => p.id === overId);
+
+      if (activeIndex !== -1 && overIndex !== -1) {
+        setTeams(prevTeams =>
+          prevTeams.map(team =>
+            team.id === activeTeam.id
+              ? { ...team, players: arrayMove(team.players, activeIndex, overIndex) }
+              : team
+          )
+        );
+      }
+    }
+  };
+
+  // Validation
   const validateTeams = () => {
     const errors: string[] = [];
-    const teamNames = teams.map(team => team.name.toLowerCase());
-    const duplicateNames = teamNames.filter((name, index) => teamNames.indexOf(name) !== index);
-    
-    if (duplicateNames.length > 0) {
-      errors.push('Team names must be unique');
-    }
-    
-    teams.forEach(team => {
+    teams.forEach((team, index) => {
       if (team.players.length === 0) {
         errors.push(`${team.name} has no players`);
       }
-      if (team.players.length > teamSize) {
-        errors.push(`${team.name} exceeds maximum team size`);
-      }
     });
-    
     return errors;
   };
-
-  // Don't render until client-side
-  if (!isClient) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '400px',
-        fontSize: '16px',
-        color: '#696775'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '20px',
-            height: '20px',
-            border: '2px solid #e4e2e8',
-            borderTop: '2px solid #8b8a94',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          Loading team management...
-        </div>
-      </div>
-    );
-  }
 
   const validationErrors = validateTeams();
 
@@ -861,11 +778,13 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
           </div>
         </div>
 
+        {/* Team Size and Search Players Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
           gap: '16px',
           alignItems: 'start',
+          marginBottom: '20px',
         }}>
           {/* Team Size Display */}
           <div>
@@ -955,108 +874,174 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div>
-            <div style={{ 
-              height: '22px', // Height of label + margin
-              marginBottom: '8px' 
-            }}></div>
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                onClick={randomizeTeams}
-                disabled={isLocked}
-                style={{
-                  padding: '12px 24px',
-                  height: '44px', // Match input box height
-                  background: isLocked ? '#e4e2e8' : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
-                  color: isLocked ? '#696775' : 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: isLocked ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                </svg>
-                Randomize Teams
-              </button>
-              <button
-                onClick={() => setIsLocked(!isLocked)}
-                style={{
-                  padding: '12px 24px',
-                  height: '44px', // Match input box height
-                  background: isLocked ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {isLocked ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    Unlock Tournament
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    Lock Tournament
-                  </>
-                )}
-              </button>
-              {(onClearAllPlayers || onClearLocalTeams) && (
-                <button
-                  onClick={handleClearAllPlayers}
-                  style={{
-                    padding: '12px 24px',
-                    height: '44px', // Match input box height
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 6h18"/>
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                    <line x1="10" y1="11" x2="10" y2="17"/>
-                    <line x1="14" y1="11" x2="14" y2="17"/>
+        {/* Action Buttons Row */}
+        <div style={{
+          marginBottom: '20px',
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: isMobile ? '8px' : '12px', 
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            alignItems: 'center',
+            width: '100%',
+          }}>
+            {/* 1. Randomize Teams */}
+            <button
+              onClick={randomizeTeams}
+              disabled={isLocked || savingTeams}
+              style={{
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                height: isMobile ? '40px' : '44px',
+                minWidth: isMobile ? '80px' : '160px',
+                background: (isLocked || savingTeams) ? '#e4e2e8' : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+                color: (isLocked || savingTeams) ? '#696775' : 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: isMobile ? '12px' : '14px',
+                fontWeight: '600',
+                cursor: (isLocked || savingTeams) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '6px' : '8px',
+                fontFamily: 'inherit',
+                flex: isMobile ? '1 1 auto' : '0 0 auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+              {isMobile ? 'Randomize' : 'Randomize Teams'}
+            </button>
+
+            {/* 2. Clear Teams */}
+            <button
+              onClick={onClearTeams}
+              disabled={savingTeams}
+              style={{
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                height: isMobile ? '40px' : '44px',
+                minWidth: isMobile ? '80px' : '140px',
+                background: savingTeams ? '#e4e2e8' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                color: savingTeams ? '#696775' : 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: isMobile ? '12px' : '14px',
+                fontWeight: '600',
+                cursor: savingTeams ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '6px' : '8px',
+                fontFamily: 'inherit',
+                flex: isMobile ? '1 1 auto' : '0 0 auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+              {isMobile ? 'Clear' : 'Clear Teams'}
+            </button>
+
+            {/* 3. Save Teams */}
+            <button
+              onClick={handleSaveTeams}
+              disabled={savingTeams}
+              style={{
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                height: isMobile ? '40px' : '44px',
+                minWidth: isMobile ? '80px' : '140px',
+                background: savingTeams ? '#e4e2e8' : 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                color: savingTeams ? '#696775' : 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: isMobile ? '12px' : '14px',
+                fontWeight: '600',
+                cursor: savingTeams ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '6px' : '8px',
+                fontFamily: 'inherit',
+                flex: isMobile ? '1 1 auto' : '0 0 auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {savingTeams ? (
+                <>
+                  <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 11-6.219-8.56"/>
                   </svg>
-                  Clear All Players
-                </button>
+                  {isMobile ? 'Saving...' : 'Saving...'}
+                </>
+              ) : (
+                <>
+                  <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17,21 17,13 7,13 7,21"/>
+                    <polyline points="7,3 7,8 15,8"/>
+                  </svg>
+                  {isMobile ? 'Save' : 'Save Teams'}
+                </>
               )}
-            </div>
+            </button>
+
+            {/* 4. Lock Tournament */}
+            <button
+              onClick={onLockTournament}
+              disabled={savingTeams}
+              style={{
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                height: isMobile ? '40px' : '44px',
+                minWidth: isMobile ? '80px' : '160px',
+                background: savingTeams ? '#e4e2e8' : (isLocked ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'),
+                color: savingTeams ? '#696775' : 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: isMobile ? '12px' : '14px',
+                fontWeight: '600',
+                cursor: savingTeams ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '6px' : '8px',
+                fontFamily: 'inherit',
+                flex: isMobile ? '1 1 auto' : '0 0 auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isLocked ? (
+                <>
+                  <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  {isMobile ? 'Unlock' : 'Unlock Tournament'}
+                </>
+              ) : (
+                <>
+                  <svg width={isMobile ? "14" : "16"} height={isMobile ? "14" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {isMobile ? 'Lock' : 'Lock Tournament'}
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -1133,7 +1118,7 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
-              maxHeight: isMobile ? '300px' : '640px', // Adjusted for new calculated height
+              maxHeight: isMobile ? '300px' : '640px',
               overflowY: 'auto',
             }}>
               <SortableContext items={availablePlayers.map(p => p.id)} strategy={verticalListSortingStrategy}>
@@ -1175,7 +1160,7 @@ export default function TeamManager({ players, teamSize: propTeamSize = 4, onTea
                     isLocked={team.isLocked}
                     onToggleLock={toggleTeamLock}
                     onRenameTeam={renameTeam}
-                    teamSize={teamSize}
+                    teamSize={Math.ceil(players.length / numTeams)}
                   />
                 </SortableContext>
               </div>

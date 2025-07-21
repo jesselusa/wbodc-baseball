@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Player, Team } from '../../lib/types';
-import { fetchPlayers, fetchTeams } from '../../lib/api';
+import { Player, Team, TournamentWithTeams, TournamentTeamWithPlayers } from '../../lib/types';
+import { fetchPlayers, fetchTeams, getCurrentTournament, getTournamentWithTeams } from '../../lib/api';
 import BaseballCard from '../../components/BaseballCard';
 
-interface TeamWithPlayers extends Team {
-  players: Player[];
+interface TeamWithStandings extends TournamentTeamWithPlayers {
   wins: number;
   losses: number;
   gamesPlayed: number;
@@ -14,7 +13,7 @@ interface TeamWithPlayers extends Team {
 }
 
 export default function TeamsPage() {
-  const [teams, setTeams] = useState<TeamWithPlayers[]>([]);
+  const [teams, setTeams] = useState<TeamWithStandings[]>([]);
   const [loading, setLoading] = useState(true);
   const [tournamentStarted, setTournamentStarted] = useState(false);
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
@@ -24,7 +23,7 @@ export default function TeamsPage() {
   useEffect(() => {
     loadTeamsData();
     
-    // Check if mobile
+    // Check if mobile (client-side only to avoid hydration mismatch)
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -37,14 +36,12 @@ export default function TeamsPage() {
   const loadTeamsData = async () => {
     try {
       setLoading(true);
-      // For now, we'll simulate checking if tournament has started
-      // In real implementation, this would check tournament status
-      const hasTeamMemberships = await checkTournamentStatus();
-      setTournamentStarted(hasTeamMemberships);
+      const hasLockedTournament = await checkTournamentStatus();
+      setTournamentStarted(hasLockedTournament);
       
-      if (hasTeamMemberships) {
-        await loadTeams();
-      }
+      // Try to load tournament teams regardless of lock status
+      // This allows users to see teams even if tournament isn't officially started
+      await loadTournamentTeams();
     } catch (error) {
       console.error('Error loading teams data:', error);
     } finally {
@@ -53,65 +50,69 @@ export default function TeamsPage() {
   };
 
   const checkTournamentStatus = async (): Promise<boolean> => {
-    // This would check if the tournament has been set up and teams locked
-    // For now, we'll simulate this by checking if there are any team memberships
     try {
-      const response = await fetchTeams();
-      return response.success && response.data.length > 0;
+      const response = await getCurrentTournament();
+      return response.success && response.data && response.data.locked_status;
     } catch {
       return false;
     }
   };
 
-  const loadTeams = async () => {
+  const loadTournamentTeams = async () => {
     try {
-      const [teamsResponse, playersResponse] = await Promise.all([
-        fetchTeams(),
-        fetchPlayers()
-      ]);
-
-      if (teamsResponse.success && playersResponse.success) {
-        // Mock data for team standings - in real implementation, this would come from game results
-        const teamsWithData: TeamWithPlayers[] = teamsResponse.data.map((team, index) => {
-          // Generate random wins (0-4) and losses (0-2), but ensure at least 1 game played
-          const wins = Math.floor(Math.random() * 5); // 0-4
-          const losses = Math.floor(Math.random() * 3); // 0-2
-          
-          // Ensure at least 1 game has been played
-          const adjustedWins = wins;
-          const adjustedLosses = wins + losses === 0 ? 1 : losses;
-          
-          const gamesPlayed = adjustedWins + adjustedLosses;
-          
-          // Calculate win percentage: wins divided by total games played
-          // Should be a decimal between 0 and 1
-          const winPercentage = adjustedWins / gamesPlayed;
-          
-          // Debug logging to help track down the issue
-          console.log(`Team ${team.name}: ${adjustedWins}-${adjustedLosses} (${adjustedWins}/${gamesPlayed} = ${winPercentage.toFixed(3)} = ${(winPercentage * 100).toFixed(1)}%)`);
-          
-          return {
-            ...team,
-            players: playersResponse.data.slice(index * 4, (index + 1) * 4), // Mock 4 players per team
-            wins: adjustedWins,
-            losses: adjustedLosses,
-            gamesPlayed,
-            winPercentage
-          };
-        });
-
-        // Sort by win percentage (highest first), then by wins
-        teamsWithData.sort((a, b) => {
-          if (b.winPercentage !== a.winPercentage) {
-            return b.winPercentage - a.winPercentage;
-          }
-          return b.wins - a.wins;
-        });
-
-        setTeams(teamsWithData);
+      const currentTournamentResponse = await getCurrentTournament();
+      
+      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
+        console.error('No current tournament found');
+        return;
       }
+
+      const tournamentWithTeamsResponse = await getTournamentWithTeams(currentTournamentResponse.data.id);
+      
+      if (!tournamentWithTeamsResponse.success || !tournamentWithTeamsResponse.data) {
+        console.error('Failed to load tournament teams');
+        return;
+      }
+
+      const tournament = tournamentWithTeamsResponse.data;
+      
+      // Mock data for team standings - in real implementation, this would come from game results
+      const teamsWithData: TeamWithStandings[] = tournament.teams.map((team, index) => {
+        // Generate deterministic wins/losses based on team index to avoid hydration mismatches
+        const wins = (index + 1) % 5; // 1, 2, 3, 4, 0, 1, 2, ... 
+        const losses = index % 3; // 0, 1, 2, 0, 1, 2, ...
+        
+        // Ensure at least 1 game has been played
+        const adjustedWins = wins;
+        const adjustedLosses = wins + losses === 0 ? 1 : losses;
+        
+        const gamesPlayed = adjustedWins + adjustedLosses;
+        
+        // Calculate win percentage: wins divided by total games played
+        const winPercentage = adjustedWins / gamesPlayed;
+        
+        console.log(`Team ${team.team_name}: ${adjustedWins}-${adjustedLosses} (${adjustedWins}/${gamesPlayed} = ${winPercentage.toFixed(3)} = ${(winPercentage * 100).toFixed(1)}%)`);
+        
+        return {
+          ...team,
+          wins: adjustedWins,
+          losses: adjustedLosses,
+          gamesPlayed,
+          winPercentage
+        };
+      });
+
+      // Sort by win percentage (highest first), then by wins
+      teamsWithData.sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) {
+          return b.winPercentage - a.winPercentage;
+        }
+        return b.wins - a.wins;
+      });
+
+      setTeams(teamsWithData);
     } catch (error) {
-      console.error('Error loading teams:', error);
+      console.error('Error loading tournament teams:', error);
     }
   };
 
@@ -157,8 +158,8 @@ export default function TeamsPage() {
     );
   }
 
-  // Show placeholder if tournament hasn't started
-  if (!tournamentStarted) {
+  // Show placeholder if tournament hasn't started AND no teams exist
+  if (!tournamentStarted && teams.length === 0) {
     return (
       <div style={{ 
         maxWidth: '1400px', 
@@ -373,7 +374,7 @@ export default function TeamsPage() {
                       flex: 1,
                       marginLeft: '12px'
                     }}>
-                      {team.name}
+                      {team.team_name}
                     </div>
                   </div>
 
@@ -498,7 +499,7 @@ export default function TeamsPage() {
                     fontWeight: '600',
                     color: '#1c1b20'
                   }}>
-                    {team.name}
+                    {team.team_name}
                   </div>
 
                   {/* Record */}

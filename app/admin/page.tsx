@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData } from '../../lib/types';
+import { createClient } from '@supabase/supabase-js';
+import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData, TeamDragDrop } from '../../lib/types';
 import { 
   fetchPlayers, 
   savePlayer, 
@@ -11,8 +12,15 @@ import {
   savePlayerData, 
   saveTeamAssignments,
   loadTeamAssignments,
-  fetchActiveTournament
+  fetchActiveTournament,
+  getPlayerTeamAssignments,
+  getCurrentTournament
 } from '../../lib/api';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 import PlayerActionsModal from '../../components/PlayerActionsModal';
 import BaseballCard from '../../components/BaseballCard';
 import TeamManager from '../../components/TeamManager';
@@ -42,6 +50,8 @@ export default function AdminPage() {
     num_teams: 4
   });
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [playerTeamAssignments, setPlayerTeamAssignments] = useState<Map<string, string>>(new Map());
+  const [currentTeams, setCurrentTeams] = useState<TeamDragDrop[]>([]);
 
   // UI state
   const [activeTab, setActiveTab] = useState<'players' | 'teams' | 'settings'>('players');
@@ -123,11 +133,12 @@ export default function AdminPage() {
       }
 
       // Load fresh data from API
-      const [playersResponse, configResponse, teamsResponse, activeTournamentResponse] = await Promise.all([
+      const [playersResponse, configResponse, teamsResponse, activeTournamentResponse, playerTeamResponse] = await Promise.all([
         fetchPlayers(),
         loadTournamentConfig('default-tournament'),
         loadTeamAssignments('default-tournament'),
-        fetchActiveTournament()
+        fetchActiveTournament(),
+        getPlayerTeamAssignments()
       ]);
 
       if (playersResponse.success) {
@@ -148,6 +159,10 @@ export default function AdminPage() {
 
       if (teamsResponse.success) {
         setTeamAssignments(teamsResponse.data);
+      }
+
+      if (playerTeamResponse.success) {
+        setPlayerTeamAssignments(playerTeamResponse.data);
       }
 
       if (activeTournamentResponse.success && activeTournamentResponse.data) {
@@ -249,16 +264,51 @@ export default function AdminPage() {
         settings_locked: settingsLocked
       };
 
-             await Promise.all([
-         savePlayerData(players),
-         saveTournamentConfig(tournamentConfig),
-         saveTeamAssignments(teamAssignments)
-       ]);
+      // Get current tournament ID for team assignments
+      const currentTournamentResponse = await getCurrentTournament();
+      const tournamentId = currentTournamentResponse.success && currentTournamentResponse.data 
+        ? currentTournamentResponse.data.id 
+        : 'default-tournament';
+
+      // Save basic data
+      await Promise.all([
+        savePlayerData(players),
+        saveTournamentConfig(tournamentConfig)
+      ]);
+
+      // Save team assignments if we're on teams tab
+      if (activeTab === 'teams') {
+        if (currentTeams.length > 0) {
+          // Save team assignments
+          const formattedTeamAssignments = currentTeams.map(team => ({
+            tournament_id: tournamentId,
+            team_id: team.id,
+            team_name: team.name,
+            player_ids: team.players.map(player => player.id),
+            is_locked: team.isLocked || false
+          }));
+          
+          const teamSaveResponse = await saveTeamAssignments(formattedTeamAssignments);
+          if (!teamSaveResponse.success) {
+            throw new Error(teamSaveResponse.error || 'Failed to save teams');
+          }
+        }
+
+        // Reload player team assignments to update the players table
+        const playerTeamResponse = await getPlayerTeamAssignments();
+        if (playerTeamResponse.success) {
+          setPlayerTeamAssignments(playerTeamResponse.data);
+        }
+      }
 
       setHasUnsavedChanges(false);
       setSaveStatus({
         type: 'success',
-        message: 'All tournament data successfully saved!',
+        message: activeTab === 'teams' 
+          ? (currentTeams.length > 0 
+              ? 'All tournament data and team assignments successfully saved!'
+              : 'Tournament data saved! (No teams to save)')
+          : 'All tournament data successfully saved!',
         timestamp: Date.now()
       });
 
@@ -311,6 +361,176 @@ export default function AdminPage() {
   const handleTeamSizeChange = (newTeamSize: number) => {
     // This is handled in TournamentSettings component now
     setHasUnsavedChanges(true);
+  };
+
+  const handleSaveTeams = async (teams: any[]) => {
+    try {
+      setSaving(true);
+      
+      // Get current tournament ID
+      const currentTournamentResponse = await getCurrentTournament();
+      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
+        setSaveStatus({
+          type: 'error',
+          message: 'No active tournament found. Please create a tournament first.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      const tournamentId = currentTournamentResponse.data.id;
+      
+      // Convert TeamDragDrop[] to the format expected by the API
+      const teamAssignments = teams.map(team => ({
+        tournament_id: tournamentId,
+        team_id: team.id,
+        team_name: team.name,
+        player_ids: team.players.map(player => player.id),
+        is_locked: team.isLocked || false
+      }));
+
+      const response = await saveTeamAssignments(teamAssignments);
+      
+      if (response.success) {
+        // Reload player team assignments to update the players table
+        const playerTeamResponse = await getPlayerTeamAssignments();
+        if (playerTeamResponse.success) {
+          setPlayerTeamAssignments(playerTeamResponse.data);
+        }
+        
+        setSaveStatus({
+          type: 'success',
+          message: 'Teams saved successfully!',
+          timestamp: Date.now()
+        });
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: response.error || 'Failed to save teams',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error) {
+      console.error('Error saving teams:', error);
+      setSaveStatus({
+        type: 'error',
+        message: 'An error occurred while saving teams',
+        timestamp: Date.now()
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearTeams = async () => {
+    try {
+      setSaving(true);
+      
+      // Get current tournament ID
+      const currentTournamentResponse = await getCurrentTournament();
+      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
+        setSaveStatus({
+          type: 'error',
+          message: 'No active tournament found.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      const tournamentId = currentTournamentResponse.data.id;
+      
+      // Clear team memberships directly using Supabase
+      const { error } = await supabase
+        .from('team_memberships')
+        .delete()
+        .eq('tournament_id', tournamentId);
+      
+      if (error) {
+        setSaveStatus({
+          type: 'error',
+          message: error.message || 'Failed to clear teams',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      // Clear current teams state - this will trigger TeamManager to reset
+      setCurrentTeams([]);
+      
+      // Reload player team assignments to update the players table
+      const playerTeamResponse = await getPlayerTeamAssignments();
+      if (playerTeamResponse.success) {
+        setPlayerTeamAssignments(playerTeamResponse.data);
+      }
+      
+      setSaveStatus({
+        type: 'success',
+        message: 'Teams cleared successfully!',
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('Error clearing teams:', error);
+      setSaveStatus({
+        type: 'error',
+        message: 'An error occurred while clearing teams',
+        timestamp: Date.now()
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLockTournament = async () => {
+    try {
+      setSaving(true);
+      
+      // Get current tournament
+      const currentTournamentResponse = await getCurrentTournament();
+      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
+        setSaveStatus({
+          type: 'error',
+          message: 'No active tournament found.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      const tournament = currentTournamentResponse.data;
+      const newLockStatus = !tournament.locked_status;
+
+      // Update tournament lock status
+      const { error } = await supabase
+        .from('tournaments')
+        .update({ locked_status: newLockStatus })
+        .eq('id', tournament.id);
+
+      if (error) {
+        setSaveStatus({
+          type: 'error',
+          message: error.message || 'Failed to update tournament lock status',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      setSaveStatus({
+        type: 'success',
+        message: `Tournament ${newLockStatus ? 'locked' : 'unlocked'} successfully!`,
+        timestamp: Date.now()
+      });
+
+      // Reload tournament data to reflect changes
+      await loadTournamentData();
+    } catch (error) {
+      console.error('Error toggling tournament lock:', error);
+      setSaveStatus({
+        type: 'error',
+        message: 'An error occurred while updating tournament',
+        timestamp: Date.now()
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getTabErrors = (tab: string) => {
@@ -700,6 +920,7 @@ export default function AdminPage() {
                 showEditColumn={true}
                 showResultsCount={true}
                 isReadOnly={false}
+                playerTeamAssignments={playerTeamAssignments}
               />
             </div>
           )}
@@ -708,7 +929,14 @@ export default function AdminPage() {
             <TeamManager
               players={players}
               numTeams={tournamentSettings.num_teams}
+              teams={currentTeams}
               onTeamSizeChange={handleTeamSizeChange}
+              onTeamsChange={setCurrentTeams}
+              onSaveTeams={handleSaveTeams}
+              onClearTeams={handleClearTeams}
+              onLockTournament={handleLockTournament}
+              isLocked={isActive}
+              savingTeams={saving}
             />
           )}
 
@@ -716,6 +944,7 @@ export default function AdminPage() {
             <TournamentSettings
               tournamentId="default-tournament"
               players={players}
+              teams={[]}
               onSettingsChange={handleSettingsChange}
               disabled={settingsLocked}
               isActive={isActive}

@@ -10,9 +10,9 @@ import { HamburgerMenuIcon, Cross1Icon } from "@radix-ui/react-icons";
 
 const navLinks = [
   { href: "/", label: "Home" },
+  { href: "/results", label: "Results" },
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
-  { href: "/stats", label: "Stats" },
   { href: "/admin", label: "Admin" },
   { href: "/wiki", label: "Wiki" },
 ];
