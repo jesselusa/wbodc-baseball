@@ -147,7 +147,15 @@ export function useDashboardUpdates(options: UseDashboardUpdatesOptions = {}): U
   // Auto-connect on mount if enabled
   useEffect(() => {
     if (autoConnect) {
-      connect();
+      // Add a small delay to avoid conflicts with HMR during navigation
+      const timeoutId = setTimeout(() => {
+        connect();
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        disconnect();
+      };
     }
 
     // Cleanup on unmount

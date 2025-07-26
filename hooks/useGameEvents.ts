@@ -149,7 +149,21 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   // Auto-connect on mount if enabled, with single cleanup
   useEffect(() => {
     if (autoConnect && gameId) {
-      connect();
+      // Add a small delay to avoid conflicts with HMR during navigation
+      const timeoutId = setTimeout(() => {
+        connect();
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        if (managerRef.current) {
+          console.log(`[useGameEvents] Cleaning up connection for game: ${gameId}`);
+          managerRef.current.dispose().catch(error => {
+            console.warn(`[useGameEvents] Error during cleanup for game ${gameId}:`, error);
+          });
+          managerRef.current = null;
+        }
+      };
     }
 
     // Single cleanup function that handles all cases

@@ -41,6 +41,7 @@ interface SaveStatus {
 export default function AdminPage() {
   // Core state
   const [players, setPlayers] = useState<Player[]>([]);
+  const [currentTournamentId, setCurrentTournamentId] = useState<string>('e4d1b3ad-620d-4cee-9431-a1ac3be68ba9');
   const [tournamentSettings, setTournamentSettings] = useState<TournamentSettingsFormData>({
     pool_play_games: 2,
     pool_play_innings: 3,
@@ -133,12 +134,25 @@ export default function AdminPage() {
       }
 
       // Load fresh data from API
-      const [playersResponse, configResponse, teamsResponse, activeTournamentResponse, playerTeamResponse] = await Promise.all([
+      const [playersResponse, activeTournamentResponse, playerTeamResponse] = await Promise.all([
         fetchPlayers(),
-        loadTournamentConfig('default-tournament'),
-        loadTeamAssignments('default-tournament'),
         fetchActiveTournament(),
         getPlayerTeamAssignments()
+      ]);
+
+      // Use the active tournament or the first available tournament
+      let tournamentId = 'e4d1b3ad-620d-4cee-9431-a1ac3be68ba9'; // Default to your current tournament
+      if (activeTournamentResponse.success && activeTournamentResponse.data) {
+        tournamentId = activeTournamentResponse.data.id;
+      }
+      
+      // Update the state with the current tournament ID
+      setCurrentTournamentId(tournamentId);
+
+      // Now load config and teams with the correct tournament ID
+      const [configResponse, teamsResponse] = await Promise.all([
+        loadTournamentConfig(tournamentId),
+        loadTeamAssignments(tournamentId)
       ]);
 
       if (playersResponse.success) {
@@ -353,15 +367,15 @@ export default function AdminPage() {
     setHasUnsavedChanges(true);
   };
 
-  const handleSettingsChange = (settings: TournamentSettingsFormData) => {
+  const handleSettingsChange = useCallback((settings: TournamentSettingsFormData) => {
     setTournamentSettings(settings);
     setHasUnsavedChanges(true);
-  };
+  }, []);
 
-  const handleTeamSizeChange = (newTeamSize: number) => {
+  const handleTeamSizeChange = useCallback((newTeamSize: number) => {
     // This is handled in TournamentSettings component now
     setHasUnsavedChanges(true);
-  };
+  }, []);
 
   const handleSaveTeams = async (teams: any[]) => {
     try {
@@ -942,7 +956,7 @@ export default function AdminPage() {
 
           {activeTab === 'settings' && (
             <TournamentSettings
-              tournamentId="default-tournament"
+              tournamentId={currentTournamentId}
               players={players}
               teams={[]}
               onSettingsChange={handleSettingsChange}

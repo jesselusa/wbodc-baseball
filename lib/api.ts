@@ -216,8 +216,12 @@ function delay(ms: number): Promise<void> {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+// For client-side, always use the anon key (RLS will handle security)
+// For server-side API routes, we can use service role key
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Event Validation Functions
 // These functions validate events according to WBDoc Baseball rules
@@ -914,7 +918,7 @@ export async function fetchGames(filters?: GameFilters): Promise<ApiResponse<Gam
     // Fetch tournaments
     const { data: tournaments } = await supabase
       .from('tournaments')
-      .select('id, name, description, status, start_date, end_date, created_at, updated_at')
+      .select('id, name, status, start_date, end_date, created_at, updated_at')
       .in('id', Array.from(tournamentIds));
 
     // Create lookup maps
@@ -933,7 +937,7 @@ export async function fetchGames(filters?: GameFilters): Promise<ApiResponse<Gam
         tournament: tournament ? {
           id: tournament.id,
           name: tournament.name,
-          description: tournament.description,
+          description: undefined, // Field doesn't exist in DB
           status: tournament.status,
           start_date: tournament.start_date,
           end_date: tournament.end_date,
@@ -1122,13 +1126,13 @@ export async function fetchTournaments(filters?: TournamentFilters): Promise<Api
 
 export async function fetchActiveTournament(): Promise<ApiResponse<Tournament | null>> {
   try {
-    const { data: tournament, error } = await supabase
+    const { data: tournaments, error } = await supabase
       .from('tournaments')
       .select('*')
       .eq('status', 'active')
-      .single();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (error) {
       console.error('Error fetching active tournament:', error);
       return {
         data: null,
@@ -1137,11 +1141,14 @@ export async function fetchActiveTournament(): Promise<ApiResponse<Tournament | 
       };
     }
 
+    // Get the first tournament from the array (or null if empty)
+    const tournament = tournaments?.[0] || null;
+
     return {
       data: tournament ? {
         id: tournament.id,
         name: tournament.name,
-        description: tournament.description,
+        description: undefined, // Field doesn't exist in DB, set as undefined
         status: tournament.status,
         start_date: tournament.start_date,
         end_date: tournament.end_date,
@@ -1415,19 +1422,19 @@ export async function saveTournamentConfig(config: {
 }): Promise<ApiResponse<any>> {
   try {
     const { data, error } = await supabase
-      .from('tournament_configurations')
-      .upsert({
-        tournament_id: config.tournament_id,
+      .from('tournaments')
+      .update({
         pool_play_games: config.pool_play_games,
         pool_play_innings: config.pool_play_innings,
         bracket_type: config.bracket_type,
         bracket_innings: config.bracket_innings,
         final_innings: config.final_innings,
-        team_size: config.team_size,
-        is_active: config.is_active || false,
-        settings_locked: config.settings_locked || false,
+        num_teams: config.team_size,
+        status: config.is_active ? 'active' : 'upcoming',
+        locked_status: config.settings_locked || false,
         updated_at: new Date().toISOString()
       })
+      .eq('id', config.tournament_id)
       .select()
       .single();
 
@@ -1459,10 +1466,21 @@ export async function saveTournamentConfig(config: {
  */
 export async function loadTournamentConfig(tournamentId: string): Promise<ApiResponse<any>> {
   try {
+    // Query the tournaments table directly since configuration is stored there
     const { data, error } = await supabase
-      .from('tournament_configurations')
-      .select('*')
-      .eq('tournament_id', tournamentId)
+      .from('tournaments')
+      .select(`
+        id,
+        pool_play_games,
+        pool_play_innings,
+        bracket_type,
+        bracket_innings,
+        final_innings,
+        num_teams,
+        status,
+        locked_status
+      `)
+      .eq('id', tournamentId)
       .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -1474,17 +1492,17 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
       };
     }
 
-    // If no configuration exists, return default values
+    // If no tournament exists, return default values
     if (!data) {
       return {
         data: {
           tournament_id: tournamentId,
-          pool_play_games: 1,
-          pool_play_innings: 7,
+          pool_play_games: 3,
+          pool_play_innings: 3,
           bracket_type: 'single_elimination',
-          bracket_innings: 7,
-          final_innings: 9,
-          team_size: 6,
+          bracket_innings: 3,
+          final_innings: 5,
+          team_size: 4,
           is_active: false,
           settings_locked: false
         },
@@ -1492,8 +1510,19 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
       };
     }
 
+    // Transform the data to match expected format
     return {
-      data,
+      data: {
+        tournament_id: data.id,
+        pool_play_games: data.pool_play_games,
+        pool_play_innings: data.pool_play_innings,
+        bracket_type: data.bracket_type,
+        bracket_innings: data.bracket_innings,
+        final_innings: data.final_innings,
+        team_size: data.num_teams,
+        is_active: data.status === 'active',
+        settings_locked: data.locked_status || false
+      },
       success: true
     };
   } catch (error) {
@@ -1711,10 +1740,21 @@ export async function saveTeamAssignments(assignments: Array<{
 export async function loadTeamAssignments(tournamentId: string): Promise<ApiResponse<any[]>> {
   try {
     const { data, error } = await supabase
-      .from('team_assignments')
-      .select('*')
-      .eq('tournament_id', tournamentId)
-      .order('team_name');
+      .from('team_memberships')
+      .select(`
+        *,
+        teams:team_id (
+          id,
+          name,
+          color
+        ),
+        players:player_id (
+          id,
+          name,
+          nickname
+        )
+      `)
+      .eq('tournament_id', tournamentId);
 
     if (error) {
       console.error('Error loading team assignments:', error);
