@@ -10,7 +10,7 @@ This document outlines a comprehensive frontend architecture strategy for the WB
 
 - **Styling Approach**: Primarily inline styles with JavaScript objects
 - **Global Styles**: Minimal CSS in `app/globals.css` (utility classes, animations)
-- **Component Libraries**: Radix UI Navigation Menu, Radix UI Icons
+- **Component Libraries**: shadcn-ui components (accessed via MCP), Radix UI Icons
 - **Theming**: Color constants duplicated across components
 - **Responsiveness**: CSS `clamp()` functions for fluid typography and spacing
 
@@ -22,6 +22,7 @@ This document outlines a comprehensive frontend architecture strategy for the WB
 4. **Team Theming Limitations**: No systematic approach for dynamic team colors
 5. **Performance**: Inline styles prevent CSS optimization
 6. **Developer Experience**: Verbose styling code reduces readability
+7. **Component Management**: Manual copying of component code instead of systematic integration
 
 ## Architecture Goals
 
@@ -43,10 +44,11 @@ This document outlines a comprehensive frontend architecture strategy for the WB
    - Support unlimited team color combinations from database-driven data
    - Maintain design consistency while allowing team-specific customization
 
-4. **Radix UI Integration**
+4. **shadcn-ui Integration**
 
-   - Standardize on Radix UI for all primitive components, icons, and accessibility features
-   - Leverage Radix's compound component patterns for consistent component APIs
+   - Standardize on shadcn-ui for all primitive components, leveraging its battle-tested design system
+   - Use the shadcn-ui MCP for systematic component integration and management
+   - Maintain consistency with the broader React ecosystem through shadcn-ui's proven patterns
 
 5. **Responsive Design Excellence**
    - Ensure seamless experience across all device sizes and orientations
@@ -57,74 +59,77 @@ This document outlines a comprehensive frontend architecture strategy for the WB
 6. **Performance Optimization**
 
    - Minimize CSS bundle size through efficient styling architecture
-   - Implement CSS-in-JS solutions that support static extraction and caching
+   - Leverage Tailwind CSS optimizations built into shadcn-ui
 
 7. **Developer Experience Enhancement**
 
    - Provide TypeScript-safe styling APIs with autocomplete and error checking
    - Establish clear patterns and conventions for component styling
+   - Use MCP for seamless component discovery and integration
+
+8. **Component Management Excellence**
+   - Use shadcn-ui MCP to systematically pull in and manage components
+   - Maintain up-to-date component library with minimal manual intervention
+   - Enable easy access to component demos and documentation
 
 ## Proposed Architecture
 
 ### 1. Design Token System
 
-**Implementation**: CSS Custom Properties + TypeScript Token System
+**Implementation**: Tailwind CSS + CSS Custom Properties + TypeScript Token System
 
 ```typescript
 // lib/design-tokens.ts
 export const tokens = {
   colors: {
     brand: {
-      50: "var(--brand-50)",
-      100: "var(--brand-100)",
-      // ... complete scale
+      50: "hsl(var(--brand-50))",
+      100: "hsl(var(--brand-100))",
+      // ... complete scale following shadcn-ui conventions
     },
     semantic: {
-      success: "var(--color-success)",
-      warning: "var(--color-warning)",
-      error: "var(--color-error)",
+      success: "hsl(var(--success))",
+      warning: "hsl(var(--warning))",
+      destructive: "hsl(var(--destructive))",
     },
     team: {
-      primary: "var(--team-primary)",
-      secondary: "var(--team-secondary)",
-      accent: "var(--team-accent)",
+      primary: "hsl(var(--team-primary))",
+      secondary: "hsl(var(--team-secondary))",
+      accent: "hsl(var(--team-accent))",
     },
   },
+  // Leveraging shadcn-ui's Tailwind configuration
   spacing: {
-    xs: "var(--space-xs)",
-    sm: "var(--space-sm)",
-    // ... scale
+    xs: "0.25rem",
+    sm: "0.5rem",
+    // ... scale matching Tailwind defaults
   },
   typography: {
+    // Using shadcn-ui typography scale
     fontSize: {
-      xs: "var(--font-size-xs)",
-      sm: "var(--font-size-sm)",
+      xs: ["0.75rem", { lineHeight: "1rem" }],
+      sm: ["0.875rem", { lineHeight: "1.25rem" }],
       // ... scale
     },
-    fontWeight: {
-      normal: "var(--font-weight-normal)",
-      medium: "var(--font-weight-medium)",
-      bold: "var(--font-weight-bold)",
-    },
   },
-  // ... other token categories
 };
 ```
 
-### 2. Hybrid Styling Architecture
+### 2. shadcn-ui + Tailwind Architecture
 
-**CSS Modules + CSS-in-JS Hybrid Approach**
+**MCP-Driven Component Management + Tailwind CSS**
 
-- **CSS Modules**: Static structure, layout, and base component styles
+- **shadcn-ui Components**: Core UI primitives managed via MCP
+- **Tailwind CSS**: Utility-first styling with shadcn-ui's design system
 - **CSS Custom Properties**: Dynamic theming and team colors
-- **Styled Components/Emotion**: Complex dynamic styling where needed
+- **Component Variants**: Using class-variance-authority for systematic variants
 
 ### 3. Component Architecture
 
 **Three-Layer Component System**:
 
-1. **Primitive Layer**: Radix UI components with custom styling
-2. **Composite Layer**: Application-specific components built from primitives
+1. **Primitive Layer**: shadcn-ui components pulled via MCP and customized
+2. **Composite Layer**: Application-specific components built from shadcn-ui primitives
 3. **Layout Layer**: Page-level layout components and containers
 
 ### 4. Team Theming System
@@ -145,132 +150,205 @@ export const tokens = {
 
 **Primary Stack**:
 
-- **Stitches.js**: Type-safe CSS-in-JS with static extraction
-- **Radix UI**: Unstyled primitive components
+- **shadcn-ui**: Battle-tested component library with excellent TypeScript support
+- **shadcn-ui MCP**: Systematic component integration and management
+- **Tailwind CSS**: Utility-first CSS framework (comes with shadcn-ui)
+- **class-variance-authority**: Type-safe variant API for components
+- **clsx**: Utility for constructing className strings conditionally
 - **CSS Custom Properties**: Dynamic theming system
-- **PostCSS**: CSS processing and optimization
 
-**Alternative Stack** (if Stitches is not preferred):
+### 2. Component Management via MCP
 
-- **Emotion**: CSS-in-JS with excellent TypeScript support
-- **Twin.macro**: Tailwind CSS + CSS-in-JS hybrid
-- **Vanilla Extract**: Zero-runtime CSS-in-JS
-
-### 2. File Structure
-
-```
-lib/
-├── design-system/
-│   ├── tokens.ts              # Design tokens
-│   ├── theme.ts               # Theme configuration
-│   ├── primitives/            # Styled Radix components
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   └── ...
-│   ├── components/            # Composite components
-│   │   ├── GameHeader.tsx
-│   │   ├── StatusBadge.tsx
-│   │   └── ...
-│   └── providers/
-│       ├── ThemeProvider.tsx
-│       └── TeamThemeProvider.tsx
-styles/
-├── globals.css                # Global styles and CSS variables
-├── reset.css                  # CSS reset/normalize
-└── tokens.css                 # Design token definitions
-```
-
-### 3. Component Patterns
-
-**Styled Primitive Pattern**:
+**MCP Integration Workflow**:
 
 ```typescript
-// lib/design-system/primitives/Button.tsx
-import { styled } from "../theme";
-import * as RadixButton from "@radix-ui/react-primitive";
+// Using MCP to pull in shadcn-ui components
+// MCP command: mcp_shadcn-ui_get_component("button")
+// MCP command: mcp_shadcn-ui_get_component_demo("button")
+// MCP command: mcp_shadcn-ui_list_components()
 
-export const Button = styled(RadixButton.Root, {
-  // Base styles using design tokens
-  padding: "$space-sm $space-md",
-  borderRadius: "$radius-md",
-  fontSize: "$fontSize-sm",
-  fontWeight: "$fontWeight-medium",
+// This enables:
+// 1. Systematic component discovery
+// 2. Up-to-date component code
+// 3. Access to component demos and examples
+// 4. Consistent component patterns
+```
 
-  variants: {
-    variant: {
-      primary: {
-        backgroundColor: "$brand-500",
-        color: "white",
+### 3. File Structure
+
+```
+components/
+├── ui/                        # shadcn-ui components (MCP managed)
+│   ├── button.tsx            # Pulled via MCP
+│   ├── card.tsx              # Pulled via MCP
+│   ├── badge.tsx             # Pulled via MCP
+│   └── ...
+├── composite/                 # Application-specific components
+│   ├── game-header.tsx
+│   ├── status-badge.tsx
+│   └── ...
+├── layout/                    # Layout components
+│   ├── page-layout.tsx
+│   └── game-layout.tsx
+└── providers/
+    ├── theme-provider.tsx
+    └── team-theme-provider.tsx
+lib/
+├── utils.ts                   # Utility functions (cn, etc.)
+├── design-tokens.ts           # Extended design tokens
+└── team-theming.ts            # Team color utilities
+styles/
+├── globals.css                # Global styles and CSS variables
+└── team-themes.css            # Team-specific theme variables
+```
+
+### 4. Component Patterns
+
+**shadcn-ui Component Pattern** (MCP Retrieved):
+
+```typescript
+// components/ui/button.tsx (Retrieved via MCP)
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
       },
-      secondary: {
-        backgroundColor: "$gray-100",
-        color: "$gray-900",
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md gap-1.5 px-3",
+        lg: "h-10 rounded-md px-6",
+        icon: "size-9",
       },
     },
-    size: {
-      sm: { padding: "$space-xs $space-sm" },
-      md: { padding: "$space-sm $space-md" },
-      lg: { padding: "$space-md $space-lg" },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
     },
-  },
-});
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
 ```
 
 **Team-Themed Component Pattern**:
 
 ```typescript
-// components/GameHeader.tsx
-import { styled } from "../lib/design-system/theme";
-import { useTeamTheme } from "../lib/design-system/providers/TeamThemeProvider";
+// components/composite/game-header.tsx
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { useTeamTheme } from "@/lib/providers/team-theme-provider";
 
-const GameCard = styled("div", {
-  padding: "$space-lg",
-  borderRadius: "$radius-lg",
-  backgroundColor: "$gray-50",
-  border: "1px solid $gray-200",
+interface GameHeaderProps {
+  homeTeam: Team;
+  awayTeam: Team;
+  themed?: boolean;
+  className?: string;
+}
 
-  variants: {
-    teamThemed: {
-      true: {
-        borderColor: "$team-primary",
-        backgroundColor: "color-mix(in srgb, $team-primary 5%, $gray-50)",
-      },
-    },
-  },
-});
-
-export const GameHeader = ({ homeTeam, awayTeam, themed = false }) => {
+export const GameHeader = ({
+  homeTeam,
+  awayTeam,
+  themed = false,
+  className,
+}: GameHeaderProps) => {
   const { homeTeamTheme } = useTeamTheme();
 
-  return <GameCard teamThemed={themed}>{/* Component content */}</GameCard>;
+  return (
+    <Card
+      className={cn(
+        "w-full",
+        themed && "border-l-4 border-l-[hsl(var(--team-primary))]",
+        className
+      )}
+      style={
+        themed
+          ? ({
+              "--team-primary": homeTeamTheme.primary,
+              "--team-secondary": homeTeamTheme.secondary,
+            } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <Badge
+            variant={themed ? "default" : "secondary"}
+            className={themed ? "bg-[hsl(var(--team-primary))] text-white" : ""}
+          >
+            {homeTeam.name}
+          </Badge>
+          <span className="text-sm text-muted-foreground">vs</span>
+          <Badge variant="outline">{awayTeam.name}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>{/* Game details */}</CardContent>
+    </Card>
+  );
 };
 ```
 
 ## Implementation Strategy
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 1: Foundation & MCP Integration (Weeks 1-2)
 
-1. **Setup Design System Infrastructure**
+1. **Setup shadcn-ui Infrastructure**
 
-   - Install and configure Stitches.js
-   - Create design token system
-   - Establish CSS custom properties in globals.css
+   - Initialize shadcn-ui in the project
+   - Configure Tailwind CSS with shadcn-ui presets
+   - Set up MCP integration for component management
 
-2. **Create Core Primitives**
-   - Style essential Radix UI components (Button, Card, Badge)
-   - Implement base component patterns
-   - Create theme provider system
+2. **Create Core Components via MCP**
+   - Use MCP to pull essential components (Button, Card, Badge, Input, etc.)
+   - Set up theme provider and CSS custom properties
+   - Establish team theming system
 
 ### Phase 2: Component Migration (Weeks 3-4)
 
 1. **Migrate High-Impact Components**
 
-   - Convert GameHeader to new system
-   - Update NavBar with styled primitives
-   - Refactor TournamentCard and GameRow
+   - Convert GameHeader to new shadcn-ui system
+   - Update NavBar with shadcn-ui components
+   - Refactor TournamentCard and GameRow using Card, Badge, Button primitives
 
 2. **Implement Team Theming**
-   - Create TeamThemeProvider
+   - Create TeamThemeProvider with CSS custom properties
    - Add team theme support to migrated components
    - Test with multiple team color combinations
 
@@ -278,27 +356,42 @@ export const GameHeader = ({ homeTeam, awayTeam, themed = false }) => {
 
 1. **Update Page Components**
 
-   - Refactor game detail page
-   - Update homepage components
-   - Ensure consistent layout patterns
+   - Refactor game detail page with shadcn-ui layout components
+   - Update homepage components using shadcn-ui primitives
+   - Ensure consistent patterns across all pages
 
 2. **Responsive Design Optimization**
-   - Implement mobile-first breakpoint system
+   - Leverage Tailwind's responsive utilities
    - Test across all target devices
-   - Optimize performance and bundle size
+   - Optimize for performance and accessibility
 
 ### Phase 4: Polish & Documentation (Week 7)
 
 1. **Quality Assurance**
 
    - Comprehensive testing across devices
-   - Accessibility audit and fixes
+   - Accessibility audit using shadcn-ui's built-in accessibility features
    - Performance optimization
 
-2. **Documentation**
-   - Create component documentation
-   - Establish contribution guidelines
-   - Write migration guide for future components
+2. **Documentation & MCP Workflow**
+   - Document MCP usage patterns for future component additions
+   - Create component usage guidelines
+   - Establish update procedures for shadcn-ui components
+
+## MCP Integration Benefits
+
+### Systematic Component Management
+
+- **Consistent Updates**: Easy access to latest shadcn-ui component versions
+- **Component Discovery**: Built-in access to component catalog and demos
+- **Reduced Maintenance**: No manual tracking of component changes
+- **Documentation Access**: Immediate access to usage examples and best practices
+
+### Developer Experience
+
+- **Faster Development**: Quick access to proven component patterns
+- **Reduced Errors**: Battle-tested components with proper TypeScript support
+- **Better Consistency**: Standardized component API across the application
 
 ## Migration Plan
 
@@ -310,20 +403,29 @@ export const GameHeader = ({ homeTeam, awayTeam, themed = false }) => {
 
 ### Risk Mitigation
 
+- **MCP Reliability**: Establish fallback procedures if MCP is unavailable
+- **Component Versioning**: Pin component versions during critical development phases
 - **Automated Testing**: Maintain existing test suite throughout migration
 
 ## Conclusion
 
-This architecture proposal provides a comprehensive roadmap for establishing a scalable, maintainable frontend design system that meets all specified goals. The hybrid approach balances flexibility with consistency, while the incremental migration strategy minimizes risk and ensures continuous delivery.
+This updated architecture proposal leverages shadcn-ui's mature design system and the MCP's systematic component management to create a scalable, maintainable frontend architecture. The combination provides:
 
-The proposed system will enable rapid iteration on design decisions, support unlimited team color combinations, and provide a solid foundation for future feature development while maintaining excellent performance and accessibility standards.
+- **Proven Design Patterns**: shadcn-ui's battle-tested components
+- **Systematic Management**: MCP-driven component integration
+- **Performance**: Tailwind CSS optimizations
+- **Developer Experience**: Excellent TypeScript support and tooling
+- **Flexibility**: Team theming capabilities built on top of solid foundations
+
+The MCP integration ensures we stay current with shadcn-ui best practices while maintaining systematic control over our component library.
 
 ## Next Steps
 
-1. **Review and Approval**: Stakeholder review of this proposal
-2. **Technical Validation**: Proof of concept implementation
-3. **Resource Allocation**: Assign development team and timeline
-4. **Implementation Kickoff**: Begin Phase 1 development
+1. **Review and Approval**: Stakeholder review of this updated proposal
+2. **MCP Setup Validation**: Confirm shadcn-ui MCP functionality
+3. **Technical Validation**: Proof of concept implementation with MCP workflow
+4. **Resource Allocation**: Assign development team and timeline
+5. **Implementation Kickoff**: Begin Phase 1 development
 
 ---
 

@@ -1008,7 +1008,7 @@ export async function fetchGameById(gameId: string): Promise<ApiResponse<GameDis
         *,
         home_team:teams!games_home_team_id_fkey(id, name, color),
         away_team:teams!games_away_team_id_fkey(id, name, color),
-        tournament:tournaments(id, name, description, status, start_date, end_date)
+        tournament:tournaments(id, name, status, start_date, end_date, created_at, updated_at)
       `)
       .eq('id', gameId)
       .single();
@@ -1037,7 +1037,6 @@ export async function fetchGameById(gameId: string): Promise<ApiResponse<GameDis
       tournament: game.tournament ? {
         id: game.tournament.id,
         name: game.tournament.name,
-        description: game.tournament.description,
         status: game.tournament.status,
         start_date: game.tournament.start_date,
         end_date: game.tournament.end_date,

@@ -44,9 +44,13 @@ export interface GameSubscriptionOptions {
   filters?: SubscriptionFilters;
 }
 
+// Global connection registry to prevent channel name collisions
+const connectionRegistry = new Map<string, GameRealtimeManager>();
+
 // Game-specific realtime subscription manager
 export class GameRealtimeManager {
   private gameId: string;
+  private instanceId: string; // Unique instance identifier
   private channel: RealtimeChannel | null = null;
   private isConnected = false;
   private reconnectAttempts = 0;
@@ -54,6 +58,7 @@ export class GameRealtimeManager {
   private reconnectDelay = 1000; // Start with 1 second
   private maxReconnectDelay = 30000; // Max 30 seconds
   private filters: SubscriptionFilters;
+  private isDisposed = false; // Flag to prevent operations after disposal
   
   // Event handlers
   private onEventHandler?: (update: RealtimeGameUpdate) => void;
@@ -61,11 +66,12 @@ export class GameRealtimeManager {
   private onConnectionStatusHandler?: (status: ConnectionStatus) => void;
   
   // Debouncing for rapid updates
-  private debounceTimer: NodeJS.Timeout | null = null;
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingUpdates: RealtimeGameUpdate[] = [];
 
   constructor(gameId: string, filters: SubscriptionFilters = {}) {
     this.gameId = gameId;
+    this.instanceId = `${gameId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.filters = {
       granularity: 'full',
       includeSnapshots: true,
@@ -73,12 +79,33 @@ export class GameRealtimeManager {
       debounceMs: 0,
       ...filters
     };
+    
+    console.log(`[GameRealtimeManager] Created instance ${this.instanceId} for game ${gameId}`);
   }
 
   /**
    * Subscribe to real-time updates for a specific game
    */
   async subscribe(options: GameSubscriptionOptions): Promise<void> {
+    if (this.isDisposed) {
+      console.warn(`[GameRealtimeManager] Attempted to subscribe to disposed instance ${this.instanceId}`);
+      return;
+    }
+    
+    console.log(`[GameRealtimeManager] Subscribing instance ${this.instanceId} to game: ${this.gameId}`);
+    
+    // Check if another instance is already connected to this game
+    const existingInstance = connectionRegistry.get(this.gameId);
+    if (existingInstance && existingInstance !== this && !existingInstance.isDisposed) {
+      console.warn(`[GameRealtimeManager] Another instance already connected to game ${this.gameId}, cleaning it up first`);
+      await existingInstance.dispose();
+      // Add a small delay to ensure cleanup completes
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    
+    // Register this instance
+    connectionRegistry.set(this.gameId, this);
+    
     this.onEventHandler = options.onEvent;
     this.onSnapshotHandler = options.onSnapshot;
     this.onConnectionStatusHandler = options.onConnectionStatus;
@@ -95,8 +122,20 @@ export class GameRealtimeManager {
    * Connect to the game channel
    */
   private async connect(): Promise<void> {
+    if (this.isDisposed) {
+      console.warn(`[GameRealtimeManager] Attempted to connect disposed instance ${this.instanceId}`);
+      return;
+    }
+    
     try {
-      console.log(`[Realtime] Attempting to connect to game channel: game:${this.gameId}`);
+      console.log(`[GameRealtimeManager] Instance ${this.instanceId} connecting to game channel: game:${this.gameId}`);
+      
+      // Clean up existing channel if it exists
+      if (this.channel) {
+        console.log(`[GameRealtimeManager] Cleaning up existing channel before reconnect for instance ${this.instanceId}`);
+        this.channel.unsubscribe();
+        this.channel = null;
+      }
       
       // Create channel for this specific game
       this.channel = supabase.channel(`game:${this.gameId}`, {
@@ -162,11 +201,17 @@ export class GameRealtimeManager {
 
       // Handle connection status changes
       this.channel.subscribe((status) => {
-        console.log(`[Realtime] Channel status changed to: ${status}`);
+        console.log(`[GameRealtimeManager] Instance ${this.instanceId} channel status: ${status}`);
         this.isConnected = status === 'SUBSCRIBED';
         
+        // Don't handle status changes for disposed instances
+        if (this.isDisposed) {
+          console.log(`[GameRealtimeManager] Ignoring status ${status} for disposed instance ${this.instanceId}`);
+          return;
+        }
+        
         if (status === 'SUBSCRIBED') {
-          console.log(`[Realtime] Successfully connected to game:${this.gameId}`);
+          console.log(`[GameRealtimeManager] Instance ${this.instanceId} successfully connected to game:${this.gameId}`);
           this.reconnectAttempts = 0;
           this.reconnectDelay = 1000;
           this.notifyConnectionStatus({
@@ -178,7 +223,7 @@ export class GameRealtimeManager {
           // Fetch latest snapshot on successful connection
           this.fetchLatestSnapshot();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`[Realtime] Connection failed with status: ${status}`);
+          console.error(`[GameRealtimeManager] Instance ${this.instanceId} connection failed with status: ${status}`);
           this.isConnected = false;
           this.notifyConnectionStatus({
             connected: false,
@@ -186,18 +231,35 @@ export class GameRealtimeManager {
             error: `Connection ${status.toLowerCase()}`
           });
           
-          // Attempt reconnection
-          this.scheduleReconnect();
+          // Only attempt reconnection if not disposed
+          if (!this.isDisposed) {
+            this.scheduleReconnect();
+          }
         } else if (status === 'CLOSED') {
-          console.warn(`[Realtime] Connection closed for game:${this.gameId}`);
+          console.warn(`[GameRealtimeManager] Instance ${this.instanceId} connection closed for game:${this.gameId}`);
           this.isConnected = false;
-          this.notifyConnectionStatus({
-            connected: false,
-            reconnecting: false,
-            error: 'Connection closed'
-          });
+          
+          // Check if this is an intentional closure (due to navigation/cleanup)
+          if (this.isDisposed || connectionRegistry.get(this.gameId) !== this) {
+            console.log(`[GameRealtimeManager] Instance ${this.instanceId} connection closed intentionally, not reconnecting`);
+            this.notifyConnectionStatus({
+              connected: false,
+              reconnecting: false,
+              error: 'Connection closed'
+            });
+          } else {
+            console.warn(`[GameRealtimeManager] Instance ${this.instanceId} connection closed unexpectedly, attempting reconnect...`);
+            this.notifyConnectionStatus({
+              connected: false,
+              reconnecting: true,
+              error: 'Connection closed'
+            });
+            
+            // Attempt reconnection for unexpected closures
+            this.scheduleReconnect();
+          }
         } else {
-          console.log(`[Realtime] Intermediate status: ${status}`);
+          console.log(`[GameRealtimeManager] Instance ${this.instanceId} intermediate status: ${status}`);
         }
       });
 
@@ -293,11 +355,34 @@ export class GameRealtimeManager {
    */
   private async fetchLatestSnapshot(): Promise<void> {
     try {
-      const { data: snapshot, error } = await supabase
+      // First, get the game status to determine expected behavior
+      const { data: game, error: gameError } = await supabase
+        .from('games')
+        .select('status')
+        .eq('id', this.gameId)
+        .single();
+
+      if (gameError || !game) {
+        console.error('Error fetching game status:', gameError);
+        return;
+      }
+
+      // Handle snapshots based on game status
+      const query = supabase
         .from('game_snapshots')
         .select('*')
-        .eq('game_id', this.gameId)
-        .single();
+        .eq('game_id', this.gameId);
+
+      let result;
+      if (game.status === 'active') {
+        // Active games MUST have snapshots - error if missing
+        result = await query.single();
+      } else {
+        // Scheduled/other games MAY have snapshots - null if missing
+        result = await query.maybeSingle();
+      }
+
+      const { data: snapshot, error } = result;
 
       if (error) {
         console.error('Error fetching latest snapshot:', error);
@@ -307,6 +392,7 @@ export class GameRealtimeManager {
       if (snapshot) {
         this.handleSnapshotUpdate(snapshot);
       }
+      // For scheduled games without snapshots, this is normal
     } catch (error) {
       console.error('Error in fetchLatestSnapshot:', error);
     }
@@ -316,7 +402,13 @@ export class GameRealtimeManager {
    * Schedule a reconnection attempt with exponential backoff
    */
   private scheduleReconnect(): void {
+    if (this.isDisposed) {
+      console.log(`[GameRealtimeManager] Not scheduling reconnect for disposed instance ${this.instanceId}`);
+      return;
+    }
+    
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.warn(`[GameRealtimeManager] Instance ${this.instanceId} max reconnection attempts reached`);
       this.notifyConnectionStatus({
         connected: false,
         reconnecting: false,
@@ -325,12 +417,19 @@ export class GameRealtimeManager {
       return;
     }
 
+    console.log(`[GameRealtimeManager] Instance ${this.instanceId} scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${this.reconnectDelay}ms`);
     this.notifyConnectionStatus({
       connected: false,
       reconnecting: true
     });
 
-    setTimeout(async () => {
+    this.debounceTimer = setTimeout(async () => {
+      // Double-check disposed state after timeout
+      if (this.isDisposed) {
+        console.log(`[GameRealtimeManager] Instance ${this.instanceId} disposed during reconnect timeout, aborting`);
+        return;
+      }
+      
       this.reconnectAttempts++;
       this.reconnectDelay = Math.min(
         this.reconnectDelay * 2, 
@@ -349,14 +448,61 @@ export class GameRealtimeManager {
   }
 
   /**
-   * Unsubscribe from the game channel
+   * Dispose of this manager instance completely
    */
-  unsubscribe(): void {
+  async dispose(): Promise<void> {
+    if (this.isDisposed) {
+      return;
+    }
+    
+    console.log(`[GameRealtimeManager] Disposing instance ${this.instanceId} for game: ${this.gameId}`);
+    this.isDisposed = true;
+    
+    // Remove from registry if this instance is registered
+    if (connectionRegistry.get(this.gameId) === this) {
+      connectionRegistry.delete(this.gameId);
+    }
+    
     if (this.channel) {
-      this.channel.unsubscribe();
+      try {
+        // Wait for unsubscribe to complete
+        await new Promise<void>((resolve) => {
+          this.channel!.unsubscribe();
+          // Give Supabase time to process the unsubscribe
+          setTimeout(resolve, 100);
+        });
+      } catch (error) {
+        console.warn(`[GameRealtimeManager] Error during channel unsubscribe for instance ${this.instanceId}:`, error);
+      }
       this.channel = null;
     }
+    
     this.isConnected = false;
+    
+    // Clear any pending reconnection attempts
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    
+    // Reset connection state
+    this.reconnectAttempts = 0;
+    this.reconnectDelay = 1000;
+    
+    // Clear handlers
+    this.onEventHandler = undefined;
+    this.onSnapshotHandler = undefined;
+    this.onConnectionStatusHandler = undefined;
+  }
+
+  /**
+   * Unsubscribe from the game channel (legacy method, use dispose instead)
+   */
+  unsubscribe(): void {
+    // Use dispose for proper cleanup
+    this.dispose().catch(error => {
+      console.warn(`[GameRealtimeManager] Error during dispose from unsubscribe:`, error);
+    });
   }
 
   /**

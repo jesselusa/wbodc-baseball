@@ -128,7 +128,9 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
   // Disconnect function
   const disconnect = useCallback(() => {
     if (managerRef.current) {
-      managerRef.current.unsubscribe();
+      managerRef.current.dispose().catch(error => {
+        console.warn(`[useGameEvents] Error during disconnect for game ${gameId}:`, error);
+      });
       managerRef.current = null;
     }
     
@@ -136,7 +138,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
       connected: false,
       reconnecting: false
     });
-  }, []);
+  }, [gameId]);
 
   // Reconnect function
   const reconnect = useCallback(async () => {
@@ -144,26 +146,23 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     await connect();
   }, [disconnect, connect]);
 
-  // Auto-connect on mount if enabled
+  // Auto-connect on mount if enabled, with single cleanup
   useEffect(() => {
     if (autoConnect && gameId) {
       connect();
     }
 
-    // Cleanup on unmount or gameId change
-    return () => {
-      disconnect();
-    };
-  }, [gameId, autoConnect]); // Intentionally not including connect/disconnect to avoid loops
-
-  // Cleanup on unmount
-  useEffect(() => {
+    // Single cleanup function that handles all cases
     return () => {
       if (managerRef.current) {
-        managerRef.current.unsubscribe();
+        console.log(`[useGameEvents] Cleaning up connection for game: ${gameId}`);
+        managerRef.current.dispose().catch(error => {
+          console.warn(`[useGameEvents] Error during cleanup for game ${gameId}:`, error);
+        });
+        managerRef.current = null;
       }
     };
-  }, []);
+  }, [gameId, autoConnect]); // Intentionally not including connect/disconnect to avoid loops
 
   // Derived state
   const isConnected = connectionStatus.connected;

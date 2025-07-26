@@ -117,7 +117,9 @@ export function useMultiGameScores(gameIds: string[]): {
   // Use a single effect to manage all game subscriptions
   useEffect(() => {
     const managers: Array<any> = [];
+    const timeouts: Array<ReturnType<typeof setTimeout>> = [];
     const newConnectionStates = new Map<string, { connected: boolean; hasError: boolean }>();
+    let isCleanedUp = false;
 
     // Initialize connection states
     gameIds.forEach(gameId => {
@@ -125,56 +127,99 @@ export function useMultiGameScores(gameIds: string[]): {
     });
     setConnectionStates(newConnectionStates);
 
-    // Create subscriptions for each game
-    gameIds.forEach(gameId => {
-      // Create a subscription using the realtime manager
-      import('../lib/realtime').then(({ createGameSubscription }) => {
-        const manager = createGameSubscription(gameId, {
-          granularity: 'summary',
-          includeSnapshots: true,
-          includeEvents: false // Only need snapshots for scores
-        });
+    console.log(`[useMultiGameScores] Setting up ${gameIds.length} connections`);
 
-        manager.subscribe({
-          onSnapshot: (snapshot) => {
-            // Update scores
-            setScores(prev => {
-              const newScores = new Map(prev);
-              newScores.set(gameId, {
-                home: snapshot.score_home,
-                away: snapshot.score_away,
-                status: snapshot.status
-              });
-              return newScores;
-            });
+    // Create subscriptions for each game with staggered timing
+    gameIds.forEach((gameId, index) => {
+      const timeout = setTimeout(() => {
+        // Check if component was unmounted before timeout fired
+        if (isCleanedUp) {
+          console.log(`[useMultiGameScores] Skipping connection for ${gameId} - component unmounted`);
+          return;
+        }
 
-            // Update connection state
-            setConnectionStates(prev => {
-              const newStates = new Map(prev);
-              newStates.set(gameId, { connected: true, hasError: false });
-              return newStates;
-            });
-          },
-          onConnectionStatus: (status) => {
-            // Update connection state
-            setConnectionStates(prev => {
-              const newStates = new Map(prev);
-              newStates.set(gameId, { 
-                connected: status.connected, 
-                hasError: !!status.error 
-              });
-              return newStates;
-            });
+        import('../lib/realtime').then(({ createGameSubscription }) => {
+          // Double-check cleanup state after async import
+          if (isCleanedUp) {
+            console.log(`[useMultiGameScores] Skipping connection for ${gameId} - component unmounted during import`);
+            return;
           }
-        });
 
-        managers.push(manager);
-      });
+          console.log(`[useMultiGameScores] Creating connection for game: ${gameId}`);
+          const manager = createGameSubscription(gameId, {
+            granularity: 'summary',
+            includeSnapshots: true,
+            includeEvents: false // Only need snapshots for scores
+          });
+
+          manager.subscribe({
+            onSnapshot: (snapshot) => {
+              // Update scores only if not cleaned up
+              if (!isCleanedUp) {
+                setScores(prev => {
+                  const newScores = new Map(prev);
+                  newScores.set(gameId, {
+                    home: snapshot.score_home,
+                    away: snapshot.score_away,
+                    status: snapshot.status
+                  });
+                  return newScores;
+                });
+
+                // Update connection state
+                setConnectionStates(prev => {
+                  const newStates = new Map(prev);
+                  newStates.set(gameId, { connected: true, hasError: false });
+                  return newStates;
+                });
+              }
+            },
+            onConnectionStatus: (status) => {
+              // Update connection state only if not cleaned up
+              if (!isCleanedUp) {
+                setConnectionStates(prev => {
+                  const newStates = new Map(prev);
+                  newStates.set(gameId, { 
+                    connected: status.connected, 
+                    hasError: !!status.error 
+                  });
+                  return newStates;
+                });
+              }
+            }
+          });
+
+          managers.push(manager);
+        }).catch(error => {
+          console.error(`[useMultiGameScores] Error creating connection for game ${gameId}:`, error);
+        });
+      }, index * 100); // Stagger by 100ms per connection
+
+      timeouts.push(timeout);
     });
 
     // Cleanup function
     return () => {
-      managers.forEach(manager => manager.unsubscribe());
+      console.log(`[useMultiGameScores] Cleaning up - ${managers.length} active connections, ${timeouts.length} pending timeouts`);
+      isCleanedUp = true;
+
+      // Clear all pending timeouts
+      timeouts.forEach(timeout => clearTimeout(timeout));
+
+      // Clean up all active connections
+      managers.forEach(async (manager, index) => {
+        if (manager && typeof manager.dispose === 'function') {
+          try {
+            await manager.dispose();
+          } catch (error) {
+            console.warn(`[useMultiGameScores] Error disposing manager ${index}:`, error);
+          }
+        }
+      });
+
+      // Clear arrays
+      managers.length = 0;
+      timeouts.length = 0;
     };
   }, [gameIds.join(',')]); // Use join to create stable dependency
 
