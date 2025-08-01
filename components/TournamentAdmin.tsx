@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData } from '../lib/types';
+import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData, TeamDragDrop, TournamentRecord } from '../lib/types';
 import { 
   fetchPlayers, 
   savePlayer, 
@@ -48,6 +48,8 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
     num_teams: 4
   });
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
+  const [teams, setTeams] = useState<TeamDragDrop[]>([]);
+  const [currentTournament, setCurrentTournament] = useState<TournamentRecord | null>(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState<'players' | 'teams' | 'settings'>('players');
@@ -361,6 +363,11 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
     setHasUnsavedChanges(true);
   };
 
+  const handleTeamsChange = (newTeams: TeamDragDrop[]) => {
+    setTeams(newTeams);
+    setHasUnsavedChanges(true);
+  };
+
   const getTabErrors = (tab: string) => {
     return validationErrors.filter(error => error.field === tab).length;
   };
@@ -547,83 +554,7 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
           )}
         </div>
         
-        <div style={{
-          display: 'flex',
-          gap: '12px'
-        }}>
-          <button
-            onClick={handleReset}
-            disabled={saving}
-            style={{
-              padding: '12px 24px',
-              background: '#f3f4f6',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#374151',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              opacity: saving ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!saving) {
-                e.currentTarget.style.background = '#e5e7eb';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!saving) {
-                e.currentTarget.style.background = '#f3f4f6';
-              }
-            }}
-          >
-            Reset
-          </button>
-          <button
-            onClick={handleSaveAll}
-            disabled={saving || validationErrors.length > 0}
-            style={{
-              padding: '12px 24px',
-              background: saving ? '#8b8a94' : 
-                         validationErrors.length > 0 ? '#d1d5db' :
-                         'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: saving || validationErrors.length > 0 ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={(e) => {
-              if (!saving && validationErrors.length === 0) {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!saving && validationErrors.length === 0) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }
-            }}
-          >
-            {saving && (
-              <div style={{
-                width: '16px',
-                height: '16px',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderTop: '2px solid white',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-            )}
-            {saving ? 'Saving...' : 'Save All'}
-          </button>
-        </div>
+
       </div>
 
       {/* Navigation Tabs */}
@@ -708,7 +639,9 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
           <TeamManager
             players={players}
             numTeams={tournamentSettings.num_teams}
+            teams={teams}
             onTeamSizeChange={handleTeamSizeChange}
+            onTeamsChange={handleTeamsChange}
           />
         )}
 
@@ -716,9 +649,12 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
           <TournamentSettings
             tournamentId={tournamentId}
             players={players}
+            teams={teams}
             onSettingsChange={handleSettingsChange}
+            onTournamentChange={setCurrentTournament}
             disabled={settingsLocked}
             isActive={isActive}
+            onReset={handleReset}
           />
         )}
       </div>

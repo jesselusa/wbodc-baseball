@@ -49,13 +49,13 @@ export default function PlayerList({
 
   const filteredPlayers = players.filter(player => {
     // Text search
-    const matchesSearch = player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = !searchQuery || (
+      player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.hometown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.current_town?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.state?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.current_state?.toLowerCase().includes(searchQuery.toLowerCase());
+      player.current_town?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     // Championship filter
     const matchesFilter = filterBy === 'all' ||
@@ -83,14 +83,14 @@ export default function PlayerList({
     return selectedPlayers.some(p => p.id === player.id);
   };
 
-  const getLocationString = (player: Player) => {
-    if (player.current_town && player.current_state) {
-      return `${player.current_town}, ${player.current_state}`;
+  const getLocationText = (player: Player): string => {
+    if (player.current_town) {
+      return player.current_town;
     }
-    if (player.hometown && player.state) {
-      return `${player.hometown}, ${player.state}`;
+    if (player.hometown) {
+      return player.hometown;
     }
-    return 'N/A';
+    return 'Location not specified';
   };
 
   return (
@@ -156,15 +156,15 @@ export default function PlayerList({
                 <div className="flex items-center space-x-3">
                   {/* Profile Picture */}
                   <div className="flex-shrink-0">
-                    {player.profile_picture ? (
+                    {player.avatar_url ? (
                       <img
                         className="h-10 w-10 rounded-full object-cover"
-                        src={player.profile_picture}
+                        src={player.avatar_url}
                         alt={player.name}
                       />
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">
+                        <span className="text-gray-600 font-semibold">
                           {player.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -183,7 +183,7 @@ export default function PlayerList({
                     </div>
                     
                     <div className="flex items-center space-x-4 mt-1">
-                      <span className="text-sm text-gray-500">{getLocationString(player)}</span>
+                      <span className="text-sm text-gray-500">{getLocationText(player)}</span>
                       {(player.championships_won || 0) > 0 && (
                         <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                           {player.championships_won} championship{player.championships_won !== 1 ? 's' : ''}
@@ -240,10 +240,9 @@ export default function PlayerList({
                 </div>
               )}
               
-              {player.hometown && player.state && player.current_town && player.current_state && 
-               (player.hometown !== player.current_town || player.state !== player.current_state) && (
+              {player.hometown && player.current_town && player.hometown !== player.current_town && (
                 <div className="mt-1 text-xs text-gray-400">
-                  Originally from: {player.hometown}, {player.state}
+                  Originally from: {player.hometown}
                 </div>
               )}
             </div>

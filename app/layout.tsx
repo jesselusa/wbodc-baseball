@@ -25,17 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <style>{`
-          html, body {
-            overflow-x: hidden;
-            max-width: 100vw;
-          }
-          * {
-            box-sizing: border-box;
-          }
-        `}</style>
-      </head>
+      <head></head>
       <body
         className={`${geist.variable} ${geistMono.variable} antialiased`}
         style={{

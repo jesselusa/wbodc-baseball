@@ -23,9 +23,26 @@ export function LiveScoreboard({
   
   if (!data) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border p-6 text-center ${className}`}>
-        <div className="text-gray-400 text-4xl mb-2">⚾</div>
-        <p className="text-gray-500">No game data available</p>
+      <div 
+        className={className}
+        style={{
+          background: 'white',
+          borderRadius: '12px',
+          border: '1px solid #e4e2e8',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          padding: '48px 24px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}
+      >
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚾</div>
+        <p style={{
+          fontSize: '16px',
+          color: '#6b7280',
+          margin: '0'
+        }}>
+          No game data available
+        </p>
       </div>
     );
   }
@@ -35,7 +52,17 @@ export function LiveScoreboard({
   const awayTeamName = 'away_team_name' in data ? data.away_team_name : 'Away';
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg border-2 overflow-hidden ${className}`}>
+    <div 
+      className={className}
+      style={{
+        background: 'white',
+        borderRadius: '12px',
+        border: '1px solid #e4e2e8',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}
+    >
       {/* Header with game status */}
       <div className={`px-4 sm:px-6 py-3 text-center text-sm font-medium ${
         isInProgress ? 'bg-green-50 text-green-800 border-b border-green-200' : 'bg-gray-50 text-gray-700 border-b'

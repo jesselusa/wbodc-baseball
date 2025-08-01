@@ -25,31 +25,26 @@ export default function PlayerManagement({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'championships_won'>('name');
-  const [formData, setFormData] = useState<PlayerFormData>({
+  const [formData, setFormData] = useState({
     name: '',
     nickname: '',
     email: '',
-    profile_picture: '',
+    avatar_url: '',
     hometown: '',
-    state: '',
     current_town: '',
-    current_state: '',
-    championships_won: 0,
+    championships_won: 0
   });
 
   useEffect(() => {
     if (initialPlayer) {
       setFormData({
-        id: initialPlayer.id,
         name: initialPlayer.name,
         nickname: initialPlayer.nickname || '',
         email: initialPlayer.email || '',
-        profile_picture: initialPlayer.profile_picture || '',
+        avatar_url: initialPlayer.avatar_url || '',
         hometown: initialPlayer.hometown || '',
-        state: initialPlayer.state || '',
         current_town: initialPlayer.current_town || '',
-        current_state: initialPlayer.current_state || '',
-        championships_won: initialPlayer.championships_won || 0,
+        championships_won: initialPlayer.championships_won || 0
       });
     }
   }, [initialPlayer]);
@@ -83,8 +78,8 @@ export default function PlayerManagement({
       newErrors.email = 'Invalid email format';
     }
 
-    if (formData.profile_picture && !isValidUrl(formData.profile_picture)) {
-      newErrors.profile_picture = 'Invalid URL format';
+    if (formData.avatar_url && !isValidUrl(formData.avatar_url)) {
+      newErrors.avatar_url = 'Invalid URL format';
     }
 
     if (formData.championships_won && formData.championships_won < 0) {
@@ -151,17 +146,15 @@ export default function PlayerManagement({
       name: '',
       nickname: '',
       email: '',
-      profile_picture: '',
+      avatar_url: '',
       hometown: '',
-      state: '',
       current_town: '',
-      current_state: '',
       championships_won: 0,
     });
     setErrors({});
   };
 
-  const handleInputChange = (field: keyof PlayerFormData, value: string | number) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -193,15 +186,12 @@ export default function PlayerManagement({
 
   const handleEditPlayer = (player: Player) => {
     setFormData({
-      id: player.id,
       name: player.name,
       nickname: player.nickname || '',
       email: player.email || '',
-      profile_picture: player.profile_picture || '',
+      avatar_url: player.avatar_url || '',
       hometown: player.hometown || '',
-      state: player.state || '',
       current_town: player.current_town || '',
-      current_state: player.current_state || '',
       championships_won: player.championships_won || 0,
     });
     setShowForm(true);
@@ -227,7 +217,7 @@ export default function PlayerManagement({
       {showForm && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {formData.id ? 'Edit Player' : 'Add New Player'}
+            {formData.name ? 'Edit Player' : 'Add New Player'}
           </h3>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -280,21 +270,21 @@ export default function PlayerManagement({
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
 
-              {/* Profile Picture */}
+              {/* Avatar URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Profile Picture URL
+                  Avatar URL
                 </label>
                 <input
                   type="url"
-                  value={formData.profile_picture}
-                  onChange={(e) => handleInputChange('profile_picture', e.target.value)}
+                  value={formData.avatar_url}
+                  onChange={(e) => handleInputChange('avatar_url', e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.profile_picture ? 'border-red-500' : 'border-gray-300'
+                    errors.avatar_url ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter profile picture URL"
+                  placeholder="Enter avatar URL"
                 />
-                {errors.profile_picture && <p className="text-red-500 text-sm mt-1">{errors.profile_picture}</p>}
+                {errors.avatar_url && <p className="text-red-500 text-sm mt-1">{errors.avatar_url}</p>}
               </div>
 
               {/* Hometown */}
@@ -306,22 +296,10 @@ export default function PlayerManagement({
                   type="text"
                   value={formData.hometown}
                   onChange={(e) => handleInputChange('hometown', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.hometown ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter hometown"
-                />
-              </div>
-
-              {/* State */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter state"
                 />
               </div>
 
@@ -334,22 +312,10 @@ export default function PlayerManagement({
                   type="text"
                   value={formData.current_town}
                   onChange={(e) => handleInputChange('current_town', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.current_town ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter current town"
-                />
-              </div>
-
-              {/* Current State */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current State
-                </label>
-                <input
-                  type="text"
-                  value={formData.current_state}
-                  onChange={(e) => handleInputChange('current_state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter current state"
                 />
               </div>
 
@@ -372,13 +338,13 @@ export default function PlayerManagement({
               </div>
             </div>
 
-            {/* Profile Picture Preview */}
-            {formData.profile_picture && isValidUrl(formData.profile_picture) && (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700">Profile Picture Preview:</span>
+            {/* Avatar Preview */}
+            {formData.avatar_url && isValidUrl(formData.avatar_url) && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-600 mb-2">Avatar Preview:</p>
                 <img
-                  src={formData.profile_picture}
-                  alt="Profile preview"
+                  src={formData.avatar_url}
+                  alt="Avatar preview"
                   className="w-16 h-16 rounded-full object-cover border border-gray-300"
                 />
               </div>
@@ -406,7 +372,7 @@ export default function PlayerManagement({
                 disabled={isSubmitting}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
               >
-                {isSubmitting ? 'Saving...' : (formData.id ? 'Update Player' : 'Add Player')}
+                {isSubmitting ? 'Saving...' : (formData.name ? 'Update Player' : 'Add Player')}
               </button>
             </div>
           </form>
@@ -476,10 +442,10 @@ export default function PlayerManagement({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          {player.profile_picture ? (
+                          {player.avatar_url ? (
                             <img
                               className="h-10 w-10 rounded-full object-cover"
-                              src={player.profile_picture}
+                              src={player.avatar_url}
                               alt={player.name}
                             />
                           ) : (
@@ -503,15 +469,13 @@ export default function PlayerManagement({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {player.current_town && player.current_state
-                          ? `${player.current_town}, ${player.current_state}`
-                          : 'N/A'}
+                        {player.current_town && (
+                          <p>Currently: {player.current_town}</p>
+                        )}
+                        {player.hometown && (
+                          <p>From: {player.hometown}</p>
+                        )}
                       </div>
-                      {player.hometown && player.state && (
-                        <div className="text-sm text-gray-500">
-                          From: {player.hometown}, {player.state}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{player.championships_won || 0}</div>

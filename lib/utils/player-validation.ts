@@ -42,29 +42,21 @@ export function validatePlayerData(data: PlayerFormData): ValidationResult {
   }
 
   // Profile picture validation
-  if (data.profile_picture) {
-    if (!isValidUrl(data.profile_picture)) {
-      errors.profile_picture = 'Invalid URL format';
-    } else if (!isImageUrl(data.profile_picture)) {
-      warnings.profile_picture = 'URL does not appear to be an image';
+  if (data.avatar_url) {
+    if (!isValidUrl(data.avatar_url)) {
+      errors.avatar_url = 'Invalid URL format';
+    } else if (!isImageUrl(data.avatar_url)) {
+      errors.avatar_url = 'URL must point to an image file';
     }
   }
 
-  // Location validation
+  // Location validation (hometown and current_town are optional)
   if (data.hometown && data.hometown.length > 100) {
-    errors.hometown = 'Hometown cannot exceed 100 characters';
-  }
-
-  if (data.state && data.state.length > 50) {
-    errors.state = 'State cannot exceed 50 characters';
+    warnings.hometown = 'Hometown should be shorter than 100 characters';
   }
 
   if (data.current_town && data.current_town.length > 100) {
-    errors.current_town = 'Current town cannot exceed 100 characters';
-  }
-
-  if (data.current_state && data.current_state.length > 50) {
-    errors.current_state = 'Current state cannot exceed 50 characters';
+    warnings.current_town = 'Current town should be shorter than 100 characters';
   }
 
   // Championships validation
@@ -77,12 +69,14 @@ export function validatePlayerData(data: PlayerFormData): ValidationResult {
   }
 
   // Cross-field validation
-  if (data.hometown && data.state && data.current_town && data.current_state) {
-    if (data.hometown === data.current_town && data.state === data.current_state) {
+  if (data.hometown && data.current_town) {
+    if (data.hometown === data.current_town) {
       warnings.location = 'Hometown and current location are the same';
     }
   }
 
+  // Clean and prepare data for submission - removed since not in ValidationResult interface
+  
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -95,15 +89,16 @@ export function validatePlayerData(data: PlayerFormData): ValidationResult {
  */
 export function checkForDuplicates(
   playerData: PlayerFormData,
-  existingPlayers: Player[]
+  existingPlayers: Player[],
+  excludePlayerId?: string
 ): DuplicateCheckResult {
   const nameMatch = existingPlayers.find(
-    player => player.id !== playerData.id && 
+    player => player.id !== excludePlayerId && 
     player.name.toLowerCase().trim() === playerData.name.toLowerCase().trim()
   );
 
   const emailMatch = existingPlayers.find(
-    player => player.id !== playerData.id && 
+    player => player.id !== excludePlayerId && 
     player.email && 
     playerData.email && 
     player.email.toLowerCase().trim() === playerData.email.toLowerCase().trim()
@@ -302,7 +297,7 @@ export function normalizePlayerData(data: PlayerFormData): PlayerFormData {
     state: data.state?.trim() || '',
     current_town: data.current_town?.trim() || '',
     current_state: data.current_state?.trim() || '',
-    profile_picture: data.profile_picture?.trim() || '',
+    avatar_url: data.avatar_url?.trim() || '',
     championships_won: data.championships_won || 0
   };
 } 

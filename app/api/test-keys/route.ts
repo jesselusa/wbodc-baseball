@@ -7,7 +7,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Test with anon key (should respect RLS)
 const supabaseAnon = createClient(
   supabaseUrl, 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!
 );
 
 // Test with service role key (should bypass RLS)
@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔑 Testing Supabase key configuration...');
     console.log('Environment:', process.env.NODE_ENV);
-    console.log('Anon key present:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-    console.log('Service role key present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log('Anon key present:', !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY);
+    console.log('Service role key present:', !!process.env.SUPABASE_SECRET_API_KEY);
 
     // Test 1: Basic connection with anon key
     console.log('\n📡 Testing anon key connection...');
@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
 
     // Test 5: Check current environment configuration
     const currentKey = process.env.NODE_ENV === 'development' 
-      ? 'SUPABASE_SERVICE_ROLE_KEY' 
-      : 'NEXT_PUBLIC_SUPABASE_ANON_KEY';
+      ? 'SUPABASE_SECRET_API_KEY' 
+      : 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY';
 
     console.log('\n🎯 Current environment configuration:');
     console.log('NODE_ENV:', process.env.NODE_ENV);

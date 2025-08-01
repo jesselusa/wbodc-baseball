@@ -20,16 +20,14 @@ export default function PlayerEditModal({
   onSave,
   onDelete
 }: PlayerEditModalProps) {
-  const [formData, setFormData] = useState<PlayerFormData>({
+  const [formData, setFormData] = useState({
     name: '',
     nickname: '',
     email: '',
-    profile_picture: '',
+    avatar_url: '',
     hometown: '',
-    state: '',
     current_town: '',
-    current_state: '',
-    championships_won: 0,
+    championships_won: 0
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,16 +39,13 @@ export default function PlayerEditModal({
   useEffect(() => {
     if (player) {
       setFormData({
-        id: player.id,
         name: player.name,
         nickname: player.nickname || '',
         email: player.email || '',
-        profile_picture: player.profile_picture || '',
+        avatar_url: player.avatar_url || '',
         hometown: player.hometown || '',
-        state: player.state || '',
         current_town: player.current_town || '',
-        current_state: player.current_state || '',
-        championships_won: player.championships_won || 0,
+        championships_won: player.championships_won || 0
       });
     }
   }, [player]);
@@ -258,19 +253,19 @@ export default function PlayerEditModal({
               {/* Profile Picture */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Profile Picture URL
+                  Avatar URL
                 </label>
                 <input
                   type="url"
-                  value={formData.profile_picture}
-                  onChange={(e) => handleInputChange('profile_picture', e.target.value)}
+                  placeholder="Avatar URL"
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.profile_picture ? 'border-red-500' : 'border-gray-300'
+                    errors.avatar_url ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Enter profile picture URL"
+                  value={formData.avatar_url}
+                  onChange={(e) => handleInputChange('avatar_url', e.target.value)}
                 />
-                {errors.profile_picture && <p className="text-red-500 text-sm mt-1">{errors.profile_picture}</p>}
-                {warnings.profile_picture && <p className="text-yellow-600 text-sm mt-1">{warnings.profile_picture}</p>}
+                {errors.avatar_url && <p className="text-red-500 text-sm mt-1">{errors.avatar_url}</p>}
+                {warnings.avatar_url && <p className="text-yellow-600 text-sm mt-1">{warnings.avatar_url}</p>}
               </div>
 
               {/* Hometown */}
@@ -280,27 +275,14 @@ export default function PlayerEditModal({
                 </label>
                 <input
                   type="text"
+                  placeholder="Hometown (e.g., Boston, MA)"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.hometown ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   value={formData.hometown}
                   onChange={(e) => handleInputChange('hometown', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter hometown"
                 />
                 {errors.hometown && <p className="text-red-500 text-sm mt-1">{errors.hometown}</p>}
-              </div>
-
-              {/* State */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State
-                </label>
-                <input
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter state"
-                />
-                {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
               </div>
 
               {/* Current Town */}
@@ -310,37 +292,24 @@ export default function PlayerEditModal({
                 </label>
                 <input
                   type="text"
+                  placeholder="Current Location (e.g., New York, NY)"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.current_town ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   value={formData.current_town}
                   onChange={(e) => handleInputChange('current_town', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter current town"
                 />
                 {errors.current_town && <p className="text-red-500 text-sm mt-1">{errors.current_town}</p>}
-              </div>
-
-              {/* Current State */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current State
-                </label>
-                <input
-                  type="text"
-                  value={formData.current_state}
-                  onChange={(e) => handleInputChange('current_state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter current state"
-                />
-                {errors.current_state && <p className="text-red-500 text-sm mt-1">{errors.current_state}</p>}
               </div>
             </div>
 
             {/* Profile Picture Preview */}
-            {formData.profile_picture && isValidUrl(formData.profile_picture) && (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700">Preview:</span>
+            {formData.avatar_url && isValidUrl(formData.avatar_url) && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-600 mb-2">Avatar Preview:</p>
                 <img
-                  src={formData.profile_picture}
-                  alt="Profile preview"
+                  src={formData.avatar_url}
+                  alt="Avatar preview"
                   className="w-16 h-16 rounded-full object-cover border border-gray-300"
                 />
               </div>

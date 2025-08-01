@@ -219,7 +219,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 // For client-side, always use the anon key (RLS will handle security)
 // For server-side API routes, we can use service role key
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 

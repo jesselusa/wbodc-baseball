@@ -19,11 +19,11 @@ export default function TeamsPage() {
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+  // Hydration-safe mobile detection
   useEffect(() => {
-    loadTeamsData();
-    
-    // Check if mobile (client-side only to avoid hydration mismatch)
+    setIsClient(true);
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };

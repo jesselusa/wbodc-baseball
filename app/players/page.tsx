@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Player } from '../../lib/types';
-import { fetchPlayers } from '../../lib/api';
+import { fetchPlayers, getPlayerTeamAssignments } from '../../lib/api';
 import BaseballCard from '../../components/BaseballCard';
 import PlayersTable from '../../components/PlayersTable';
 
@@ -14,6 +14,7 @@ export default function PlayersPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
+  const [playerTeamAssignments, setPlayerTeamAssignments] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     loadPlayers();
@@ -22,9 +23,17 @@ export default function PlayersPage() {
   const loadPlayers = async () => {
     try {
       setLoading(true);
-      const response = await fetchPlayers();
-      if (response.success) {
-        setPlayers(response.data);
+      const [playersResponse, teamAssignmentsResponse] = await Promise.all([
+        fetchPlayers(),
+        getPlayerTeamAssignments()
+      ]);
+      
+      if (playersResponse.success) {
+        setPlayers(playersResponse.data);
+      }
+      
+      if (teamAssignmentsResponse.success) {
+        setPlayerTeamAssignments(teamAssignmentsResponse.data);
       }
     } catch (error) {
       console.error('Error loading players:', error);
@@ -99,6 +108,7 @@ export default function PlayersPage() {
           showEditColumn={false}
           showResultsCount={true}
           isReadOnly={true}
+          playerTeamAssignments={playerTeamAssignments}
         />
 
         {/* Baseball Card */}

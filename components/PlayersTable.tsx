@@ -16,6 +16,7 @@ interface PlayersTableProps {
   showEditColumn?: boolean;
   showResultsCount?: boolean;
   isReadOnly?: boolean;
+  playerTeamAssignments?: Map<string, string>; // player_id -> team_name
 }
 
 export default function PlayersTable({
@@ -32,7 +33,8 @@ export default function PlayersTable({
   showAddButton = false,
   showEditColumn = false,
   showResultsCount = true,
-  isReadOnly = false
+  isReadOnly = false,
+  playerTeamAssignments
 }: PlayersTableProps) {
   const getSortIcon = (field: 'name' | 'championships_won') => {
     if (sortBy !== field) {
@@ -53,6 +55,9 @@ export default function PlayersTable({
       </svg>
     );
   };
+
+  // Check if teams are assigned
+  const hasTeamAssignments = playerTeamAssignments && playerTeamAssignments.size > 0;
 
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -75,146 +80,139 @@ export default function PlayersTable({
   });
 
   const getLocationString = (player: Player) => {
-    return player.current_town || 'N/A';
+    if (player.current_town) {
+      return player.current_town;
+    }
+    return '-';
   };
 
   const getOriginLocationString = (player: Player) => {
-    return player.hometown || 'N/A';
+    if (player.hometown) {
+      return player.hometown;
+    }
+    return '-';
   };
 
   return (
     <>
-      {/* Controls Card */}
-      <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e4e2e8',
-        padding: '24px',
+      {/* Search and Actions Bar */}
+      <div style={{ 
         marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
+        {/* Search and Add Button Row */}
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           gap: '16px',
+          flexWrap: 'wrap'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '16px',
+          {/* Search Input */}
+          <div style={{ 
+            position: 'relative',
+            flexGrow: 1,
+            maxWidth: '400px'
           }}>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              flex: '1',
-              minWidth: '280px'
+              position: 'absolute',
+              left: '16px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none'
             }}>
-              {/* Search */}
-              <div style={{ position: 'relative', flex: '1', maxWidth: '400px' }}>
-                <input
-                  type="text"
-                  placeholder="Search players..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px 12px 44px',
-                    border: '1px solid #e4e2e8',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    background: '#fdfcfe',
-                    color: '#1c1b20',
-                    outline: 'none',
-                    transition: 'all 0.2s ease',
-                    fontFamily: 'inherit'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#8b8a94';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e4e2e8';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#696775'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="M21 21l-4.35-4.35"/>
-                  </svg>
-                </div>
-              </div>
-
-              {/* Results Count */}
-              {showResultsCount && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  background: 'rgba(139, 138, 148, 0.1)',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  color: '#696775',
-                  fontWeight: '500',
-                  whiteSpace: 'nowrap'
-                }}>
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: '#8b8a94'
-                  }}></div>
-                  {sortedPlayers.length} player{sortedPlayers.length !== 1 ? 's' : ''}
-                </div>
-              )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8a94" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
             </div>
-
-            {showAddButton && onAddPlayer && (
-              <button
-                onClick={onAddPlayer}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 24px',
-                  background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(28, 27, 32, 0.15)',
-                  fontFamily: 'inherit'
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Add Player
-              </button>
-            )}
+            <input
+              type="text"
+              placeholder="Search players..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px 12px 44px',
+                border: '1px solid #e4e2e8',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+                color: '#1c1b20',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3b82f6';
+                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e4e2e8';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
           </div>
+
+          {/* Add Player Button */}
+          {showAddButton && onAddPlayer && (
+            <button
+              onClick={onAddPlayer}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="24" y2="13"/>
+                <line x1="24" y1="8" x2="19" y2="13"/>
+              </svg>
+              Add Player
+            </button>
+          )}
         </div>
+
+        {/* Results Count */}
+        {showResultsCount && (
+          <div style={{
+            fontSize: '14px',
+            color: '#696775',
+            fontWeight: '500'
+          }}>
+            {loading ? 'Loading...' : `${sortedPlayers.length} of ${players.length} players`}
+          </div>
+        )}
       </div>
 
-      {/* Players Table */}
+      {/* Table */}
       <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
+        background: 'white',
+        borderRadius: '12px',
         border: '1px solid #e4e2e8',
-        boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden'
       }}>
         {loading ? (
@@ -226,20 +224,26 @@ export default function PlayersTable({
           }}>
             <div style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '12px'
             }}>
               <div style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid #e4e2e8',
-                borderTop: '2px solid #8b8a94',
+                width: '32px',
+                height: '32px',
+                border: '3px solid #e4e2e8',
+                borderTop: '3px solid #3b82f6',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }}></div>
               Loading players...
             </div>
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
           </div>
         ) : sortedPlayers.length === 0 ? (
           <div style={{
@@ -266,7 +270,7 @@ export default function PlayersTable({
             <div style={{ overflowX: 'auto' }}>
               <table style={{ 
                 width: '100%', 
-                minWidth: '800px',
+                minWidth: hasTeamAssignments ? '1000px' : '800px',
                 borderCollapse: 'collapse' 
               }}>
                 <thead>
@@ -310,7 +314,6 @@ export default function PlayersTable({
                         {getSortIcon('name')}
                       </button>
                     </th>
-
                     <th style={{
                       padding: '20px 24px',
                       textAlign: 'left',
@@ -320,7 +323,7 @@ export default function PlayersTable({
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px'
                     }}>
-                      Location
+                      CURRENT LOCATION
                     </th>
                     <th style={{
                       padding: '20px 24px',
@@ -331,8 +334,21 @@ export default function PlayersTable({
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px'
                     }}>
-                      {isReadOnly ? 'Hometown' : 'From'}
+                      HOMETOWN
                     </th>
+                    {hasTeamAssignments && (
+                      <th style={{
+                        padding: '20px 24px',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#696775',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        TEAM
+                      </th>
+                    )}
                     <th style={{
                       padding: '20px 24px',
                       textAlign: 'left',
@@ -369,6 +385,7 @@ export default function PlayersTable({
                         {getSortIcon('championships_won')}
                       </button>
                     </th>
+
                     {showEditColumn && (
                       <th style={{
                         padding: '20px 24px',
@@ -491,6 +508,39 @@ export default function PlayersTable({
                       }}>
                         {getOriginLocationString(player)}
                       </td>
+                      {hasTeamAssignments && (
+                        <td style={{ 
+                          padding: '20px 24px',
+                          fontSize: '14px',
+                          color: '#1c1b20'
+                        }}>
+                          {playerTeamAssignments?.get(player.id) ? (
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '4px 12px',
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                              color: 'white',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '600'
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                              </svg>
+                              {playerTeamAssignments.get(player.id)}
+                            </div>
+                          ) : (
+                            <span style={{ color: '#8b8a94', fontSize: '12px', fontStyle: 'italic' }}>
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td style={{ padding: '20px 24px' }}>
                         <div style={{
                           display: 'flex',

@@ -52,6 +52,60 @@ export interface Tournament {
   updated_at: string;
 }
 
+// Tournament system types for historical tracking (uses existing tournaments table)
+export interface TournamentRecord {
+  id: string;
+  name: string; // tournament name
+  start_date?: string; // ISO date string
+  end_date?: string; // ISO date string  
+  location: string;
+  winner?: string;
+  tournament_number: number;
+  locked_status: boolean;
+  status: 'upcoming' | 'active' | 'completed'; // existing status field
+  // Tournament settings
+  pool_play_games: number;
+  pool_play_innings: number;
+  bracket_type: BracketType;
+  bracket_innings: number;
+  final_innings: number;
+  num_teams: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Utility function to get year from tournament start_date
+export function getTournamentYear(tournament: TournamentRecord): number {
+  if (tournament.start_date) {
+    return new Date(tournament.start_date).getFullYear();
+  }
+  return new Date().getFullYear(); // fallback to current year
+}
+
+export interface TournamentTeamRecord {
+  id: string;
+  tournament_id: string;
+  team_name: string;
+  created_at: string;
+}
+
+export interface TournamentPlayerAssignment {
+  id: string;
+  tournament_id: string;
+  player_id: string;
+  team_id: string;
+  created_at: string;
+}
+
+// Extended types with relationships
+export interface TournamentWithTeams extends TournamentRecord {
+  teams: TournamentTeamWithPlayers[];
+}
+
+export interface TournamentTeamWithPlayers extends TournamentTeamRecord {
+  players: Player[];
+}
+
 // Tournament Admin Types
 export type BracketType = 'single_elimination' | 'double_elimination';
 

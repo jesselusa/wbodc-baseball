@@ -22,206 +22,245 @@ interface GameHeaderProps {
   tournament?: Tournament;
 }
 
-// Consistent color scheme matching home page
-const colors = {
-  background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-  cardBackground: '#ffffff',
-  primaryText: '#1c1b20',
-  secondaryText: '#312f36',
-  tertiaryText: '#696775',
-  border: '#e5e3e8',
-  accent: '#696775',
-};
+export default function GameHeader({ homeTeam, awayTeam, status = 'scheduled', timeStatus, tournament }: GameHeaderProps) {
+  const getStatusStyle = () => {
+    switch (status) {
+      case 'in_progress':
+        return {
+          background: '#dcfce7',
+          color: '#166534',
+          border: '1px solid #bbf7d0',
+          label: timeStatus || 'Live'
+        };
+      case 'completed':
+        return {
+          background: '#f3f4f6',
+          color: '#374151',
+          border: '1px solid #d1d5db',
+          label: timeStatus || 'Final'
+        };
+      default:
+        return {
+          background: '#fefce8',
+          color: '#a16207',
+          border: '1px solid #fde047',
+          label: timeStatus || 'Scheduled'
+        };
+    }
+  };
 
-const statusStyles = {
-  in_progress: {
-    background: '#d1fadf',
-    color: '#15803d',
-    label: 'Live',
-  },
-  completed: {
-    background: '#e5e7eb',
-    color: '#374151',
-    label: 'Final',
-  },
-  scheduled: {
-    background: '#f3f2f4',
-    color: colors.secondaryText,
-    label: 'Scheduled',
-  },
-};
+  const statusStyle = getStatusStyle();
 
-const TeamBlock: React.FC<{ team: Team; side: 'home' | 'away' }> = ({ team, side }) => (
-  <div 
-    className="team-block"
-    style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      minWidth: 'clamp(60px, 15vw, 80px)',
-      flex: 1,
-    }}
-  >
-    <div 
-      className={`team-identifier ${side}`} 
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        minWidth: 'clamp(28px, 8vw, 32px)', 
-        minHeight: 'clamp(28px, 8vw, 32px)',
-      }}
-    >
-      {team.logoUrl ? (
-        <img 
-          src={team.logoUrl} 
-          alt={team.name + ' logo'} 
-          className="team-logo" 
-          style={{ 
-            width: 'clamp(28px, 8vw, 32px)', 
-            height: 'clamp(28px, 8vw, 32px)', 
-            borderRadius: '50%' 
-          }} 
-        />
-      ) : (
-        <span 
-          className="team-initials" 
-          style={{ 
-            fontWeight: 700, 
-            fontSize: 'clamp(16px, 5vw, 20px)'
-          }}
-        >
-          {team.initials || team.name.charAt(0)}
-        </span>
-      )}
-    </div>
-    <span 
-      className="team-name" 
-      style={{ 
-        marginTop: 4, 
-        fontWeight: 500, 
-        fontSize: 'clamp(12px, 3.5vw, 16px)',
-        textAlign: 'center',
-        lineHeight: 1.2,
-        maxWidth: '100%',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {team.name}
-    </span>
-    <span 
-      className="team-score" 
-      style={{ 
-        marginTop: 2, 
-        fontWeight: 700, 
-        fontSize: 'clamp(20px, 7vw, 28px)', 
-        color: colors.primaryText 
-      }}
-    >
-      {team.score ?? ''}
-    </span>
-  </div>
-);
-
-const GameHeader: React.FC<GameHeaderProps> = ({ homeTeam, awayTeam, status = 'scheduled', timeStatus, tournament }) => {
-  const badge = statusStyles[status] || statusStyles.scheduled;
   return (
-    <div
-      className="game-header-card"
-      style={{
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        padding: 'clamp(16px, 4vw, 24px)',
-        borderRadius: 16,
-        background: colors.cardBackground,
-        boxShadow: '0 2px 12px 0 rgba(105, 103, 117, 0.08)',
-        border: `1.5px solid ${colors.border}`,
-        marginBottom: 16,
-      }}
-    >
-      {/* Tournament context */}
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      border: '1px solid #e4e2e8',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      overflow: 'hidden',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      position: 'relative',
+      width: '100%',
+      maxWidth: '600px',
+      margin: '0 auto'
+    }}>
+      {/* Tournament Header */}
       {tournament && (
         <div style={{
+          background: '#f9fafb',
+          borderBottom: '1px solid #e4e2e8',
+          padding: '12px 20px',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          background: '#f3f2f4',
-          color: colors.secondaryText,
-          borderRadius: 999,
-          padding: '2px 14px',
-          fontWeight: 600,
-          fontSize: 'clamp(12px, 3.5vw, 14px)',
-          marginBottom: 12,
-          alignSelf: 'flex-start',
-          maxWidth: '70%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          justifyContent: 'space-between'
         }}>
-          {tournament.logo_url && (
-            <img 
-              src={tournament.logo_url} 
-              alt={tournament.name + ' logo'} 
-              style={{ 
-                width: 'clamp(16px, 4vw, 20px)', 
-                height: 'clamp(16px, 4vw, 20px)', 
-                borderRadius: '50%',
-                flexShrink: 0,
-              }} 
-            />
-          )}
-          <span>{tournament.name}</span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            {tournament.logo_url && (
+              <img 
+                src={tournament.logo_url} 
+                alt={`${tournament.name} logo`}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  objectFit: 'cover'
+                }}
+              />
+            )}
+            <span style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151'
+            }}>
+              {tournament.name}
+            </span>
+          </div>
+          
+          {/* Status Badge */}
+          <span style={{
+            padding: '4px 8px',
+            borderRadius: '9999px',
+            fontSize: '12px',
+            fontWeight: '500',
+            background: statusStyle.background,
+            color: statusStyle.color,
+            border: statusStyle.border
+          }}>
+            {statusStyle.label}
+          </span>
         </div>
       )}
-      {/* Status badge */}
-      <span
-        style={{
-          position: 'absolute',
-          top: 'clamp(12px, 3vw, 16px)',
-          right: 'clamp(16px, 4vw, 24px)',
-          background: badge.background,
-          color: badge.color,
-          padding: '4px 14px',
-          borderRadius: 999,
-          fontWeight: 600,
-          fontSize: 'clamp(12px, 3.5vw, 14px)',
-          letterSpacing: 0.5,
-          boxShadow: '0 1px 4px 0 rgba(80, 60, 120, 0.06)',
-        }}
-      >
-        {timeStatus || badge.label}
-      </span>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        gap: 'clamp(20px, 8vw, 40px)', 
-        width: '100%' 
-      }}>
-        <TeamBlock team={awayTeam} side="away" />
-        <div 
-          className="vs" 
-          style={{ 
-            fontWeight: 600, 
-            fontSize: 'clamp(16px, 5vw, 22px)', 
-            color: colors.tertiaryText, 
-            minWidth: 'clamp(24px, 6vw, 40px)', 
-            textAlign: 'center',
-            flexShrink: 0,
-          }}
-        >
-          vs
+
+      {/* Game Matchup */}
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          gap: '20px',
+          alignItems: 'center'
+        }}>
+          {/* Away Team */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '8px',
+              fontSize: '18px',
+              fontWeight: '700',
+              color: '#374151'
+            }}>
+              {awayTeam.logoUrl ? (
+                <img 
+                  src={awayTeam.logoUrl} 
+                  alt={`${awayTeam.name} logo`}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                awayTeam.initials || awayTeam.name.charAt(0)
+              )}
+            </div>
+            <div style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '4px',
+              lineHeight: '1.2'
+            }}>
+              {awayTeam.name}
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#1f2937'
+            }}>
+              {awayTeam.score ?? '-'}
+            </div>
+          </div>
+
+          {/* VS */}
+          <div style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#6b7280',
+            padding: '0 8px'
+          }}>
+            VS
+          </div>
+
+          {/* Home Team */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '8px',
+              fontSize: '18px',
+              fontWeight: '700',
+              color: '#374151'
+            }}>
+              {homeTeam.logoUrl ? (
+                <img 
+                  src={homeTeam.logoUrl} 
+                  alt={`${homeTeam.name} logo`}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                homeTeam.initials || homeTeam.name.charAt(0)
+              )}
+            </div>
+            <div style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '4px',
+              lineHeight: '1.2'
+            }}>
+              {homeTeam.name}
+            </div>
+            <div style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#1f2937'
+            }}>
+              {homeTeam.score ?? '-'}
+            </div>
+          </div>
         </div>
-        <TeamBlock team={homeTeam} side="home" />
       </div>
+
+      {/* Status Badge for mobile when no tournament */}
+      {!tournament && (
+        <div style={{
+          position: 'absolute',
+          top: '16px',
+          right: '16px'
+        }}>
+          <span style={{
+            padding: '4px 8px',
+            borderRadius: '9999px',
+            fontSize: '12px',
+            fontWeight: '500',
+            background: statusStyle.background,
+            color: statusStyle.color,
+            border: statusStyle.border
+          }}>
+            {statusStyle.label}
+          </span>
+        </div>
+      )}
     </div>
   );
-};
-
-export default GameHeader; 
+} 
