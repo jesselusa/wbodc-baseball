@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import YearSelector from '../../components/YearSelector';
 import GameResultsList from '../../components/GameResultsList';
 import { useHistoricalGames } from '../../hooks/useHistoricalGames';
 
-export default function ResultsPage() {
+function ResultsContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const searchParams = useSearchParams();
@@ -288,5 +288,38 @@ export default function ResultsPage() {
       )}
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+      minHeight: '100vh',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: '#1c1b20',
+      paddingTop: '64px'
+    }}>
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto', 
+        padding: '32px 24px'
+      }}>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+          <span className="text-lg font-medium" style={{ color: '#312f36' }}>
+            Loading results...
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResultsContent />
+    </Suspense>
   );
 } 

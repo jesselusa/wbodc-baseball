@@ -166,6 +166,7 @@ export interface TournamentSettingsFormData {
   bracket_innings: number;
   final_innings: number;
   num_teams: number;
+  team_size: number;
 }
 
 export interface BracketStanding {

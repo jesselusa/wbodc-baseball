@@ -99,6 +99,7 @@ const mockTournamentSettings: TournamentSettingsFormData = {
   bracket_innings: 5,
   final_innings: 7,
   num_teams: 2,
+  team_size: 3,
 };
 
 describe('TournamentAdmin Integration Tests', () => {

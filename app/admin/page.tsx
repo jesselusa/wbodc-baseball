@@ -48,7 +48,8 @@ export default function AdminPage() {
     bracket_type: 'single_elimination',
     bracket_innings: 3,
     final_innings: 5,
-    num_teams: 4
+    num_teams: 4,
+    team_size: 3
   });
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [playerTeamAssignments, setPlayerTeamAssignments] = useState<Map<string, string>>(new Map());
@@ -166,7 +167,8 @@ export default function AdminPage() {
           bracket_type: configResponse.data.bracket_type,
           bracket_innings: configResponse.data.bracket_innings,
           final_innings: configResponse.data.final_innings,
-          num_teams: configResponse.data.team_size
+          num_teams: configResponse.data.num_teams || configResponse.data.team_size,
+          team_size: configResponse.data.team_size
         });
         setSettingsLocked(configResponse.data.settings_locked);
       }

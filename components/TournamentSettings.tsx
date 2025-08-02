@@ -26,7 +26,8 @@ const getDefaultTournamentSettings = (): TournamentSettingsFormData => ({
   bracket_type: 'single_elimination',
   bracket_innings: 3,
   final_innings: 5,
-  num_teams: 4
+  num_teams: 4,
+  team_size: 3
 });
 
 export default function TournamentSettings({
@@ -185,7 +186,8 @@ export default function TournamentSettings({
             bracket_type: response.data.bracket_type,
             bracket_innings: response.data.bracket_innings,
             final_innings: response.data.final_innings,
-            num_teams: response.data.num_teams
+            num_teams: response.data.num_teams,
+            team_size: Math.ceil(players.length / response.data.num_teams)
           };
           setLocalSettings(tournamentSettings);
           onSettingsChange?.(tournamentSettings);

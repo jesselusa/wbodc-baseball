@@ -140,13 +140,14 @@ export function checkForDuplicates(
  */
 export function checkSimilarPlayers(
   playerData: PlayerFormData,
-  existingPlayers: Player[]
+  existingPlayers: Player[],
+  excludePlayerId?: string
 ): Player[] {
   const similarPlayers: Player[] = [];
   const targetName = playerData.name.toLowerCase().trim();
 
   for (const player of existingPlayers) {
-    if (player.id === playerData.id) continue;
+    if (player.id === excludePlayerId) continue;
 
     const playerName = player.name.toLowerCase().trim();
     
@@ -177,7 +178,7 @@ export function validateTournamentReadiness(player: Player): ValidationResult {
     errors.name = 'Name is required for tournament participation';
   }
 
-  if (!player.current_town || !player.current_state) {
+  if (!player.current_town) {
     warnings.location = 'Current location is recommended for tournament records';
   }
 
@@ -294,9 +295,7 @@ export function normalizePlayerData(data: PlayerFormData): PlayerFormData {
     nickname: data.nickname?.trim() || '',
     email: data.email?.toLowerCase().trim() || '',
     hometown: data.hometown?.trim() || '',
-    state: data.state?.trim() || '',
     current_town: data.current_town?.trim() || '',
-    current_state: data.current_state?.trim() || '',
     avatar_url: data.avatar_url?.trim() || '',
     championships_won: data.championships_won || 0
   };

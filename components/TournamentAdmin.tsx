@@ -45,7 +45,8 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
     bracket_type: 'single_elimination',
     bracket_innings: 3,
     final_innings: 5,
-    num_teams: 4
+    num_teams: 4,
+    team_size: 3
   });
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [teams, setTeams] = useState<TeamDragDrop[]>([]);
@@ -137,7 +138,8 @@ const TournamentAdmin: React.FC<TournamentAdminProps> = ({
             bracket_type: config.bracket_type,
             bracket_innings: config.bracket_innings,
             final_innings: config.final_innings,
-            num_teams: Math.ceil(playersResponse.data.length / config.team_size)
+            num_teams: Math.ceil(playersResponse.data.length / config.team_size),
+            team_size: config.team_size
           });
           setIsActive(config.is_active);
           setSettingsLocked(config.settings_locked);
