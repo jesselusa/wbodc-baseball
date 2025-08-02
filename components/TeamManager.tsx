@@ -508,13 +508,13 @@ export default function TeamManager({
   const setTeamsState = (newTeams: TeamDragDrop[] | ((prev: TeamDragDrop[]) => TeamDragDrop[])) => {
     if (typeof newTeams === 'function') {
       const updatedTeams = newTeams(teams);
-      if (onTeamsChange) {
+      if (externalTeams && onTeamsChange) {
         onTeamsChange(updatedTeams);
       } else {
         setTeams(updatedTeams);
       }
     } else {
-      if (onTeamsChange) {
+      if (externalTeams && onTeamsChange) {
         onTeamsChange(newTeams);
       } else {
         setTeams(newTeams);
@@ -564,28 +564,41 @@ export default function TeamManager({
     // setTeamSize(propTeamSize); // This line is removed as per the new_code
   }, [teamSize]);
 
-  // Generate initial teams based on desired number of teams
+  // Initialize teams - use external teams if provided, otherwise generate initial teams
   useEffect(() => {
     if (!isClient) return;
     
-    const teamCount = Math.max(2, numTeams);
-    const initialTeams: TeamDragDrop[] = [];
-    
-    for (let i = 0; i < teamCount; i++) {
-      initialTeams.push({
-        id: `team-${i + 1}`,
-        name: `Team ${i + 1}`,
-        players: [],
-        isLocked: false,
-        color: `hsl(${(i * 360) / teamCount}, 70%, 60%)`,
-      });
+    if (externalTeams && externalTeams.length > 0) {
+      // Use external teams if provided
+      setTeams(externalTeams);
+    } else {
+      // Generate initial teams based on desired number of teams
+      const teamCount = Math.max(2, numTeams);
+      const initialTeams: TeamDragDrop[] = [];
+      
+      for (let i = 0; i < teamCount; i++) {
+        initialTeams.push({
+          id: `team-${i + 1}`,
+          name: `Team ${i + 1}`,
+          players: [],
+          isLocked: false,
+          color: `hsl(${(i * 360) / teamCount}, 70%, 60%)`,
+        });
+      }
+      
+      setTeams(initialTeams);
     }
-    
-    setTeamsState(initialTeams);
-  }, [players.length, numTeams, isClient]);
+  }, [numTeams, isClient, externalTeams]);
 
   // Filter available players (not assigned to any team)
   const availablePlayers = useMemo(() => {
+    if (!teams || teams.length === 0) {
+      // If no teams exist, all players are available
+      return players.filter(player => 
+        player.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
     const assignedPlayerIds = new Set(teams.flatMap(team => team.players.map(p => p.id)));
     return players.filter(player => 
       !assignedPlayerIds.has(player.id) && 
@@ -611,6 +624,7 @@ export default function TeamManager({
   // Randomize teams functionality
   const randomizeTeams = () => {
     if (isLocked || !isClient) return; // Don't randomize during SSR
+    if (!teams || teams.length === 0) return; // Don't randomize if no teams exist
     
     const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
     const newTeams = teams.map(team => ({ ...team, players: [] }));
@@ -624,12 +638,22 @@ export default function TeamManager({
   };
 
   const clearLocalTeams = () => {
+    if (!teams || teams.length === 0) return; // Don't clear if no teams exist
+    
     setTeamsState(prevTeams => 
       prevTeams.map(team => ({ ...team, players: [] }))
     );
   };
 
   const handleClearAllPlayers = () => {
+    if (!teams || teams.length === 0) {
+      // If no teams exist, just call the API clear function
+      if (onClearAllPlayers) {
+        onClearAllPlayers();
+      }
+      return;
+    }
+    
     // Check if any team has players assigned
     const hasAssignedPlayers = teams.some(team => team.players.length > 0);
     

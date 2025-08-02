@@ -33,6 +33,13 @@ export default function TeamsPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Load teams data on component mount
+  useEffect(() => {
+    if (isClient) {
+      loadTeamsData();
+    }
+  }, [isClient]);
+
   const loadTeamsData = async () => {
     try {
       setLoading(true);
@@ -158,8 +165,23 @@ export default function TeamsPage() {
     );
   }
 
-  // Show placeholder if tournament hasn't started AND no teams exist
-  if (!tournamentStarted && teams.length === 0) {
+  // Helper to determine if we should show coming soon for 2025 or when no teams exist
+  const shouldShowComingSoon = () => {
+    const currentYear = new Date().getFullYear();
+    
+    // If it's 2025 and no teams exist, or tournament hasn't started yet
+    if (currentYear === 2025) {
+      return teams.length === 0;
+    }
+    
+    // For other years, show coming soon if no teams exist
+    return teams.length === 0;
+  };
+
+  const showComingSoon = shouldShowComingSoon();
+
+  // Show "Teams Coming Soon" placeholder
+  if (showComingSoon) {
     return (
       <div style={{ 
         maxWidth: '1400px', 
@@ -188,76 +210,123 @@ export default function TeamsPage() {
         <div style={{
           background: 'white',
           borderRadius: '12px',
-          border: '2px dashed #e4e2e8',
-          padding: '64px 32px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          border: '1px solid #e4e2e8',
+          padding: isMobile ? '32px 24px' : '48px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          textAlign: 'center'
         }}>
           <div style={{
             width: '80px',
             height: '80px',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
             borderRadius: '50%',
-            backgroundColor: 'rgba(139, 138, 148, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 24px'
+            margin: '0 auto 24px auto'
           }}>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8b8a94" strokeWidth="2">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
-          <h3 style={{
-            fontSize: '20px',
+          
+          <h2 style={{
+            fontSize: isMobile ? '24px' : '28px',
             fontWeight: '600',
             color: '#1c1b20',
-            margin: '0 0 12px 0'
+            margin: '0 0 16px 0'
           }}>
-            Teams Will Show After Tournament Setup
-          </h3>
+            Teams Coming Soon
+          </h2>
+          
           <p style={{
-            fontSize: '16px',
-            color: '#696775',
-            margin: '0 0 24px 0',
-            lineHeight: '1.5',
-            maxWidth: '400px',
-            marginLeft: 'auto',
-            marginRight: 'auto'
+            fontSize: isMobile ? '16px' : '18px',
+            color: '#6b7280',
+            margin: '0 0 32px 0',
+            lineHeight: '1.6'
           }}>
-            Once the tournament is configured and teams are locked in the admin panel, 
-            you'll see all teams, their players, and current standings here.
+            {new Date().getFullYear() === 2025 
+              ? 'Tournament teams will be available once the 2025 tournament begins.'
+              : 'This page will display tournament teams, players, and standings once teams are configured.'
+            }
           </p>
-          <a 
-            href="/admin" 
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              color: 'white',
-              textDecoration: 'none',
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gap: '24px',
+            maxWidth: '600px',
+            margin: '0 auto'
+          }}>
+            <div style={{
+              padding: '20px',
+              background: 'rgba(59, 130, 246, 0.05)',
               borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'transform 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-            Go to Tournament Admin
-          </a>
+              border: '1px solid rgba(59, 130, 246, 0.1)'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#3b82f6',
+                marginBottom: '8px'
+              }}>
+                TEAM ROSTERS
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: '#6b7280'
+              }}>
+                Player assignments & lineups
+              </div>
+            </div>
+
+            <div style={{
+              padding: '20px',
+              background: 'rgba(16, 185, 129, 0.05)',
+              borderRadius: '8px',
+              border: '1px solid rgba(16, 185, 129, 0.1)'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#10b981',
+                marginBottom: '8px'
+              }}>
+                STANDINGS
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: '#6b7280'
+              }}>
+                Win-loss records & rankings
+              </div>
+            </div>
+
+            <div style={{
+              padding: '20px',
+              background: 'rgba(245, 158, 11, 0.05)',
+              borderRadius: '8px',
+              border: '1px solid rgba(245, 158, 11, 0.1)'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#f59e0b',
+                marginBottom: '8px'
+              }}>
+                STATS
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: '#6b7280'
+              }}>
+                Player & team statistics
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

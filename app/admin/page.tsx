@@ -944,8 +944,8 @@ export default function AdminPage() {
           {activeTab === 'teams' && (
             <TeamManager
               players={players}
+              teamSize={tournamentSettings.team_size}
               numTeams={tournamentSettings.num_teams}
-              teams={currentTeams}
               onTeamSizeChange={handleTeamSizeChange}
               onTeamsChange={setCurrentTeams}
               onSaveTeams={handleSaveTeams}

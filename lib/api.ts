@@ -1429,7 +1429,7 @@ export async function saveTournamentConfig(config: {
         bracket_type: config.bracket_type,
         bracket_innings: config.bracket_innings,
         final_innings: config.final_innings,
-        num_teams: config.team_size,
+        team_size: config.team_size,
         status: config.is_active ? 'active' : 'upcoming',
         locked_status: config.settings_locked || false,
         updated_at: new Date().toISOString()
@@ -1477,6 +1477,7 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
         bracket_innings,
         final_innings,
         num_teams,
+        team_size,
         status,
         locked_status
       `)
@@ -1519,7 +1520,7 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
         bracket_type: data.bracket_type,
         bracket_innings: data.bracket_innings,
         final_innings: data.final_innings,
-        team_size: data.num_teams,
+        team_size: data.team_size,
         is_active: data.status === 'active',
         settings_locked: data.locked_status || false
       },
@@ -1924,6 +1925,7 @@ export async function createTournament(data: {
   bracket_innings?: number;
   final_innings?: number;
   num_teams?: number;
+  team_size?: number;
 }): Promise<ApiResponse<TournamentRecord>> {
   try {
     const { data: result, error } = await supabase
@@ -1936,7 +1938,8 @@ export async function createTournament(data: {
         bracket_type: data.bracket_type || 'single_elimination',
         bracket_innings: data.bracket_innings || 3,
         final_innings: data.final_innings || 5,
-        num_teams: data.num_teams || 4
+        num_teams: data.num_teams || 4,
+        team_size: data.team_size || 3
       }])
       .select()
       .single();
@@ -1975,6 +1978,7 @@ export async function updateTournamentSettings(
     bracket_innings?: number;
     final_innings?: number;
     num_teams?: number;
+    team_size?: number;
     name?: string;
     start_date?: string;
     end_date?: string;
