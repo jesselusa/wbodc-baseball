@@ -1260,9 +1260,9 @@ export async function fetchTeamPlayers(teamId: string, tournamentId?: string): P
   try {
     // Build the query to fetch players for a specific team
     let query = supabase
-      .from('team_memberships')
+      .from('tournament_player_assignments')
       .select(`
-        players!inner(id, name, nickname, email, created_at, updated_at)
+        players!inner(id, name, nickname, email, avatar_url, current_town, hometown, championships_won, created_at, updated_at)
       `)
       .eq('team_id', teamId);
 
@@ -1271,7 +1271,7 @@ export async function fetchTeamPlayers(teamId: string, tournamentId?: string): P
       query = query.eq('tournament_id', tournamentId);
     }
 
-    const { data: memberships, error } = await query;
+    const { data: assignments, error } = await query;
 
     if (error) {
       console.error('Error fetching team players:', error);
@@ -1282,8 +1282,8 @@ export async function fetchTeamPlayers(teamId: string, tournamentId?: string): P
       };
     }
 
-    // Extract players from the memberships
-    const players: Player[] = memberships?.map((membership: any) => membership.players).filter(Boolean) || [];
+    // Extract players from the assignments
+    const players: Player[] = assignments?.map((assignment: any) => assignment.players).filter(Boolean) || [];
 
     // Sort by name
     players.sort((a, b) => a.name.localeCompare(b.name));
@@ -1467,22 +1467,21 @@ export async function saveTournamentConfig(config: {
 export async function loadTournamentConfig(tournamentId: string): Promise<ApiResponse<any>> {
   try {
     // Query the tournaments table directly since configuration is stored there
-    const { data, error } = await supabase
-      .from('tournaments')
-      .select(`
-        id,
-        pool_play_games,
-        pool_play_innings,
-        bracket_type,
-        bracket_innings,
-        final_innings,
-        num_teams,
-        team_size,
-        status,
-        locked_status
-      `)
-      .eq('id', tournamentId)
-      .single();
+          const { data, error } = await supabase
+        .from('tournaments')
+        .select(`
+          id,
+          pool_play_games,
+          pool_play_innings,
+          bracket_type,
+          bracket_innings,
+          final_innings,
+          num_teams,
+          team_size,
+          status
+        `)
+        .eq('id', tournamentId)
+        .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.error('Error loading tournament configuration:', error);
@@ -1520,9 +1519,10 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
         bracket_type: data.bracket_type,
         bracket_innings: data.bracket_innings,
         final_innings: data.final_innings,
+        num_teams: data.num_teams,
         team_size: data.team_size,
         is_active: data.status === 'active',
-        settings_locked: data.locked_status || false
+        settings_locked: data.status === 'active'
       },
       success: true
     };
@@ -1616,113 +1616,83 @@ export async function saveTeamAssignments(assignments: Array<{
       };
     }
 
-    // Create or find teams in the database and get their UUIDs
-    const teamIdMap = new Map<string, string>(); // maps team_name -> database team UUID
-    
+    // Clear existing tournament player assignments for this tournament
+    await supabase
+      .from('tournament_player_assignments')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    // Create or find teams in the global teams table and create player assignments
+    const teamRecords: any[] = [];
+    const playerAssignments: any[] = [];
+
     for (const assignment of assignments) {
       if (assignment.player_ids.length === 0) continue; // Skip empty teams
       
-      // Check if team already exists with this name
-      const { data: existingTeam, error: teamError } = await supabase
+      // Try to find existing team by name first
+      const { data: existingTeam } = await supabase
         .from('teams')
-        .select('id, name')
+        .select('*')
         .eq('name', assignment.team_name)
         .single();
 
-      if (teamError && teamError.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error checking existing team:', teamError);
-        return {
-          data: [],
-          success: false,
-          error: `Failed to check existing team: ${teamError.message}`
-        };
-      }
-
-      let teamUuid;
+      let teamRecord;
       if (existingTeam) {
-        // Use existing team
-        teamUuid = existingTeam.id;
+        teamRecord = existingTeam;
       } else {
         // Create new team
-        const { data: newTeam, error: createError } = await supabase
+        const { data: newTeam, error: teamError } = await supabase
           .from('teams')
           .insert({
             name: assignment.team_name,
             color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)` // Random color
           })
-          .select('id')
+          .select()
           .single();
 
-        if (createError) {
-          console.error('Error creating team:', createError);
+        if (teamError) {
+          console.error('Error creating team:', teamError);
           return {
             data: [],
             success: false,
-            error: `Failed to create team ${assignment.team_name}: ${createError.message}`
+            error: `Failed to create team: ${teamError.message}`
           };
         }
-
-        teamUuid = newTeam.id;
+        teamRecord = newTeam;
       }
-
-      teamIdMap.set(assignment.team_name, teamUuid);
-    }
-
-    // Delete existing team memberships for this tournament
-    const { error: deleteError } = await supabase
-      .from('team_memberships')
-      .delete()
-      .eq('tournament_id', tournamentId);
-
-    if (deleteError) {
-      console.error('Error deleting existing team memberships:', deleteError);
-      return {
-        data: [],
-        success: false,
-        error: deleteError.message || 'Failed to clear existing team assignments'
-      };
-    }
-
-    // Create new team memberships for each player-team assignment
-    const memberships = [];
-    for (const assignment of assignments) {
-      if (assignment.player_ids.length === 0) continue; // Skip empty teams
       
-      const teamUuid = teamIdMap.get(assignment.team_name);
-      if (!teamUuid) continue;
+      teamRecords.push(teamRecord);
 
-      for (const playerId of assignment.player_ids) {
-        memberships.push({
-          tournament_id: assignment.tournament_id,
-          team_id: teamUuid,
-          player_id: playerId
+      // Create player assignments for this team
+      assignment.player_ids.forEach((playerId: any) => {
+        playerAssignments.push({
+          tournament_id: tournamentId,
+          player_id: playerId,
+          team_id: teamRecord.id
         });
+      });
+    }
+
+    // Insert all player assignments
+    if (playerAssignments.length > 0) {
+      const { error: assignmentError } = await supabase
+        .from('tournament_player_assignments')
+        .insert(playerAssignments);
+
+      if (assignmentError) {
+        console.error('Error creating player assignments:', assignmentError);
+        return {
+          data: [],
+          success: false,
+          error: `Failed to create player assignments: ${assignmentError.message}`
+        };
       }
     }
 
-    if (memberships.length === 0) {
-      return {
-        data: [],
-        success: true
-      };
-    }
 
-    const { data, error } = await supabase
-      .from('team_memberships')
-      .insert(memberships)
-      .select('*, teams!inner(name, color), players!inner(name)');
-
-    if (error) {
-      console.error('Error saving team memberships:', error);
-      return {
-        data: [],
-        success: false,
-        error: error.message || 'Failed to save team assignments'
-      };
-    }
 
     return {
-      data: data || [],
+      data: teamRecords || [],
       success: true
     };
   } catch (error) {
@@ -1740,10 +1710,12 @@ export async function saveTeamAssignments(assignments: Array<{
  */
 export async function loadTeamAssignments(tournamentId: string): Promise<ApiResponse<any[]>> {
   try {
-    const { data, error } = await supabase
-      .from('team_memberships')
+    // Load player assignments from the tournament_player_assignments table
+    const { data: playerAssignments, error: assignmentsError } = await supabase
+      .from('tournament_player_assignments')
       .select(`
-        *,
+        team_id,
+        player_id,
         teams:team_id (
           id,
           name,
@@ -1757,17 +1729,52 @@ export async function loadTeamAssignments(tournamentId: string): Promise<ApiResp
       `)
       .eq('tournament_id', tournamentId);
 
-    if (error) {
-      console.error('Error loading team assignments:', error);
+    if (assignmentsError) {
+      console.error('Error loading player assignments:', assignmentsError);
       return {
         data: [],
         success: false,
-        error: error.message || 'Failed to load team assignments'
+        error: assignmentsError.message || 'Failed to load team assignments'
       };
     }
 
+    if (!playerAssignments || playerAssignments.length === 0) {
+      return {
+        data: [],
+        success: true
+      };
+    }
+
+    // Group players by team and format for the admin interface
+    const teamMap = new Map<string, any>();
+    
+    playerAssignments.forEach(assignment => {
+      const teamId = assignment.team_id;
+      const team = assignment.teams;
+      const player = assignment.players;
+      
+      if (!team || !player) return;
+      
+      if (!teamMap.has(teamId)) {
+        teamMap.set(teamId, {
+          tournament_id: tournamentId,
+          team_id: teamId,
+          team_name: (team as any).name,
+          player_ids: [],
+          players: [],
+          is_locked: false // Add this for compatibility
+        });
+      }
+      
+      const teamData = teamMap.get(teamId);
+      teamData.player_ids.push((player as any).id);
+      teamData.players.push(player);
+    });
+
+    const teamAssignments = Array.from(teamMap.values());
+
     return {
-      data: data || [],
+      data: teamAssignments,
       success: true
     };
   } catch (error) {
@@ -2022,6 +2029,27 @@ export async function updateTournamentSettings(
  */
 export async function getCurrentTournament(): Promise<ApiResponse<TournamentRecord | null>> {
   try {
+    const currentYear = new Date().getFullYear();
+    
+    // First try to get a tournament with dates in the current year
+    const { data: yearTournament, error: yearError } = await supabase
+      .from('tournaments')
+      .select('*')
+      .gte('start_date', `${currentYear}-01-01`)
+      .lt('start_date', `${currentYear + 1}-01-01`)
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    // If we found a tournament for the current year, return it
+    if (!yearError && yearTournament) {
+      return {
+        data: yearTournament,
+        success: true
+      };
+    }
+    
+    // Fallback: get the most recent tournament (for cases where dates aren't set)
     const { data, error } = await supabase
       .from('tournaments')
       .select('*')
@@ -2092,94 +2120,23 @@ export async function lockTournament(
   teams: TeamDragDrop[]
 ): Promise<ApiResponse<boolean>> {
   try {
-    // Start a transaction-like operation
-    const { error: lockError } = await supabase
-      .from('tournaments')
-      .update({ locked_status: true })
-      .eq('id', tournamentId);
-
-    if (lockError) {
-      return {
-        data: false,
-        success: false,
-        error: lockError.message
-      };
-    }
-
-    // Clear existing team assignments for this tournament
-    await supabase
-      .from('tournament_teams')
-      .delete()
-      .eq('tournament_id', tournamentId);
-
-    await supabase
-      .from('tournament_player_assignments')
-      .delete()
-      .eq('tournament_id', tournamentId);
-
-    // Create new team records
-    const teamInserts = teams.map(team => ({
-      tournament_id: tournamentId,
-      team_name: team.name
-    }));
-
-    const { data: teamRecords, error: teamError } = await supabase
-      .from('tournament_teams')
-      .insert(teamInserts)
-      .select();
-
-    if (teamError) {
-      // Rollback the lock
-      await supabase
-        .from('tournaments')
-        .update({ locked_status: false })
-        .eq('id', tournamentId);
-      
-      return {
-        data: false,
-        success: false,
-        error: teamError.message
-      };
-    }
-
-    // Create player assignments
-    const playerAssignments: any[] = [];
-    teams.forEach((team, teamIndex) => {
-      const teamRecord = teamRecords?.[teamIndex];
-      if (teamRecord && team.players.length > 0) {
-        team.players.forEach(player => {
-          playerAssignments.push({
-            tournament_id: tournamentId,
-            player_id: player.id,
-            team_id: teamRecord.id
-          });
-        });
-      }
+    // Use the API route to save teams server-side
+    const response = await fetch(`/api/tournaments/${tournamentId}/teams`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ teams }),
     });
 
-    if (playerAssignments.length > 0) {
-      const { error: assignmentError } = await supabase
-        .from('tournament_player_assignments')
-        .insert(playerAssignments);
-
-      if (assignmentError) {
-        // Rollback everything
-        await supabase
-          .from('tournament_teams')
-          .delete()
-          .eq('tournament_id', tournamentId);
-        
-        await supabase
-          .from('tournaments')
-          .update({ locked_status: false })
-          .eq('id', tournamentId);
-        
-        return {
-          data: false,
-          success: false,
-          error: assignmentError.message
-        };
-      }
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return {
+        data: false,
+        success: false,
+        error: result.error || 'Failed to save teams'
+      };
     }
 
     return {
@@ -2248,9 +2205,9 @@ export async function getTournamentWithTeams(tournamentId: string): Promise<ApiR
       };
     }
 
-    // Get team memberships with team and player details for this tournament
-    const { data: memberships, error: membershipsError } = await supabase
-      .from('team_memberships')
+    // Get tournament player assignments with team and player details for this tournament
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('tournament_player_assignments')
       .select(`
         team_id,
         player_id,
@@ -2272,21 +2229,21 @@ export async function getTournamentWithTeams(tournamentId: string): Promise<ApiR
       `)
       .eq('tournament_id', tournamentId);
 
-    if (membershipsError) {
+    if (assignmentsError) {
       return {
         data: null,
         success: false,
-        error: membershipsError.message
+        error: assignmentsError.message
       };
     }
 
-    // Group memberships by team to build teams with players
+    // Group assignments by team to build teams with players
     const teamMap = new Map<string, any>();
     
-    memberships?.forEach((membership: any) => {
-      const teamId = membership.team_id;
-      const team = membership.teams;
-      const player = membership.players;
+    assignments?.forEach((assignment: any) => {
+      const teamId = assignment.team_id;
+      const team = assignment.teams;
+      const player = assignment.players;
 
       if (!teamMap.has(teamId)) {
         teamMap.set(teamId, {
@@ -2340,9 +2297,9 @@ export async function getPlayerTeamAssignments(): Promise<ApiResponse<Map<string
 
     const tournamentId = currentTournamentResponse.data.id;
 
-    // Get player assignments from team_memberships table
+    // Get player assignments from tournament_player_assignments table
     const { data: assignments, error } = await supabase
-      .from('team_memberships')
+      .from('tournament_player_assignments')
       .select(`
         player_id,
         teams!inner (

@@ -20,7 +20,7 @@ export default function GameSetupPage() {
       setCreatingGame(true);
       setError(undefined);
       
-      // Fetch team lineups before creating the game
+      // Fetch team lineups
       const [homeTeamResponse, awayTeamResponse] = await Promise.all([
         fetchTeamPlayers(gameData.home_team_id),
         fetchTeamPlayers(gameData.away_team_id)
@@ -31,20 +31,27 @@ export default function GameSetupPage() {
         return;
       }
 
-      // Create the game with all the user-provided details
-      const response = await createNewGame({
-        home_team_id: gameData.home_team_id,
-        away_team_id: gameData.away_team_id,
-        game_type: 'free_play',
-        innings: gameData.innings || 7
-      });
-      
-      if (!response.success || !response.data) {
-        setError(response.error || 'Failed to create game');
-        return;
-      }
+      let gameId: string;
 
-      const gameId = response.data.game_id;
+      if (gameData.game_id) {
+        // Use existing tournament game
+        gameId = gameData.game_id;
+      } else {
+        // Create new game (fallback for free play)
+        const response = await createNewGame({
+          home_team_id: gameData.home_team_id,
+          away_team_id: gameData.away_team_id,
+          game_type: 'free_play',
+          innings: gameData.innings || 7
+        });
+        
+        if (!response.success || !response.data) {
+          setError(response.error || 'Failed to create game');
+          return;
+        }
+
+        gameId = response.data.game_id;
+      }
 
       // Now submit the game start event with team lineups
       const gameStartPayload: GameStartEventPayload = {

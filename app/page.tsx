@@ -4,18 +4,18 @@ import React, { useState, useEffect } from "react";
 import PlayBallButton from "../components/PlayBallButton";
 import LiveGameList from "../components/LiveGameList";
 import TournamentCard from "../components/TournamentCard";
-import { Tournament } from "../lib/types";
-import { fetchActiveTournament } from "../lib/api";
+import { TournamentRecord } from "../lib/types";
+import { getCurrentTournament } from "../lib/api";
 
 export default function Page() {
-  const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
+  const [activeTournament, setActiveTournament] = useState<TournamentRecord | null>(null);
   const [tournamentLoading, setTournamentLoading] = useState(true);
 
   useEffect(() => {
     async function loadActiveTournament() {
       setTournamentLoading(true);
       try {
-        const response = await fetchActiveTournament();
+        const response = await getCurrentTournament();
         if (response.success && response.data) {
           setActiveTournament(response.data);
         }

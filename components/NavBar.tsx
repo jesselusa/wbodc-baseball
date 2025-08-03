@@ -5,22 +5,32 @@ import {
   NavigationMenuList,
   NavigationMenuItem,
   NavigationMenuLink,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
 } from "@radix-ui/react-navigation-menu";
 import { HamburgerMenuIcon, Cross1Icon } from "@radix-ui/react-icons";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/results", label: "Results" },
+  { href: "/games", label: "Games" },
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
   { href: "/admin", label: "Admin" },
-  { href: "/wiki", label: "Wiki" },
+  { 
+    label: "Wiki", 
+    href: "/wiki",
+    subItems: [
+      { href: "/results", label: "Results" },
+    ]
+  },
 ];
 
 const HEADER_HEIGHT = 64; // px (increased for better alignment)
 
 export function NavBar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [expandedSubMenu, setExpandedSubMenu] = React.useState<string | null>(null);
+  const [desktopDropdownOpen, setDesktopDropdownOpen] = React.useState<string | null>(null);
 
   return (
     <nav
@@ -46,7 +56,7 @@ export function NavBar() {
         justifyContent: "space-between", 
         height: HEADER_HEIGHT,
         maxWidth: "100%", // Ensure content doesn't overflow
-        overflow: "hidden" // Prevent any overflow
+        overflow: "visible" // Allow dropdown to extend beyond nav
       }}>
         <a href="/" style={{ 
           fontWeight: 700, 
@@ -63,7 +73,8 @@ export function NavBar() {
           gap: 24, // Reduced gap to save space
           alignItems: "center", 
           overflow: "visible",
-          flexShrink: 1 // Allow nav to shrink if needed
+          flexShrink: 1, // Allow nav to shrink if needed
+          position: "relative" // Ensure proper positioning context for dropdown
         }}>
           <NavigationMenu orientation="horizontal">
             <NavigationMenuList style={{ 
@@ -73,19 +84,92 @@ export function NavBar() {
               flexWrap: "nowrap" // Prevent wrapping
             }}>
               {navLinks.map((link) => (
-                <NavigationMenuItem key={link.href}>
-                  <NavigationMenuLink 
-                    href={link.href} 
-                    style={{ 
-                      textDecoration: "none", 
-                      color: "#1c1b20", 
-                      fontWeight: 500, 
-                      padding: "0 6px", // Reduced padding
-                      whiteSpace: "nowrap" // Prevent text wrapping
-                    }}
-                  >
-                    {link.label}
-                  </NavigationMenuLink>
+                <NavigationMenuItem key={link.href || link.label} style={{ position: "relative" }}>
+                  {link.subItems ? (
+                    // Custom dropdown for items with sub-items
+                    <div style={{ position: "relative" }}>
+                      <button
+                        style={{ 
+                          textDecoration: "none", 
+                          color: "#1c1b20", 
+                          fontWeight: 500, 
+                          padding: "0 6px",
+                          whiteSpace: "nowrap",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "inherit"
+                        }}
+                        onMouseEnter={() => setDesktopDropdownOpen(link.label)}
+                        onMouseLeave={() => setDesktopDropdownOpen(null)}
+                      >
+                        {link.label}
+                      </button>
+                      {desktopDropdownOpen === link.label && (
+                        <div 
+                          style={{
+                            position: "absolute",
+                            top: "calc(100% + 8px)", // Small gap between trigger and dropdown
+                            right: "0", // Right-align instead of left-align
+                            background: "#ffffff",
+                            border: "1px solid #e5e5e5",
+                            borderRadius: "6px",
+                            padding: "16px 0",
+                            minWidth: "180px",
+                            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)",
+                            zIndex: 9999,
+                            fontSize: "15px",
+                            lineHeight: "1.4"
+                          }}
+                          onMouseEnter={() => setDesktopDropdownOpen(link.label)}
+                          onMouseLeave={() => setDesktopDropdownOpen(null)}
+                        >
+                          {link.subItems.map((subItem) => (
+                            <a
+                              key={subItem.href}
+                              href={subItem.href}
+                              style={{
+                                display: "block",
+                                textDecoration: "none",
+                                color: "#1a1a1a",
+                                fontWeight: 400,
+                                padding: "12px 24px",
+                                whiteSpace: "nowrap",
+                                transition: "background-color 0.15s ease",
+                                fontSize: "15px",
+                                lineHeight: "1.4",
+                                textAlign: "right" // Right-align text to match Wiki
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = "#f7f7f7";
+                                e.currentTarget.style.color = "#000000";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = "transparent";
+                                e.currentTarget.style.color = "#1a1a1a";
+                              }}
+                            >
+                              {subItem.label}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Regular navigation link
+                    <NavigationMenuLink 
+                      href={link.href} 
+                      style={{ 
+                        textDecoration: "none", 
+                        color: "#1c1b20", 
+                        fontWeight: 500, 
+                        padding: "0 6px",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {link.label}
+                    </NavigationMenuLink>
+                  )}
                 </NavigationMenuItem>
               ))}
             </NavigationMenuList>
@@ -148,20 +232,75 @@ export function NavBar() {
             }}
           >
             {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                style={{ 
-                  textDecoration: "none", 
-                  color: "#1c1b20", 
-                  fontWeight: 500, 
-                  padding: 12, 
-                  fontSize: 20 
-                }}
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </a>
+              <div key={link.href || link.label}>
+                {link.subItems ? (
+                  // Sub-menu item
+                  <>
+                    <button
+                      style={{ 
+                        width: "100%",
+                        textAlign: "left",
+                        textDecoration: "none", 
+                        color: "#1c1b20", 
+                        fontWeight: 500, 
+                        padding: 12, 
+                        fontSize: 20,
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}
+                      onClick={() => setExpandedSubMenu(
+                        expandedSubMenu === link.label ? null : link.label
+                      )}
+                    >
+                      {link.label}
+                      <span style={{ fontSize: 16 }}>
+                        {expandedSubMenu === link.label ? '▲' : '▼'}
+                      </span>
+                    </button>
+                    {expandedSubMenu === link.label && (
+                      <div style={{ marginLeft: 16 }}>
+                        {link.subItems.map((subItem) => (
+                          <a
+                            key={subItem.href}
+                            href={subItem.href}
+                            style={{
+                              display: "block",
+                              textDecoration: "none",
+                              color: "#696775",
+                              fontWeight: 500,
+                              padding: "8px 12px",
+                              fontSize: 18
+                            }}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            {subItem.label}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Regular navigation link
+                  <a
+                    href={link.href}
+                    style={{ 
+                      display: "block",
+                      textDecoration: "none", 
+                      color: "#1c1b20", 
+                      fontWeight: 500, 
+                      padding: 12, 
+                      fontSize: 20 
+                    }}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                )}
+              </div>
             ))}
           </div>
         </>

@@ -61,11 +61,18 @@ export default function GamePage({ params }: GamePageProps) {
       const gameDate = initialGame.scheduled_start || initialGame.actual_start;
       if (gameDate) {
         const year = new Date(gameDate).getFullYear();
-        router.push(`/results?year=${year}`);
+        const currentYear = new Date().getFullYear();
+        
+        // Route to /games for current year (2025), /results for historical years
+        if (year === currentYear) {
+          router.push('/games');
+        } else {
+          router.push(`/results?year=${year}`);
+        }
       } else {
         // Fallback to current year if no date available
         const currentYear = new Date().getFullYear();
-        router.push(`/results?year=${currentYear}`);
+        router.push('/games');
       }
     }
   };

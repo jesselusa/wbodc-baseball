@@ -26,10 +26,11 @@ interface UseHistoricalGamesReturn {
 /**
  * Custom hook for managing historical games data and selection state
  * Handles data fetching: years -> games for selected year
+ * Excludes current year (2025) to separate current games from historical results
  */
 export function useHistoricalGames(): UseHistoricalGamesReturn {
-  // Selection state
-  const [selectedYear, setSelectedYear] = useState<string | null>('2025');
+  // Selection state - start with null instead of '2025'
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   
   // Data state
   const [years, setYears] = useState<string[]>([]);
@@ -53,7 +54,18 @@ export function useHistoricalGames(): UseHistoricalGamesReturn {
       const data = await response.json();
       
       if (data.success) {
-        setYears(data.data.years || []);
+        // Filter out current year (2025) to keep results page historical only
+        const allYears = data.data.years || [];
+        const currentYear = new Date().getFullYear().toString();
+        const historicalYears = allYears.filter((year: string) => year !== currentYear);
+        
+        setYears(historicalYears);
+        
+        // Auto-select the most recent historical year if available
+        if (historicalYears.length > 0 && !selectedYear) {
+          const mostRecentYear = historicalYears.sort((a: string, b: string) => parseInt(b) - parseInt(a))[0];
+          setSelectedYear(mostRecentYear);
+        }
       } else {
         setError(data.error || 'Failed to fetch years');
       }
@@ -62,7 +74,7 @@ export function useHistoricalGames(): UseHistoricalGamesReturn {
     } finally {
       setLoadingYears(false);
     }
-  }, []);
+  }, [selectedYear]);
 
   // Fetch tournament and games for selected year
   const fetchYearData = useCallback(async (year: string) => {
@@ -111,24 +123,12 @@ export function useHistoricalGames(): UseHistoricalGamesReturn {
     fetchYears();
   }, [fetchYears]);
 
-  // Fetch data for initial selected year (2025)
+  // Fetch data for selected year
   useEffect(() => {
     if (selectedYear) {
       fetchYearData(selectedYear);
     }
   }, [selectedYear, fetchYearData]);
-
-  // Handle current year logic for 2025
-  useEffect(() => {
-    const currentYear = new Date().getFullYear().toString();
-    
-    // If it's 2025 and no year selected, we might want to auto-select based on business logic
-    // For now, we'll let the user manually select
-    if (years.includes(currentYear) && !selectedYear) {
-      // Could auto-select current year here if desired
-      // setSelectedYear(currentYear);
-    }
-  }, [years, selectedYear]);
 
   return {
     // Selection state

@@ -59,7 +59,7 @@ export default function TeamsPage() {
   const checkTournamentStatus = async (): Promise<boolean> => {
     try {
       const response = await getCurrentTournament();
-      return response.success && response.data && response.data.locked_status;
+      return response.success && response.data && response.data.status === 'active';
     } catch {
       return false;
     }
@@ -74,17 +74,19 @@ export default function TeamsPage() {
         return;
       }
 
-      const tournamentWithTeamsResponse = await getTournamentWithTeams(currentTournamentResponse.data.id);
+      // Fetch teams using the new API route
+      const response = await fetch(`/api/tournaments/${currentTournamentResponse.data.id}/teams`);
+      const teamsData = await response.json();
       
-      if (!tournamentWithTeamsResponse.success || !tournamentWithTeamsResponse.data) {
-        console.error('Failed to load tournament teams');
+      if (!teamsData.success || !teamsData.data) {
+        console.error('Failed to load tournament teams:', teamsData.error);
         return;
       }
 
-      const tournament = tournamentWithTeamsResponse.data;
+      const teams = teamsData.data;
       
       // Mock data for team standings - in real implementation, this would come from game results
-      const teamsWithData: TeamWithStandings[] = tournament.teams.map((team, index) => {
+      const teamsWithData: TeamWithStandings[] = teams.map((team, index) => {
         // Generate deterministic wins/losses based on team index to avoid hydration mismatches
         const wins = (index + 1) % 5; // 1, 2, 3, 4, 0, 1, 2, ... 
         const losses = index % 3; // 0, 1, 2, 0, 1, 2, ...

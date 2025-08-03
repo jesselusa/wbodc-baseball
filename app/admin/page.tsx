@@ -65,6 +65,8 @@ export default function AdminPage() {
   const [isActive, setIsActive] = useState(false);
   const [settingsLocked, setSettingsLocked] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [tournamentLive, setTournamentLive] = useState(false);
+  const [startingTournament, setStartingTournament] = useState(false);
 
   // Players tab state
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,10 +153,16 @@ export default function AdminPage() {
       setCurrentTournamentId(tournamentId);
 
       // Now load config and teams with the correct tournament ID
-      const [configResponse, teamsResponse] = await Promise.all([
-        loadTournamentConfig(tournamentId),
-        loadTeamAssignments(tournamentId)
-      ]);
+      const configResponse = await loadTournamentConfig(tournamentId);
+      
+      // Load team assignments using the new API route
+      const teamsApiResponse = await fetch(`/api/tournaments/${tournamentId}/assignments`);
+      
+      if (!teamsApiResponse.ok) {
+        console.error('API response not ok:', teamsApiResponse.status, teamsApiResponse.statusText);
+      }
+      
+      const teamsResponse = await teamsApiResponse.json();
 
       if (playersResponse.success) {
         setPlayers(playersResponse.data);
@@ -175,6 +183,26 @@ export default function AdminPage() {
 
       if (teamsResponse.success) {
         setTeamAssignments(teamsResponse.data);
+        
+        // Convert team assignments to current teams format for TeamManager
+        if (teamsResponse.data && teamsResponse.data.length > 0) {
+          const convertedTeams: TeamDragDrop[] = teamsResponse.data.map((assignment: any) => {
+            // Find the players for this team
+            const teamPlayers = assignment.players || [];
+            
+            return {
+              id: assignment.team_id,
+              name: assignment.team_name,
+              players: teamPlayers,
+              isLocked: assignment.is_locked || false,
+              color: undefined // Will be set by TeamManager if needed
+            };
+          });
+          
+          setCurrentTeams(convertedTeams);
+        }
+      } else {
+        console.error('Teams response failed:', teamsResponse);
       }
 
       if (playerTeamResponse.success) {
@@ -182,8 +210,11 @@ export default function AdminPage() {
       }
 
       if (activeTournamentResponse.success && activeTournamentResponse.data) {
-        setIsActive(true);
-        setSettingsLocked(true);
+        const tournament = activeTournamentResponse.data as any;         // Set states based on tournament status only
+        const isActiveTournament = tournament.status === 'active';
+        setIsActive(isActiveTournament);
+        setSettingsLocked(isActiveTournament);
+        setTournamentLive(isActiveTournament);
       }
 
     } catch (error) {
@@ -383,31 +414,20 @@ export default function AdminPage() {
     try {
       setSaving(true);
       
-      // Get current tournament ID
-      const currentTournamentResponse = await getCurrentTournament();
-      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
-        setSaveStatus({
-          type: 'error',
-          message: 'No active tournament found. Please create a tournament first.',
-          timestamp: Date.now()
-        });
-        return;
-      }
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/teams`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ teams }),
+      });
 
-      const tournamentId = currentTournamentResponse.data.id;
-      
-      // Convert TeamDragDrop[] to the format expected by the API
-      const teamAssignments = teams.map(team => ({
-        tournament_id: tournamentId,
-        team_id: team.id,
-        team_name: team.name,
-        player_ids: team.players.map(player => player.id),
-        is_locked: team.isLocked || false
-      }));
+      const data = await response.json();
 
-      const response = await saveTeamAssignments(teamAssignments);
-      
-      if (response.success) {
+      if (response.ok && data.success) {
+        // Update current teams state
+        setCurrentTeams(teams);
+        
         // Reload player team assignments to update the players table
         const playerTeamResponse = await getPlayerTeamAssignments();
         if (playerTeamResponse.success) {
@@ -416,13 +436,13 @@ export default function AdminPage() {
         
         setSaveStatus({
           type: 'success',
-          message: 'Teams saved successfully!',
+          message: data.message || 'Teams saved successfully!',
           timestamp: Date.now()
         });
       } else {
         setSaveStatus({
           type: 'error',
-          message: response.error || 'Failed to save teams',
+          message: data.error || 'Failed to save teams',
           timestamp: Date.now()
         });
       }
@@ -442,48 +462,38 @@ export default function AdminPage() {
     try {
       setSaving(true);
       
-      // Get current tournament ID
-      const currentTournamentResponse = await getCurrentTournament();
-      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
-        setSaveStatus({
-          type: 'error',
-          message: 'No active tournament found.',
-          timestamp: Date.now()
-        });
-        return;
-      }
-
-      const tournamentId = currentTournamentResponse.data.id;
-      
-      // Clear team memberships directly using Supabase
-      const { error } = await supabase
-        .from('team_memberships')
-        .delete()
-        .eq('tournament_id', tournamentId);
-      
-      if (error) {
-        setSaveStatus({
-          type: 'error',
-          message: error.message || 'Failed to clear teams',
-          timestamp: Date.now()
-        });
-        return;
-      }
-
-      // Clear current teams state - this will trigger TeamManager to reset
-      setCurrentTeams([]);
-      
-      // Reload player team assignments to update the players table
-      const playerTeamResponse = await getPlayerTeamAssignments();
-      if (playerTeamResponse.success) {
-        setPlayerTeamAssignments(playerTeamResponse.data);
-      }
-      
-      setSaveStatus({
-        type: 'success',
-        message: 'Teams cleared successfully!',
-        timestamp: Date.now()
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/teams`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ teams: [] }),
       });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Clear current teams state - this will trigger TeamManager to reset
+        setCurrentTeams([]);
+        
+        // Reload player team assignments to update the players table
+        const playerTeamResponse = await getPlayerTeamAssignments();
+        if (playerTeamResponse.success) {
+          setPlayerTeamAssignments(playerTeamResponse.data);
+        }
+        
+        setSaveStatus({
+          type: 'success',
+          message: data.message || 'Teams cleared successfully!',
+          timestamp: Date.now()
+        });
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: data.error || 'Failed to clear teams',
+          timestamp: Date.now()
+        });
+      }
     } catch (error) {
       console.error('Error clearing teams:', error);
       setSaveStatus({
@@ -496,56 +506,116 @@ export default function AdminPage() {
     }
   };
 
-  const handleLockTournament = async () => {
-    try {
-      setSaving(true);
-      
-      // Get current tournament
-      const currentTournamentResponse = await getCurrentTournament();
-      if (!currentTournamentResponse.success || !currentTournamentResponse.data) {
-        setSaveStatus({
-          type: 'error',
-          message: 'No active tournament found.',
-          timestamp: Date.now()
-        });
-        return;
-      }
-
-      const tournament = currentTournamentResponse.data;
-      const newLockStatus = !tournament.locked_status;
-
-      // Update tournament lock status
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ locked_status: newLockStatus })
-        .eq('id', tournament.id);
-
-      if (error) {
-        setSaveStatus({
-          type: 'error',
-          message: error.message || 'Failed to update tournament lock status',
-          timestamp: Date.now()
-        });
-        return;
-      }
-
-      setSaveStatus({
-        type: 'success',
-        message: `Tournament ${newLockStatus ? 'locked' : 'unlocked'} successfully!`,
-        timestamp: Date.now()
-      });
-
-      // Reload tournament data to reflect changes
-      await loadTournamentData();
-    } catch (error) {
-      console.error('Error toggling tournament lock:', error);
+  const handleStartTournament = async () => {
+    if (currentTeams.length === 0) {
       setSaveStatus({
         type: 'error',
-        message: 'An error occurred while updating tournament',
+        message: 'No teams configured to start tournament',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    try {
+      setStartingTournament(true);
+      
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ teams: currentTeams }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTournamentLive(true);
+        setIsActive(true);
+        setSettingsLocked(true);
+        setSaveStatus({
+          type: 'success',
+          message: 'Tournament started successfully!',
+          timestamp: Date.now()
+        });
+        
+        // Reload tournament data to reflect changes
+        await loadTournamentData();
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: data.error || 'Failed to start tournament',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error) {
+      console.error('Error starting tournament:', error);
+      setSaveStatus({
+        type: 'error',
+        message: 'An error occurred while starting tournament',
         timestamp: Date.now()
       });
     } finally {
-      setSaving(false);
+      setStartingTournament(false);
+    }
+  };
+
+  const handleResetTournament = async () => {
+    const confirmReset = window.confirm(
+      'Are you sure you want to reset the tournament? This will:\n' +
+      '• Clear all team assignments\n' +
+      '• Clear all games (pool play and bracket)\n' +
+      '• Set tournament status back to upcoming\n' +
+      '• Unlock tournament settings for editing\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (!confirmReset) return;
+
+    try {
+      setStartingTournament(true);
+      
+      const response = await fetch(`/api/tournaments/${currentTournamentId}/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Immediately update UI states
+        setTournamentLive(false);
+        setIsActive(false);
+        setSettingsLocked(false);
+        setCurrentTeams([]);
+        
+        // Show success message
+        setSaveStatus({
+          type: 'success',
+          message: 'Tournament reset successfully! Settings are now unlocked.',
+          timestamp: Date.now()
+        });
+        
+        // Reload tournament data to reflect changes
+        await loadTournamentData();
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: data.error || 'Failed to reset tournament',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error) {
+      console.error('Error resetting tournament:', error);
+      setSaveStatus({
+        type: 'error',
+        message: 'An error occurred while resetting tournament',
+        timestamp: Date.now()
+      });
+    } finally {
+      setStartingTournament(false);
     }
   };
 
@@ -785,8 +855,95 @@ export default function AdminPage() {
           
           <div style={{
             display: 'flex',
-            gap: '12px'
+            gap: '12px',
+            flexWrap: 'wrap'
           }}>
+            {/* Tournament Control Buttons */}
+            {!tournamentLive ? (
+              <button
+                onClick={handleStartTournament}
+                disabled={startingTournament || currentTeams.length === 0}
+                style={{
+                  padding: '12px 24px',
+                  background: (currentTeams.length === 0) 
+                    ? '#e5e7eb' 
+                    : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: (currentTeams.length === 0) ? '#9ca3af' : 'white',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: (startingTournament || currentTeams.length === 0) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  opacity: startingTournament ? 0.7 : 1
+                }}
+              >
+                {startingTournament && (
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                )}
+                {startingTournament ? 'Starting...' : 'Start Tournament'}
+              </button>
+            ) : (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                color: 'white',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#22c55e',
+                  animation: 'pulse 2s infinite'
+                }}></span>
+                Tournament Live
+              </div>
+            )}
+            
+            <button
+              onClick={handleResetTournament}
+              disabled={startingTournament}
+              style={{
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: startingTournament ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: startingTournament ? 0.7 : 1
+              }}
+            >
+              {startingTournament ? 'Resetting...' : 'Reset Tournament'}
+            </button>
+
+            {/* Separator */}
+            <div style={{
+              width: '1px',
+              height: '40px',
+              background: '#e4e2e8',
+              margin: '0 8px'
+            }}></div>
+
+            {/* Data Management Buttons */}
             <button
               onClick={handleReset}
               disabled={saving}
@@ -803,7 +960,7 @@ export default function AdminPage() {
                 opacity: saving ? 0.6 : 1
               }}
             >
-              Reset
+              Reset Data
             </button>
             <button
               onClick={handleSaveAll}
@@ -946,11 +1103,12 @@ export default function AdminPage() {
               players={players}
               teamSize={tournamentSettings.team_size}
               numTeams={tournamentSettings.num_teams}
+              teams={currentTeams}
               onTeamSizeChange={handleTeamSizeChange}
               onTeamsChange={setCurrentTeams}
               onSaveTeams={handleSaveTeams}
               onClearTeams={handleClearTeams}
-              onLockTournament={handleLockTournament}
+
               isLocked={isActive}
               savingTeams={saving}
             />
@@ -960,8 +1118,9 @@ export default function AdminPage() {
             <TournamentSettings
               tournamentId={currentTournamentId}
               players={players}
-              teams={[]}
+              teams={currentTeams}
               onSettingsChange={handleSettingsChange}
+              onReset={handleReset}
               disabled={settingsLocked}
               isActive={isActive}
             />

@@ -84,9 +84,9 @@ export default function TournamentSettings({
 
   // Calculate if settings are locked
   const settingsLocked = useMemo(() => {
-    // Settings are locked if tournament is locked OR if explicitly disabled
-    return currentTournament?.locked_status || disabled;
-  }, [currentTournament?.locked_status, disabled]);
+    // Settings are locked if tournament is active OR if explicitly disabled
+    return currentTournament?.status === 'active' || disabled;
+  }, [currentTournament?.status, disabled]);
 
   // Handle mobile detection and default dates (client-side only to avoid hydration issues)
   useEffect(() => {
@@ -227,10 +227,10 @@ export default function TournamentSettings({
     const newErrors: Record<string, string> = {};
 
     // Tournament details validation (only when not locked)
-    if (!currentTournament?.locked_status && !tournamentForm.name.trim()) {
+    if (!(currentTournament?.status === 'active') && !tournamentForm.name.trim()) {
       newErrors.name = 'Tournament name is required';
     }
-    if (!currentTournament?.locked_status && !tournamentForm.location.trim()) {
+    if (!(currentTournament?.status === 'active') && !tournamentForm.location.trim()) {
       newErrors.location = 'Location is required';
     }
 
@@ -359,57 +359,7 @@ export default function TournamentSettings({
     }
   };
 
-  const handleLockTournament = async () => {
-    if (!currentTournament) {
-      setErrors({ submit: 'No tournament to lock' });
-      return;
-    }
 
-    if ((teams?.length || 0) === 0) {
-      setErrors({ submit: 'No teams configured to lock' });
-      return;
-    }
-
-    setLockingTournament(true);
-    try {
-      const response = await lockTournament(currentTournament.id, teams);
-      if (response.success) {
-        const updatedTournament = { ...currentTournament, locked_status: true };
-        setCurrentTournament(updatedTournament);
-        onTournamentChange?.(updatedTournament);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        setErrors({ submit: response.error || 'Failed to lock tournament' });
-      }
-    } catch (error) {
-      setErrors({ submit: 'An error occurred while locking tournament' });
-    } finally {
-      setLockingTournament(false);
-    }
-  };
-
-  const handleUnlockTournament = async () => {
-    if (!currentTournament) return;
-
-    setLockingTournament(true);
-    try {
-      const response = await unlockTournament(currentTournament.id);
-      if (response.success) {
-        const updatedTournament = { ...currentTournament, locked_status: false };
-        setCurrentTournament(updatedTournament);
-        onTournamentChange?.(updatedTournament);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        setErrors({ submit: response.error || 'Failed to unlock tournament' });
-      }
-    } catch (error) {
-      setErrors({ submit: 'An error occurred while unlocking tournament' });
-    } finally {
-      setLockingTournament(false);
-    }
-  };
 
 
 
@@ -526,14 +476,14 @@ export default function TournamentSettings({
                     type="text"
                     value={tournamentForm.name}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, name: e.target.value })}
-                    disabled={currentTournament.locked_status}
+                    disabled={currentTournament.status === 'active'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: `1px solid ${errors.name ? '#ef4444' : '#e4e2e8'}`,
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px', // 16px prevents zoom on iOS
-                      backgroundColor: currentTournament.locked_status ? '#f9fafb' : 'white'
+                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white'
                     }}
                   />
                   {errors.name && (
@@ -564,15 +514,15 @@ export default function TournamentSettings({
                         end_date: prev.end_date < newStartDate ? newStartDate : prev.end_date
                       }));
                     }}
-                    disabled={currentTournament.locked_status}
+                    disabled={currentTournament.status === 'active'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.locked_status ? '#f9fafb' : 'white',
-                      cursor: currentTournament.locked_status ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
                     }}
                   />
                 </div>
@@ -591,15 +541,15 @@ export default function TournamentSettings({
                     value={tournamentForm.end_date}
                     min={tournamentForm.start_date} // End date can't be before start date
                     onChange={(e) => setTournamentForm({ ...tournamentForm, end_date: e.target.value })}
-                    disabled={currentTournament.locked_status}
+                    disabled={currentTournament.status === 'active'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.locked_status ? '#f9fafb' : 'white',
-                      cursor: currentTournament.locked_status ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
                     }}
                   />
                 </div>
@@ -625,14 +575,14 @@ export default function TournamentSettings({
                     type="text"
                     value={tournamentForm.location}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, location: e.target.value })}
-                    disabled={currentTournament.locked_status}
+                    disabled={currentTournament.status === 'active'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: `1px solid ${errors.location ? '#ef4444' : '#e4e2e8'}`,
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.locked_status ? '#f9fafb' : 'white'
+                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white'
                     }}
                   />
                   {errors.location && (
@@ -654,15 +604,15 @@ export default function TournamentSettings({
                   <select
                     value={tournamentForm.tournament_number}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, tournament_number: parseInt(e.target.value) })}
-                    disabled={currentTournament.locked_status}
+                    disabled={currentTournament.status === 'active'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.locked_status ? '#f9fafb' : 'white',
-                      cursor: currentTournament.locked_status ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {Array.from({ length: 20 }, (_, i) => (
@@ -683,7 +633,7 @@ export default function TournamentSettings({
               <div style={{
                 fontSize: '14px',
                 fontWeight: '600',
-                color: currentTournament.locked_status ? '#22c55e' : '#f59e0b',
+                color: currentTournament.status === 'active' ? '#22c55e' : '#f59e0b',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
@@ -692,9 +642,9 @@ export default function TournamentSettings({
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: currentTournament.locked_status ? '#22c55e' : '#f59e0b'
+                  background: currentTournament.status === 'active' ? '#22c55e' : '#f59e0b'
                 }}></div>
-                Status: {currentTournament.locked_status ? 'Locked' : 'Configuring'}
+                Status: {currentTournament.status === 'active' ? 'Locked' : 'Configuring'}
               </div>
               {tournamentForm.start_date && (
                 <div style={{
@@ -1348,11 +1298,10 @@ export default function TournamentSettings({
                 paddingTop: '20px'
               }}>
                 <TournamentBracket 
-                  teams={mockStandings}
-                  bracketType={localSettings.bracket_type}
-                  bracketInnings={localSettings.bracket_innings}
-                  finalInnings={localSettings.final_innings}
-                  showMockData={true}
+                  tournamentId={tournamentId}
+                  teams={mockStandings as any}
+                  onGameClick={() => {}}
+                  className=""
                 />
               </div>
             </div>
@@ -1391,25 +1340,7 @@ export default function TournamentSettings({
         </div>
         
         <div style={{ display: 'flex', gap: '12px' }}>
-          {currentTournament?.locked_status ? (
-            <button
-              onClick={handleUnlockTournament}
-              disabled={lockingTournament}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                opacity: lockingTournament ? 0.7 : 1
-              }}
-            >
-              {lockingTournament ? 'Unlocking...' : 'Unlock Tournament'}
-            </button>
-          ) : (
+          {!(currentTournament?.status === 'active') && (
             <>
               {onReset && (
                 <button
@@ -1461,28 +1392,7 @@ export default function TournamentSettings({
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>
-              
-              {currentTournament && (
-                <button
-                  onClick={handleLockTournament}
-                  disabled={lockingTournament || (teams?.length || 0) === 0}
-                  style={{
-                    background: (teams?.length || 0) === 0 
-                      ? '#e5e7eb' 
-                      : 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                    color: (teams?.length || 0) === 0 ? '#9ca3af' : 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '12px 24px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: (teams?.length || 0) === 0 ? 'not-allowed' : 'pointer',
-                    opacity: lockingTournament ? 0.7 : 1
-                  }}
-                >
-                  {lockingTournament ? 'Locking...' : 'Lock Tournament'}
-                </button>
-              )}
+
             </>
           )}
         </div>

@@ -38,6 +38,7 @@ export default function RootLayout({
           overflowX: 'hidden',
           maxWidth: '100vw'
         }}
+        suppressHydrationWarning={true}
       >
         <NavBar />
         {children}

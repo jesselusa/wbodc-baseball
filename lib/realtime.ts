@@ -2,9 +2,14 @@ import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabas
 import { 
   RealtimeGameUpdate, 
   RealtimeDashboardUpdate,
+  RealtimeTournamentUpdate,
   GameSnapshot,
   GameEvent,
-  LiveGameStatus
+  LiveGameStatus,
+  TournamentStandingsUpdate,
+  TournamentBracketUpdate,
+  TournamentGameComplete,
+  TournamentPhaseTransition
 } from './types';
 
 // Initialize Supabase client
@@ -678,6 +683,13 @@ export function createDashboardSubscription(): DashboardRealtimeManager {
 }
 
 /**
+ * Create a tournament-specific realtime subscription
+ */
+export function createTournamentSubscription(tournamentId: string): TournamentRealtimeManager {
+  return new TournamentRealtimeManager(tournamentId);
+}
+
+/**
  * Get live game status with team/player names
  */
 export async function getLiveGameStatus(gameId: string): Promise<LiveGameStatus | null> {
@@ -782,4 +794,534 @@ export async function testRealtimeConnection(): Promise<{ success: boolean; erro
       }
     });
   });
+}
+
+// Tournament realtime subscription manager
+export class TournamentRealtimeManager {
+  private tournamentId: string;
+  private instanceId: string;
+  private channel: RealtimeChannel | null = null;
+  private isConnected = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
+  private maxReconnectDelay = 30000;
+  private isDisposed = false;
+  
+  // Event handlers
+  private onTournamentUpdateHandler?: (update: RealtimeTournamentUpdate) => void;
+  private onConnectionStatusHandler?: (status: ConnectionStatus) => void;
+  
+  // Debouncing for rapid updates
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingUpdates: RealtimeTournamentUpdate[] = [];
+
+  constructor(tournamentId: string) {
+    this.tournamentId = tournamentId;
+    this.instanceId = `tournament-${tournamentId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log(`[TournamentRealtimeManager] Created instance ${this.instanceId} for tournament ${tournamentId}`);
+  }
+
+  /**
+   * Subscribe to real-time updates for a specific tournament
+   */
+  async subscribe(options: {
+    onTournamentUpdate?: (update: RealtimeTournamentUpdate) => void;
+    onConnectionStatus?: (status: ConnectionStatus) => void;
+  }): Promise<void> {
+    if (this.isDisposed) {
+      console.warn(`[TournamentRealtimeManager] Attempted to subscribe to disposed instance ${this.instanceId}`);
+      return;
+    }
+    
+    console.log(`[TournamentRealtimeManager] Subscribing instance ${this.instanceId} to tournament: ${this.tournamentId}`);
+    
+    this.onTournamentUpdateHandler = options.onTournamentUpdate;
+    this.onConnectionStatusHandler = options.onConnectionStatus;
+
+    await this.connect();
+  }
+
+  /**
+   * Connect to the tournament channel
+   */
+  private async connect(): Promise<void> {
+    if (this.isDisposed) {
+      console.warn(`[TournamentRealtimeManager] Attempted to connect disposed instance ${this.instanceId}`);
+      return;
+    }
+    
+    try {
+      console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} connecting to tournament channel: tournament:${this.tournamentId}`);
+      
+      // Clean up existing channel if it exists
+      if (this.channel) {
+        console.log(`[TournamentRealtimeManager] Cleaning up existing channel before reconnect for instance ${this.instanceId}`);
+        this.channel.unsubscribe();
+        this.channel = null;
+      }
+      
+      // Create channel for this specific tournament
+      this.channel = supabase.channel(`tournament:${this.tournamentId}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: this.tournamentId }
+        }
+      });
+
+      console.log(`[TournamentRealtime] Channel created, setting up subscriptions...`);
+
+      // Subscribe to tournament standings updates
+      this.channel.on('postgres_changes', 
+        { 
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public', 
+          table: 'tournament_standings',
+          filter: `tournament_id=eq.${this.tournamentId}`
+        }, 
+        (payload) => {
+          console.log(`[TournamentRealtime] Received standings update:`, payload);
+          this.handleStandingsUpdate(payload);
+        }
+      );
+
+      // Subscribe to tournament bracket updates
+      this.channel.on('postgres_changes', 
+        { 
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public', 
+          table: 'tournament_brackets',
+          filter: `tournament_id=eq.${this.tournamentId}`
+        }, 
+        (payload) => {
+          console.log(`[TournamentRealtime] Received bracket update:`, payload);
+          this.handleBracketUpdate(payload);
+        }
+      );
+
+      // Subscribe to tournament rounds updates
+      this.channel.on('postgres_changes', 
+        { 
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public', 
+          table: 'tournament_rounds',
+          filter: `tournament_id=eq.${this.tournamentId}`
+        }, 
+        (payload) => {
+          console.log(`[TournamentRealtime] Received round update:`, payload);
+          this.handleRoundUpdate(payload);
+        }
+      );
+
+      // Subscribe to game completion updates for this tournament
+      this.channel.on('postgres_changes', 
+        { 
+          event: 'UPDATE',
+          schema: 'public', 
+          table: 'games',
+          filter: `tournament_id=eq.${this.tournamentId}`
+        }, 
+        (payload) => {
+          console.log(`[TournamentRealtime] Received game update:`, payload);
+          this.handleGameUpdate(payload);
+        }
+      );
+
+      console.log(`[TournamentRealtime] Subscriptions configured, attempting to subscribe...`);
+
+      // Handle connection status changes
+      this.channel.subscribe((status) => {
+        console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} channel status: ${status}`);
+        this.isConnected = status === 'SUBSCRIBED';
+        
+        if (this.isDisposed) {
+          console.log(`[TournamentRealtimeManager] Ignoring status ${status} for disposed instance ${this.instanceId}`);
+          return;
+        }
+        
+        if (status === 'SUBSCRIBED') {
+          console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} successfully connected to tournament:${this.tournamentId}`);
+          this.reconnectAttempts = 0;
+          this.reconnectDelay = 1000;
+          this.notifyConnectionStatus({
+            connected: true,
+            reconnecting: false,
+            lastConnected: new Date()
+          });
+          
+          // Fetch latest tournament state on successful connection
+          this.fetchLatestTournamentState();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`[TournamentRealtimeManager] Instance ${this.instanceId} connection failed with status: ${status}`);
+          this.isConnected = false;
+          this.notifyConnectionStatus({
+            connected: false,
+            reconnecting: false,
+            error: `Connection ${status.toLowerCase()}`
+          });
+          
+          if (!this.isDisposed) {
+            this.scheduleReconnect();
+          }
+        } else if (status === 'CLOSED') {
+          console.warn(`[TournamentRealtimeManager] Instance ${this.instanceId} connection closed for tournament:${this.tournamentId}`);
+          this.isConnected = false;
+          
+          if (this.isDisposed) {
+            console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} connection closed intentionally, not reconnecting`);
+            this.notifyConnectionStatus({
+              connected: false,
+              reconnecting: false,
+              error: 'Connection closed'
+            });
+          } else {
+            console.warn(`[TournamentRealtimeManager] Instance ${this.instanceId} connection closed unexpectedly, attempting reconnect...`);
+            this.notifyConnectionStatus({
+              connected: false,
+              reconnecting: true,
+              error: 'Connection closed'
+            });
+            
+            this.scheduleReconnect();
+          }
+        } else {
+          console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} intermediate status: ${status}`);
+        }
+      });
+
+    } catch (error) {
+      console.error('[TournamentRealtime] Error connecting to tournament channel:', error);
+      this.notifyConnectionStatus({
+        connected: false,
+        reconnecting: false,
+        error: error instanceof Error ? error.message : 'Unknown connection error'
+      });
+    }
+  }
+
+  /**
+   * Handle standings updates
+   */
+  private async handleStandingsUpdate(payload: any): Promise<void> {
+    try {
+      // Fetch current standings for the tournament
+      const { data: standings, error } = await supabase
+        .from('tournament_standings')
+        .select(`
+          team_id,
+          wins,
+          losses,
+          runs_scored,
+          runs_allowed,
+          run_differential,
+          games_played,
+          seed,
+          tournament_teams!inner (
+            id,
+            team_name
+          )
+        `)
+        .eq('tournament_id', this.tournamentId)
+        .order('seed', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching standings for update:', error);
+        return;
+      }
+
+      // Calculate round robin completion status
+      const totalTeams = standings?.length || 0;
+      const expectedGames = totalTeams > 0 ? (totalTeams * (totalTeams - 1)) / 2 : 0;
+      const completedGames = standings?.reduce((sum, s) => sum + (s.games_played || 0), 0) / 2 || 0;
+      const roundRobinComplete = completedGames >= expectedGames;
+
+      const update: RealtimeTournamentUpdate = {
+        type: 'standings_update',
+        tournament_id: this.tournamentId,
+        data: {
+          standings: standings?.map(s => ({
+            team_id: s.team_id,
+            team_name: (s.tournament_teams as any)?.team_name || 'Unknown Team',
+            wins: s.wins,
+            losses: s.losses,
+            runs_scored: s.runs_scored,
+            runs_allowed: s.runs_allowed,
+            run_differential: s.run_differential,
+            win_percentage: s.games_played > 0 ? s.wins / s.games_played : 0,
+            seed: s.seed || 0
+          })) || [],
+          round_robin_complete: roundRobinComplete,
+          total_teams: totalTeams,
+          completed_games: completedGames,
+          expected_games: expectedGames
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      this.onTournamentUpdateHandler?.(update);
+    } catch (error) {
+      console.error('Error handling standings update:', error);
+    }
+  }
+
+  /**
+   * Handle bracket updates
+   */
+  private async handleBracketUpdate(payload: any): Promise<void> {
+    try {
+      // Fetch current bracket state
+      const { data: bracketMatches, error: bracketError } = await supabase
+        .from('tournament_brackets')
+        .select(`
+          id,
+          tournament_id,
+          round_id,
+          bracket_type,
+          round_number,
+          game_number,
+          home_team_id,
+          away_team_id,
+          home_team_seed,
+          away_team_seed,
+          winner_team_id,
+          game_id,
+          is_bye,
+          next_game_number,
+          tournament_teams!home_team_id (
+            id,
+            team_name
+          ),
+          tournament_teams!away_team_id (
+            id,
+            team_name
+          ),
+          tournament_teams!winner_team_id (
+            id,
+            team_name
+          )
+        `)
+        .eq('tournament_id', this.tournamentId)
+        .order('round_number', { ascending: true })
+        .order('game_number', { ascending: true });
+
+      if (bracketError) {
+        console.error('Error fetching bracket for update:', bracketError);
+        return;
+      }
+
+      // Fetch bracket games
+      const { data: bracketGames, error: gamesError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('tournament_id', this.tournamentId)
+        .eq('is_round_robin', false)
+        .order('bracket_game_number', { ascending: true });
+
+      if (gamesError) {
+        console.error('Error fetching bracket games for update:', gamesError);
+        return;
+      }
+
+      const update: RealtimeTournamentUpdate = {
+        type: 'bracket_update',
+        tournament_id: this.tournamentId,
+        data: {
+          bracket_matches: bracketMatches || [],
+          bracket_games: bracketGames || [],
+          updated_match: payload.new,
+          winner_advanced: payload.eventType === 'UPDATE' && payload.new?.winner_team_id
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      this.onTournamentUpdateHandler?.(update);
+    } catch (error) {
+      console.error('Error handling bracket update:', error);
+    }
+  }
+
+  /**
+   * Handle round updates (phase transitions)
+   */
+  private async handleRoundUpdate(payload: any): Promise<void> {
+    try {
+      const round = payload.new;
+      
+      const update: RealtimeTournamentUpdate = {
+        type: 'phase_transition',
+        tournament_id: this.tournamentId,
+        data: {
+          from_phase: payload.old?.round_type || 'round_robin',
+          to_phase: round.round_type,
+          round_id: round.id,
+          bracket_type: round.round_type === 'bracket' ? 'single_elimination' : undefined,
+          total_rounds: round.round_type === 'bracket' ? 3 : undefined,
+          total_games: round.round_type === 'bracket' ? 5 : undefined
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      this.onTournamentUpdateHandler?.(update);
+    } catch (error) {
+      console.error('Error handling round update:', error);
+    }
+  }
+
+  /**
+   * Handle game completion updates
+   */
+  private async handleGameUpdate(payload: any): Promise<void> {
+    try {
+      const game = payload.new;
+      
+      // Only handle completed games
+      if (game.status !== 'completed') {
+        return;
+      }
+
+      const update: RealtimeTournamentUpdate = {
+        type: 'game_complete',
+        tournament_id: this.tournamentId,
+        data: {
+          game_id: game.id,
+          home_team_id: game.home_team_id,
+          away_team_id: game.away_team_id,
+          home_score: game.home_score,
+          away_score: game.away_score,
+          winner_team_id: game.home_score > game.away_score ? game.home_team_id : game.away_team_id,
+          is_round_robin: game.is_round_robin,
+          bracket_game_number: game.bracket_game_number
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      this.onTournamentUpdateHandler?.(update);
+    } catch (error) {
+      console.error('Error handling game update:', error);
+    }
+  }
+
+  /**
+   * Fetch latest tournament state (used on reconnect)
+   */
+  private async fetchLatestTournamentState(): Promise<void> {
+    try {
+      // Fetch current standings
+      await this.handleStandingsUpdate({});
+      
+      // Fetch current bracket state
+      await this.handleBracketUpdate({});
+      
+      // Fetch current round state
+      const { data: currentRound, error } = await supabase
+        .from('tournament_rounds')
+        .select('*')
+        .eq('tournament_id', this.tournamentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!error && currentRound) {
+        await this.handleRoundUpdate({ new: currentRound });
+      }
+    } catch (error) {
+      console.error('Error fetching latest tournament state:', error);
+    }
+  }
+
+  /**
+   * Schedule a reconnection attempt with exponential backoff
+   */
+  private scheduleReconnect(): void {
+    if (this.isDisposed) {
+      console.log(`[TournamentRealtimeManager] Not scheduling reconnect for disposed instance ${this.instanceId}`);
+      return;
+    }
+    
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.warn(`[TournamentRealtimeManager] Instance ${this.instanceId} max reconnection attempts reached`);
+      this.notifyConnectionStatus({
+        connected: false,
+        reconnecting: false,
+        error: 'Max reconnection attempts reached'
+      });
+      return;
+    }
+
+    console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${this.reconnectDelay}ms`);
+    this.notifyConnectionStatus({
+      connected: false,
+      reconnecting: true
+    });
+
+    this.debounceTimer = setTimeout(async () => {
+      if (this.isDisposed) {
+        console.log(`[TournamentRealtimeManager] Instance ${this.instanceId} disposed during reconnect timeout, aborting`);
+        return;
+      }
+      
+      this.reconnectAttempts++;
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2, 
+        this.maxReconnectDelay
+      );
+      
+      await this.connect();
+    }, this.reconnectDelay);
+  }
+
+  /**
+   * Notify connection status changes
+   */
+  private notifyConnectionStatus(status: ConnectionStatus): void {
+    this.onConnectionStatusHandler?.(status);
+  }
+
+  /**
+   * Dispose of this manager instance completely
+   */
+  async dispose(): Promise<void> {
+    if (this.isDisposed) {
+      return;
+    }
+    
+    console.log(`[TournamentRealtimeManager] Disposing instance ${this.instanceId} for tournament: ${this.tournamentId}`);
+    this.isDisposed = true;
+    
+    if (this.channel) {
+      try {
+        await new Promise<void>((resolve) => {
+          this.channel!.unsubscribe();
+          setTimeout(resolve, 100);
+        });
+      } catch (error) {
+        console.warn(`[TournamentRealtimeManager] Error during channel unsubscribe for instance ${this.instanceId}:`, error);
+      }
+      this.channel = null;
+    }
+    
+    this.isConnected = false;
+    
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    
+    this.reconnectAttempts = 0;
+    this.reconnectDelay = 1000;
+    
+    this.onTournamentUpdateHandler = undefined;
+    this.onConnectionStatusHandler = undefined;
+  }
+
+  /**
+   * Get current connection status
+   */
+  getConnectionStatus(): ConnectionStatus {
+    return {
+      connected: this.isConnected,
+      reconnecting: this.reconnectAttempts > 0 && this.reconnectAttempts < this.maxReconnectAttempts
+    };
+  }
 } 

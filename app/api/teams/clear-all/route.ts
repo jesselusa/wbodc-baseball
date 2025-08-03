@@ -22,16 +22,16 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Clear all team memberships (this removes players from teams)
-    const { error: teamMembershipsError } = await supabase
-      .from('team_memberships')
+    // Clear all tournament player assignments (this removes players from teams)
+    const { error: assignmentsError } = await supabase
+      .from('tournament_player_assignments')
       .delete()
       .not('id', 'is', null); // Delete all records
 
-    if (teamMembershipsError) {
-      console.error('Error clearing team memberships:', teamMembershipsError);
+    if (assignmentsError) {
+      console.error('Error clearing tournament player assignments:', assignmentsError);
       return NextResponse.json(
-        { error: 'Failed to clear team memberships' },
+        { error: 'Failed to clear tournament player assignments' },
         { status: 500 }
       );
     }

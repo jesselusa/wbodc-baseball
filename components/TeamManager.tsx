@@ -36,7 +36,7 @@ interface TeamManagerProps {
   onClearLocalTeams?: () => void;
   onClearTeams?: () => Promise<void>;
   onSaveTeams?: (teams: TeamDragDrop[]) => Promise<void>;
-  onLockTournament?: () => Promise<void>;
+
   isLocked?: boolean;
   savingTeams?: boolean;
 }
@@ -492,7 +492,7 @@ export default function TeamManager({
   onClearLocalTeams,
   onClearTeams,
   onSaveTeams,
-  onLockTournament,
+
   isLocked: propIsLocked,
   savingTeams: propSavingTeams,
 }: TeamManagerProps) {
@@ -1067,43 +1067,7 @@ export default function TeamManager({
                 </svg>
                 Randomize Teams
               </button>
-              <button
-                onClick={() => setIsLocked(!isLocked)}
-                style={{
-                  padding: '12px 24px',
-                  height: '44px', // Match input box height
-                  background: isLocked ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {isLocked ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    Unlock Tournament
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    Lock Tournament
-                  </>
-                )}
-              </button>
+
               {(onClearAllPlayers || onClearLocalTeams) && (
                 <button
                   onClick={handleClearAllPlayers}

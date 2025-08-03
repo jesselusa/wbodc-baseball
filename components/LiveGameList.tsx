@@ -42,7 +42,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     loadGames();
   }, [limit]);
 
-  // Merge live scores with game data
+  // Merge live scores with game data and filter out unknown teams
   const gamesWithLiveData = games.map(game => {
     const liveScore = liveScores.get(game.id);
     if (liveScore) {
@@ -54,7 +54,21 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
       };
     }
     return game;
+  }).filter(game => {
+    // Only show games where both teams are known (not "Unknown Team" or null)
+    const hasValidHomeTeam = game.home_team?.name && game.home_team.name !== 'Unknown Team';
+    const hasValidAwayTeam = game.away_team?.name && game.away_team.name !== 'Unknown Team';
+    return hasValidHomeTeam && hasValidAwayTeam;
   });
+
+  // Split games into completed and upcoming
+  const completedGames = gamesWithLiveData.filter(game => 
+    game.status === 'completed'
+  ).slice(0, Math.min(4, limit)); // Limit completed games
+
+  const upcomingGames = gamesWithLiveData.filter(game => 
+    game.status === 'scheduled' || game.status === 'active'
+  ).slice(0, Math.min(4, limit)); // Limit upcoming games
 
   if (loading) {
     return (
@@ -100,7 +114,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     );
   }
 
-  if (gamesWithLiveData.length === 0) {
+  if (completedGames.length === 0 && upcomingGames.length === 0) {
     return (
       <div style={{
         background: '#f9f8fc',
@@ -116,15 +130,15 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
           color: '#696775',
           fontSize: '16px',
         }}>
-          No games found
+          No games found with known teams
         </div>
       </div>
     );
   }
 
   // Separate live and non-live games for special treatment
-  const liveGames = gamesWithLiveData.filter(game => game.status === 'in_progress');
-  const otherGames = gamesWithLiveData.filter(game => game.status !== 'in_progress');
+  const liveGames = [...completedGames, ...upcomingGames].filter(game => game.status === 'in_progress');
+  const hasLiveGames = liveGames.length > 0;
 
   return (
     <div style={{
@@ -150,11 +164,11 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
             fontWeight: '600',
             color: '#1c1b20',
           }}>
-            Recent Games
+            Games
           </h2>
           
           {/* Live connection indicator */}
-          {liveGames.length > 0 && (
+          {hasLiveGames && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -178,7 +192,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
           )}
         </div>
         
-        {liveGames.length > 0 && (
+        {hasLiveGames && (
           <p style={{
             margin: '4px 0 0',
             fontSize: '14px',
@@ -190,10 +204,10 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
       </div>
 
       {/* Live Games Section */}
-      {liveGames.length > 0 && (
+      {hasLiveGames && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.03) 0%, rgba(34, 197, 94, 0.08) 100%)',
-          borderBottom: otherGames.length > 0 ? '3px solid #22c55e' : 'none',
+          borderBottom: (completedGames.length > 0 || upcomingGames.length > 0) ? '3px solid #22c55e' : 'none',
           position: 'relative',
         }}>
           {/* Live indicator stripe */}
@@ -270,7 +284,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
       )}
 
       {/* Recent Games Section */}
-      {otherGames.length > 0 && (
+      {completedGames.length > 0 && (
         <div style={{
           background: '#fdfcfe',
         }}>
@@ -280,7 +294,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderTop: liveGames.length > 0 ? 'none' : '1px solid #e9e8eb',
+            borderTop: hasLiveGames ? 'none' : '1px solid #e9e8eb',
           }}>
             <div style={{
               display: 'flex',
@@ -312,7 +326,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
               fontWeight: '600',
               color: '#696775',
             }}>
-              {otherGames.length} Completed
+              {completedGames.length} Completed
             </div>
           </div>
           
@@ -324,9 +338,75 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
             border: '1px solid #e4e2e8',
             overflow: 'hidden',
           }}>
-            {otherGames.map((game, index) => (
+            {completedGames.map((game, index) => (
               <div key={game.id} style={{
-                borderBottom: index < otherGames.length - 1 ? '1px solid #e9e8eb' : 'none',
+                borderBottom: index < completedGames.length - 1 ? '1px solid #e9e8eb' : 'none',
+              }}>
+                <LiveGameCard game={game} isLive={false} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Games Section */}
+      {upcomingGames.length > 0 && (
+        <div style={{
+          background: '#fdfcfe',
+        }}>
+          {/* Upcoming Games Header */}
+          <div style={{
+            padding: '20px 24px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderTop: (hasLiveGames || completedGames.length > 0) ? '1px solid #e9e8eb' : 'none',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: '#3b82f6',
+              }}></div>
+              <span style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#3b82f6',
+                textTransform: 'uppercase',
+                letterSpacing: '0.8px',
+              }}>
+                📅 Upcoming Games
+              </span>
+            </div>
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '12px',
+              padding: '4px 10px',
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#2563eb',
+            }}>
+              {upcomingGames.length} Scheduled
+            </div>
+          </div>
+          
+          {/* Upcoming Games List */}
+          <div style={{
+            background: '#fdfcfe',
+            margin: '0 16px 16px',
+            borderRadius: '8px',
+            border: '1px solid #dbeafe',
+            overflow: 'hidden',
+          }}>
+            {upcomingGames.map((game, index) => (
+              <div key={game.id} style={{
+                borderBottom: index < upcomingGames.length - 1 ? '1px solid #e9e8eb' : 'none',
               }}>
                 <LiveGameCard game={game} isLive={false} />
               </div>

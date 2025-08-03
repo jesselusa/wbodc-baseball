@@ -61,8 +61,7 @@ export interface TournamentRecord {
   location: string;
   winner?: string;
   tournament_number: number;
-  locked_status: boolean;
-  status: 'upcoming' | 'active' | 'completed'; // existing status field
+  status: 'upcoming' | 'active' | 'completed'; // simplified status: upcoming=not started, active=in progress, completed=finished
   // Tournament settings
   pool_play_games: number;
   pool_play_innings: number;
@@ -182,7 +181,7 @@ export interface BracketStanding {
 }
 
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-export type GameType = 'tournament' | 'free_play';
+export type GameType = 'round_robin' | 'bracket' | 'single_elimination' | 'tournament' | 'free_play';
 
 export interface Game {
   id: string;
@@ -194,12 +193,19 @@ export interface Game {
   away_team: Team;
   status: GameStatus;
   game_type: GameType;
-  innings: number; // 3, 5, 7, or 9
+  innings?: number; // 3, 5, 7, or 9
+  total_innings?: number;
+  current_inning?: number;
+  is_top_inning?: boolean;
   scheduled_start?: string;
   actual_start?: string;
   actual_end?: string;
+  started_at?: string;
+  completed_at?: string;
   home_score: number;
   away_score: number;
+  round_number?: number;
+  game_number?: number;
   created_at: string;
   updated_at: string;
 }
@@ -449,6 +455,7 @@ export interface GameSetupData {
   away_team_id: string;
   innings: 3 | 5 | 7 | 9;
   umpire_id: string;
+  game_id?: string; // Optional - for starting existing tournament games
 }
 
 // Real-time subscription types
@@ -463,6 +470,69 @@ export interface RealtimeDashboardUpdate {
   game_id: string;
   data: Partial<LiveGameStatus>;
   timestamp: string;
+}
+
+// Tournament-specific real-time update types
+export interface RealtimeTournamentUpdate {
+  type: 'standings_update' | 'bracket_update' | 'game_complete' | 'phase_transition' | 'error';
+  tournament_id: string;
+  data: TournamentStandingsUpdate | TournamentBracketUpdate | TournamentGameComplete | TournamentPhaseTransition | { message: string };
+  timestamp: string;
+}
+
+export interface TournamentStandingsUpdate {
+  standings: BracketStanding[];
+  round_robin_complete: boolean;
+  total_teams: number;
+  completed_games: number;
+  expected_games: number;
+}
+
+export interface TournamentBracketUpdate {
+  bracket_matches: TournamentBracketMatch[];
+  bracket_games: Game[];
+  updated_match?: TournamentBracketMatch;
+  winner_advanced?: boolean;
+}
+
+export interface TournamentBracketMatch {
+  id: string;
+  tournament_id: string;
+  round_id: string;
+  bracket_type: BracketType;
+  round_number: number;
+  game_number: number;
+  home_team_id?: string;
+  away_team_id?: string;
+  home_team_seed?: number;
+  away_team_seed?: number;
+  winner_team_id?: string;
+  game_id?: string;
+  is_bye: boolean;
+  next_game_number?: number;
+  home_team?: TournamentTeamRecord;
+  away_team?: TournamentTeamRecord;
+  winner_team?: TournamentTeamRecord;
+}
+
+export interface TournamentGameComplete {
+  game_id: string;
+  home_team_id: string;
+  away_team_id: string;
+  home_score: number;
+  away_score: number;
+  winner_team_id: string;
+  is_round_robin: boolean;
+  bracket_game_number?: number;
+}
+
+export interface TournamentPhaseTransition {
+  from_phase: 'round_robin' | 'bracket';
+  to_phase: 'round_robin' | 'bracket';
+  round_id: string;
+  bracket_type?: BracketType;
+  total_rounds?: number;
+  total_games?: number;
 }
 
 // API response types

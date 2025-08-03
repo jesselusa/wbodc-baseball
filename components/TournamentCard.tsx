@@ -2,16 +2,20 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Tournament } from '../lib/types';
+import { Tournament, TournamentRecord } from '../lib/types';
 
 interface TournamentCardProps {
-  tournament: Tournament;
+  tournament: Tournament | TournamentRecord;
   onTournamentClick?: () => void;
   isHero?: boolean;
 }
 
 export default function TournamentCard({ tournament, onTournamentClick, isHero = false }: TournamentCardProps) {
   const router = useRouter();
+
+
+
+
 
   const handleClick = () => {
     if (onTournamentClick) {
@@ -21,10 +25,13 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
     }
   };
 
-  // Calculate tournament stats (these would come from API in real implementation)
-  const teamCount: number = 6; // Mock data - would be calculated from tournament teams
-  const gamesPlayed: number = 3; // Mock data - would be calculated from tournament games
-  const format: string = 'Round Robin'; // Mock data - would come from tournament settings
+  // Calculate tournament stats from real data
+  const isTournamentRecord = 'num_teams' in tournament;
+  const teamCount: number = isTournamentRecord ? (tournament as TournamentRecord).num_teams : 4; // Default to 4 if basic Tournament
+  const gamesPlayed: number = isTournamentRecord ? (tournament as TournamentRecord).pool_play_games : 6; // Default to 6 if basic Tournament
+  const format: string = isTournamentRecord && (tournament as TournamentRecord).bracket_type 
+    ? `${(tournament as TournamentRecord).bracket_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}` 
+    : 'Round Robin';
 
   // Hero-specific styling
   const heroStyles = isHero ? {
@@ -166,23 +173,34 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
             </span>
 
             {/* Date Range */}
-            <span style={{
-              fontSize: '14px',
-              color: '#696775',
-            }}>
-              {new Date(tournament.start_date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: '2-digit'
-              })}
-              {tournament.end_date && tournament.end_date !== tournament.start_date && (
+            <span 
+              key={`dates-${tournament.id}-${tournament.start_date}-${tournament.end_date}`}
+              style={{
+                fontSize: '14px',
+                color: '#696775',
+              }}
+            >
+              {tournament.start_date ? (
                 <>
-                  {' - '}
-                  {new Date(tournament.end_date).toLocaleDateString('en-US', {
+                  {new Date(tournament.start_date + 'T00:00:00').toLocaleDateString('en-US', {
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
+                    year: '2-digit',
+                    timeZone: 'UTC'
                   })}
+                  {tournament.end_date && tournament.end_date !== tournament.start_date && (
+                    <>
+                      {' - '}
+                      {new Date(tournament.end_date + 'T00:00:00').toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        timeZone: 'UTC'
+                      })}
+                    </>
+                  )}
                 </>
+              ) : (
+                'Dates TBD'
               )}
             </span>
           </div>

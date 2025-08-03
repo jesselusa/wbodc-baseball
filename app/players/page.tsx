@@ -15,6 +15,20 @@ export default function PlayersPage() {
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
   const [playerTeamAssignments, setPlayerTeamAssignments] = useState<Map<string, string>>(new Map());
+  const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Hydration-safe mobile detection
+  useEffect(() => {
+    setIsClient(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     loadPlayers();
@@ -67,28 +81,30 @@ export default function PlayersPage() {
       minHeight: '100vh',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       color: '#1c1b20',
-      paddingTop: '64px'
+      paddingTop: isMobile ? '56px' : '64px' // Reduced top padding for mobile
     }}>
       <div style={{ 
         maxWidth: '1400px', 
         margin: '0 auto', 
-        padding: '32px 24px' 
+        padding: isMobile ? '20px 16px' : '32px 24px' // Reduced padding for mobile
       }}>
         {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
+        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
           <h1 style={{
-            fontSize: '36px',
+            fontSize: isMobile ? '28px' : '36px',
             fontWeight: '700',
             color: '#1c1b20',
-            margin: '0 0 8px 0'
+            margin: '0 0 8px 0',
+            lineHeight: isMobile ? '1.2' : '1.1'
           }}>
             Players
           </h1>
           <p style={{
-            fontSize: '16px',
+            fontSize: isMobile ? '14px' : '16px',
             color: '#696775',
             margin: '0',
-            fontWeight: '500'
+            fontWeight: '500',
+            lineHeight: isMobile ? '1.4' : '1.5'
           }}>
             Manage and view all registered players
           </p>

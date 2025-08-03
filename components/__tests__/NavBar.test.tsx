@@ -27,10 +27,27 @@ describe('NavBar', () => {
     
     // Check that navigation links exist (they might be hidden on mobile)
     expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Games')).toBeInTheDocument();
     expect(screen.getByText('Teams')).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('Stats')).toBeInTheDocument();
+    expect(screen.getByText('Admin')).toBeInTheDocument();
     expect(screen.getByText('Wiki')).toBeInTheDocument();
+    // Results is now a sub-menu item under Wiki, not a top-level link
+  });
+
+  it('shows Results sub-menu when Wiki is expanded on mobile', () => {
+    render(<NavBar />);
+    
+    // Open mobile menu
+    const hamburgerButton = screen.getByLabelText('Open menu');
+    fireEvent.click(hamburgerButton);
+    
+    // Find and click Wiki button to expand sub-menu
+    const wikiButton = screen.getByRole('button', { name: /Wiki/ });
+    fireEvent.click(wikiButton);
+    
+    // Results should now be visible as a sub-menu item
+    expect(screen.getByText('Results')).toBeInTheDocument();
   });
 
   it('has mobile hamburger menu button', () => {
@@ -111,10 +128,11 @@ describe('NavBar', () => {
     render(<NavBar />);
     
     expect(screen.getByText('Home').closest('a')).toHaveAttribute('href', '/');
+    expect(screen.getByText('Games').closest('a')).toHaveAttribute('href', '/games');
     expect(screen.getByText('Teams').closest('a')).toHaveAttribute('href', '/teams');
     expect(screen.getByText('Players').closest('a')).toHaveAttribute('href', '/players');
-    expect(screen.getByText('Stats').closest('a')).toHaveAttribute('href', '/stats');
-    expect(screen.getByText('Wiki').closest('a')).toHaveAttribute('href', '/wiki');
+    expect(screen.getByText('Admin').closest('a')).toHaveAttribute('href', '/admin');
+    // Wiki is now a dropdown trigger button, not a direct link
   });
 
   it('closes mobile menu when backdrop is clicked', () => {

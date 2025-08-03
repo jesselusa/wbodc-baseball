@@ -1,15 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Team, 
   Player, 
   GameSetupData,
-  GameStartEventPayload 
+  GameStartEventPayload,
+  TournamentRecord
 } from '../lib/types';
+
+// Interface for tournament games API response
+interface TournamentGame {
+  id: string;
+  tournament_id: string;
+  home_team_id: string;
+  away_team_id: string;
+  home_team: {
+    id: string;
+    name: string;
+  };
+  away_team: {
+    id: string;
+    name: string;
+  };
+  home_score: number;
+  away_score: number;
+  status: string;
+  current_inning: number;
+  is_top_inning: boolean;
+  total_innings: number;
+  started_at?: string;
+  completed_at?: string;
+  game_type?: string;
+  brackets?: Array<{
+    round_number: number;
+    round_name: string;
+    game_number: number;
+    home_seed: number;
+    away_seed: number;
+    next_game_id?: string;
+    bracket_type: string;
+  }>;
+}
 import { 
-  fetchTeams, 
   fetchPlayers,
   fetchTeamPlayers,
-  submitEvent 
+  submitEvent,
+  getCurrentTournament
 } from '../lib/api';
 
 export interface GameSetupProps {
@@ -20,8 +54,8 @@ export interface GameSetupProps {
 }
 
 /**
- * GameSetup component for initializing a new game
- * Handles team selection and game configuration
+ * GameSetup component for starting existing tournament games
+ * Allows selection of a scheduled game and umpire
  */
 export function GameSetup({ 
   gameId, 
@@ -30,7 +64,8 @@ export function GameSetup({
   className = '' 
 }: GameSetupProps) {
   // Data state
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [tournament, setTournament] = useState<TournamentRecord | null>(null);
+  const [games, setGames] = useState<TournamentGame[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [homeTeamPlayers, setHomeTeamPlayers] = useState<Player[]>([]);
   const [awayTeamPlayers, setAwayTeamPlayers] = useState<Player[]>([]);
@@ -39,28 +74,63 @@ export function GameSetup({
   const [error, setError] = useState<string>();
 
   // Form state
-  const [homeTeamId, setHomeTeamId] = useState<string>('');
-  const [awayTeamId, setAwayTeamId] = useState<string>('');
+  const [selectedGameId, setSelectedGameId] = useState<string>('');
   const [innings, setInnings] = useState<3 | 5 | 7 | 9>(7);
   const [umpireId, setUmpireId] = useState<string>('');
-
-  // UI state
-  const [activeTab, setActiveTab] = useState<'teams' | 'settings'>('teams');
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [teamsResponse, playersResponse] = await Promise.all([
-          fetchTeams(),
+        
+        // Get current tournament and its games
+        const [tournamentResponse, playersResponse] = await Promise.all([
+          getCurrentTournament(),
           fetchPlayers()
         ]);
 
-        if (teamsResponse.success) {
-          setTeams(teamsResponse.data);
+        if (tournamentResponse.success && tournamentResponse.data) {
+          const currentTournament = tournamentResponse.data;
+          setTournament(currentTournament);
+          
+          // Set default innings from tournament settings
+          if (currentTournament.pool_play_innings) {
+            setInnings(currentTournament.pool_play_innings as 3 | 5 | 7 | 9);
+          }
+
+          // Fetch tournament games
+          const gamesResponse = await fetch(`/api/tournaments/${currentTournament.id}/games`);
+          const gamesData = await gamesResponse.json();
+
+          if (gamesResponse.ok && gamesData.success) {
+            // Filter to only show games that haven't started yet and have known teams
+            // Explicitly exclude: in_progress, completed, cancelled games
+            const availableGames = gamesData.data?.filter((game: TournamentGame) => {
+              // Only allow scheduled games (not started, completed, or cancelled)
+              const isScheduled = game.status === 'scheduled';
+              
+              // Ensure both teams are real (not placeholder teams)
+              const hasValidTeams = game.home_team?.name !== 'Unknown Team' && 
+                                   game.away_team?.name !== 'Unknown Team' &&
+                                   game.home_team?.name !== 'TBD' &&
+                                   game.away_team?.name !== 'TBD';
+              
+              // Additional safety: check that the game hasn't been started
+              const notStarted = !game.started_at;
+              
+      
+              
+              return isScheduled && hasValidTeams && notStarted;
+            }) || [];
+            
+            setGames(availableGames);
+
+          } else {
+            setError('Failed to load tournament games');
+          }
         } else {
-          setError(teamsResponse.error || 'Failed to load teams');
+          setError('No active tournament found. Please set up a tournament first.');
         }
 
         if (playersResponse.success) {
@@ -82,37 +152,35 @@ export function GameSetup({
     loadData();
   }, []);
 
-  // Load team players when a team is selected
+  // Load team players when a game is selected
   useEffect(() => {
-    if (homeTeamId) {
-      fetchTeamPlayers(homeTeamId).then(response => {
-        if (response.success) {
-          setHomeTeamPlayers(response.data);
-        }
-      });
+    if (selectedGameId && tournament) {
+      const selectedGame = games.find(g => g.id === selectedGameId);
+      if (selectedGame) {
+        // Load both team rosters
+        Promise.all([
+          fetchTeamPlayers(selectedGame.home_team_id, tournament.id),
+          fetchTeamPlayers(selectedGame.away_team_id, tournament.id)
+        ]).then(([homeResponse, awayResponse]) => {
+          if (homeResponse.success) {
+            setHomeTeamPlayers(homeResponse.data);
+          }
+          if (awayResponse.success) {
+            setAwayTeamPlayers(awayResponse.data);
+          }
+        });
+      }
     } else {
       setHomeTeamPlayers([]);
-    }
-  }, [homeTeamId]);
-
-  useEffect(() => {
-    if (awayTeamId) {
-      fetchTeamPlayers(awayTeamId).then(response => {
-        if (response.success) {
-          setAwayTeamPlayers(response.data);
-        }
-      });
-    } else {
       setAwayTeamPlayers([]);
     }
-  }, [awayTeamId]);
+  }, [selectedGameId, games, tournament]);
 
   // Helper functions
-  const getTeamById = (teamId: string) => teams.find(t => t.id === teamId);
+  const getSelectedGame = () => games.find(g => g.id === selectedGameId);
   const getPlayerById = (playerId: string) => players.find(p => p.id === playerId);
 
-  const canProceedToSettings = homeTeamId && awayTeamId && homeTeamId !== awayTeamId;
-  const canStartGame = canProceedToSettings && umpireId;
+  const canStartGame = selectedGameId && umpireId;
 
   const handleStartGame = async () => {
     if (!canStartGame) return;
@@ -121,18 +189,44 @@ export function GameSetup({
       setSubmitting(true);
       setError(undefined);
 
+      const selectedGame = getSelectedGame();
+      if (!selectedGame) {
+        setError('Selected game not found');
+        return;
+      }
+
+      // Race condition protection: re-check game status before starting
+      const gameCheckResponse = await fetch(`/api/tournaments/${tournament?.id}/games`);
+      const gameCheckData = await gameCheckResponse.json();
+      
+      if (gameCheckResponse.ok && gameCheckData.success) {
+        const currentGameState = gameCheckData.data?.find((g: TournamentGame) => g.id === selectedGameId);
+        
+        if (!currentGameState) {
+          setError('Game not found in current tournament');
+          return;
+        }
+        
+        if (currentGameState.status !== 'scheduled' || currentGameState.started_at) {
+          setError('This game has already been started by another user. Please refresh and select a different game.');
+          return;
+        }
+      }
+
       const gameData: GameSetupData = {
-        home_team_id: homeTeamId,
-        away_team_id: awayTeamId,
+        home_team_id: selectedGame.home_team_id,
+        away_team_id: selectedGame.away_team_id,
         innings,
-        umpire_id: umpireId
+        umpire_id: umpireId,
+        game_id: selectedGameId // Pass the existing game ID
       };
 
       if (onGameStarted) {
         await onGameStarted(gameData);
       }
     } catch (err) {
-      setError('Failed to start game');
+      console.error('Error starting game:', err);
+      setError('Failed to start game. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -249,79 +343,11 @@ export function GameSetup({
           marginLeft: 'auto',
           marginRight: 'auto'
         }}>
-          Configure teams and game settings to start your baseball game
+          Select a scheduled game from the tournament to start playing
         </p>
       </div>
 
-      {/* Progress Steps */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        marginBottom: '32px',
-        gap: '12px'
-      }}>
-        {(['teams', 'settings'] as const).map((step, index) => {
-          const isActive = activeTab === step;
-          const isCompleted = (step === 'teams' && canProceedToSettings) ||
-                             (step === 'settings' && canStartGame);
-          const isDisabled = (step === 'settings' && !canProceedToSettings);
 
-          return (
-            <button
-              key={step}
-              onClick={() => !isDisabled && setActiveTab(step)}
-              disabled={isDisabled}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '12px',
-                border: isActive ? '2px solid #8b8a94' : '1px solid #e4e2e8',
-                background: isActive 
-                  ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
-                  : isCompleted 
-                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-                    : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-                color: isActive || isCompleted ? 'white' : isDisabled ? '#d1cdd7' : '#1c1b20',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                textTransform: 'capitalize',
-                boxShadow: isActive ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none'
-              }}
-              onMouseEnter={(e) => {
-                if (!isDisabled) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 138, 148, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isDisabled) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = isActive ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none';
-                }
-              }}
-            >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                background: isActive || isCompleted ? 'rgba(255, 255, 255, 0.3)' : 'rgba(139, 138, 148, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: '700'
-              }}>
-                {isCompleted ? '✓' : index + 1}
-              </div>
-              {step}
-            </button>
-          );
-        })}
-      </div>
 
       {/* Main Content Card */}
       <div style={{
@@ -332,218 +358,139 @@ export function GameSetup({
         boxShadow: '0 1px 3px rgba(28, 27, 32, 0.1)',
         minHeight: '500px'
       }}>
-        {/* Teams Tab */}
-        {activeTab === 'teams' && (
+        {/* Combined Setup Screen */}
+        <div style={{
+          maxWidth: '800px',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '32px'
+        }}>
+          {/* Game Selection Section */}
           <div>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              margin: '0 0 24px 0',
-              color: '#1c1b20',
-              textAlign: 'center'
-            }}>
-              Select Teams
-            </h2>
-            
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '24px',
-              maxWidth: '800px',
-              margin: '0 auto'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '24px'
             }}>
-              {/* Home Team */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  marginBottom: '8px'
-                }}>
-                  Home Team
-                </label>
-                <select
-                  value={homeTeamId}
-                  onChange={(e) => setHomeTeamId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    border: '1px solid #e4e2e8',
-                    background: 'white',
-                    fontSize: '16px',
-                    color: '#1c1b20',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#8b8a94';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e4e2e8';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <option value="">Select home team...</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id} disabled={team.id === awayTeamId}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Home Team Players */}
-                {homeTeamPlayers.length > 0 && (
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '16px',
-                    background: 'rgba(249, 248, 252, 0.6)',
-                    borderRadius: '8px',
-                    border: '1px solid #f2f1f5'
-                  }}>
-                    <h4 style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#696775',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      margin: '0 0 12px 0'
-                    }}>
-                      Team Roster ({homeTeamPlayers.length} players)
-                    </h4>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px'
-                    }}>
-                      {homeTeamPlayers.map(player => (
-                        <div
-                          key={player.id}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'white',
-                            borderRadius: '16px',
-                            border: '1px solid #e4e2e8',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            color: '#1c1b20'
-                          }}
-                        >
-                          {player.name}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Away Team */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  marginBottom: '8px'
-                }}>
-                  Away Team
-                </label>
-                <select
-                  value={awayTeamId}
-                  onChange={(e) => setAwayTeamId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    border: '1px solid #e4e2e8',
-                    background: 'white',
-                    fontSize: '16px',
-                    color: '#1c1b20',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#8b8a94';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e4e2e8';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <option value="">Select away team...</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id} disabled={team.id === homeTeamId}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Away Team Players */}
-                {awayTeamPlayers.length > 0 && (
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '16px',
-                    background: 'rgba(249, 248, 252, 0.6)',
-                    borderRadius: '8px',
-                    border: '1px solid #f2f1f5'
-                  }}>
-                    <h4 style={{
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#696775',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      margin: '0 0 12px 0'
-                    }}>
-                      Team Roster ({awayTeamPlayers.length} players)
-                    </h4>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px'
-                    }}>
-                      {awayTeamPlayers.map(player => (
-                        <div
-                          key={player.id}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'white',
-                            borderRadius: '16px',
-                            border: '1px solid #e4e2e8',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            color: '#1c1b20'
-                          }}
-                        >
-                          {player.name}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                margin: '0',
+                color: '#1c1b20'
+              }}>
+                Select Game
+              </h2>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  background: 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)',
+                  color: '#696775',
+                  border: '1px solid #e4e2e8',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #f2f1f5 0%, #e4e2e8 100%)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                🔄 Refresh
+              </button>
             </div>
+            
+            <select
+              value={selectedGameId}
+              onChange={(e) => setSelectedGameId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e4e2e8',
+                background: 'white',
+                fontSize: '16px',
+                color: '#1c1b20',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#8b8a94';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#e4e2e8';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <option value="">Select a scheduled game...</option>
+              {games.map(game => {
+                let gameLabel = `${game.home_team?.name || 'Home'} vs ${game.away_team?.name || 'Away'}`;
+                
+                // Add round/bracket info if available
+                if (game.brackets && game.brackets.length > 0) {
+                  const bracket = game.brackets[0];
+                  if (bracket.round_name) {
+                    gameLabel = `${bracket.round_name} - ${gameLabel}`;
+                  }
+                } else if (game.game_type?.includes('pool')) {
+                  gameLabel = `Pool Play - ${gameLabel}`;
+                }
+                
+                return (
+                  <option key={game.id} value={game.id}>
+                    {gameLabel}
+                  </option>
+                );
+              })}
+            </select>
 
-            {/* Team Preview */}
-            {homeTeamId && awayTeamId && (
+            {games.length === 0 && (
               <div style={{
-                marginTop: '32px',
+                marginTop: '16px',
+                padding: '16px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: '8px',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                textAlign: 'center',
+                color: '#dc2626'
+              }}>
+                <p style={{ margin: 0 }}>
+                  No games available to start. All tournament games may already be in progress, completed, or still have placeholder teams (TBD). Please check the tournament schedule or admin panel.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Game Preview */}
+          {selectedGameId && (() => {
+            const selectedGame = getSelectedGame();
+            return (
+              <div style={{
                 padding: '24px',
                 background: 'rgba(34, 197, 94, 0.05)',
                 borderRadius: '12px',
-                border: '1px solid rgba(34, 197, 94, 0.2)',
-                textAlign: 'center'
+                border: '1px solid rgba(34, 197, 94, 0.2)'
               }}>
                 <h3 style={{
                   fontSize: '18px',
                   fontWeight: '600',
                   margin: '0 0 16px 0',
-                  color: '#1c1b20'
+                  color: '#1c1b20',
+                  textAlign: 'center'
                 }}>
-                  Game Matchup
+                  Selected Game
                 </h3>
                 <div style={{
                   display: 'flex',
@@ -552,75 +499,127 @@ export function GameSetup({
                   gap: '16px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  color: '#1c1b20'
+                  color: '#1c1b20',
+                  marginBottom: '16px'
                 }}>
-                  <span>{getTeamById(homeTeamId)?.name}</span>
+                  <span>{selectedGame?.home_team?.name || 'Home Team'}</span>
                   <span style={{ color: '#696775' }}>vs</span>
-                  <span>{getTeamById(awayTeamId)?.name}</span>
+                  <span>{selectedGame?.away_team?.name || 'Away Team'}</span>
                 </div>
+                
+                {/* Team Rosters */}
+                {(homeTeamPlayers.length > 0 || awayTeamPlayers.length > 0) && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: '16px',
+                    marginTop: '16px'
+                  }}>
+                    {/* Home Team Roster */}
+                    {homeTeamPlayers.length > 0 && (
+                      <div style={{
+                        padding: '16px',
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        borderRadius: '8px',
+                        border: '1px solid #f2f1f5'
+                      }}>
+                        <h4 style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#696775',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          margin: '0 0 12px 0'
+                        }}>
+                          {selectedGame?.home_team?.name} ({homeTeamPlayers.length} players)
+                        </h4>
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '6px'
+                        }}>
+                          {homeTeamPlayers.map(player => (
+                            <div
+                              key={player.id}
+                              style={{
+                                padding: '4px 8px',
+                                background: 'white',
+                                borderRadius: '12px',
+                                border: '1px solid #e4e2e8',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                color: '#1c1b20'
+                              }}
+                            >
+                              {player.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Away Team Roster */}
+                    {awayTeamPlayers.length > 0 && (
+                      <div style={{
+                        padding: '16px',
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        borderRadius: '8px',
+                        border: '1px solid #f2f1f5'
+                      }}>
+                        <h4 style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#696775',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          margin: '0 0 12px 0'
+                        }}>
+                          {selectedGame?.away_team?.name} ({awayTeamPlayers.length} players)
+                        </h4>
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '6px'
+                        }}>
+                          {awayTeamPlayers.map(player => (
+                            <div
+                              key={player.id}
+                              style={{
+                                padding: '4px 8px',
+                                background: 'white',
+                                borderRadius: '12px',
+                                border: '1px solid #e4e2e8',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                color: '#1c1b20'
+                              }}
+                            >
+                              {player.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            );
+          })()}
 
-            {/* Continue Button */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '32px'
-            }}>
-              <button
-                onClick={() => setActiveTab('settings')}
-                disabled={!canProceedToSettings}
-                style={{
-                  background: canProceedToSettings 
-                    ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
-                    : 'linear-gradient(135deg, #d1cdd7 0%, #e4e2e8 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '16px 32px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: canProceedToSettings ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
-                  boxShadow: canProceedToSettings ? '0 2px 8px rgba(139, 138, 148, 0.3)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (canProceedToSettings) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #696775 0%, #8b8a94 100%)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (canProceedToSettings) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }
-                }}
-              >
-                Continue to Settings →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
+          {/* Game Settings */}
           <div>
             <h2 style={{
               fontSize: '20px',
               fontWeight: '600',
-              margin: '0 0 32px 0',
-              color: '#1c1b20',
-              textAlign: 'center'
+              margin: '0 0 24px 0',
+              color: '#1c1b20'
             }}>
               Game Settings
             </h2>
-
+            
             <div style={{
-              maxWidth: '600px',
-              margin: '0 auto',
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '32px'
             }}>
               {/* Innings */}
@@ -633,6 +632,16 @@ export function GameSetup({
                   marginBottom: '16px'
                 }}>
                   Number of Innings
+                  {tournament && (
+                    <span style={{
+                      fontSize: '12px',
+                      fontWeight: '400',
+                      color: '#696775',
+                      marginLeft: '8px'
+                    }}>
+                      (Tournament default: {tournament.pool_play_innings})
+                    </span>
+                  )}
                 </label>
                 <div style={{
                   display: 'grid',
@@ -718,13 +727,16 @@ export function GameSetup({
                   ))}
                 </select>
               </div>
+            </div>
 
-              {/* Game Summary */}
+            {/* Game Summary */}
+            {selectedGameId && (
               <div style={{
                 padding: '24px',
                 background: 'rgba(34, 197, 94, 0.05)',
                 borderRadius: '12px',
-                border: '1px solid rgba(34, 197, 94, 0.2)'
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                marginTop: '32px'
               }}>
                 <h3 style={{
                   fontSize: '16px',
@@ -732,7 +744,7 @@ export function GameSetup({
                   margin: '0 0 16px 0',
                   color: '#1c1b20'
                 }}>
-                  Game Summary
+                  Ready to Start
                 </h3>
                 <div style={{
                   display: 'grid',
@@ -742,12 +754,11 @@ export function GameSetup({
                   color: '#696775'
                 }}>
                   <div>
-                    <strong style={{ color: '#1c1b20' }}>Home:</strong><br />
-                    {getTeamById(homeTeamId)?.name} ({homeTeamPlayers.length} players)
-                  </div>
-                  <div>
-                    <strong style={{ color: '#1c1b20' }}>Away:</strong><br />
-                    {getTeamById(awayTeamId)?.name} ({awayTeamPlayers.length} players)
+                    <strong style={{ color: '#1c1b20' }}>Game:</strong><br />
+                    {(() => {
+                      const selectedGame = getSelectedGame();
+                      return `${selectedGame?.home_team?.name || 'Home'} vs ${selectedGame?.away_team?.name || 'Away'}`;
+                    })()}
                   </div>
                   <div>
                     <strong style={{ color: '#1c1b20' }}>Innings:</strong><br />
@@ -755,44 +766,22 @@ export function GameSetup({
                   </div>
                   <div>
                     <strong style={{ color: '#1c1b20' }}>Umpire:</strong><br />
-                    {getPlayerById(umpireId)?.name}
+                    {getPlayerById(umpireId)?.name || 'Not selected'}
+                  </div>
+                  <div>
+                    <strong style={{ color: '#1c1b20' }}>Players:</strong><br />
+                    {homeTeamPlayers.length + awayTeamPlayers.length} total
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Navigation */}
+            {/* Start Game Button */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              gap: '16px',
               marginTop: '32px'
             }}>
-              <button
-                onClick={() => setActiveTab('teams')}
-                style={{
-                  background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-                  color: '#696775',
-                  border: '1px solid #e4e2e8',
-                  borderRadius: '12px',
-                  padding: '16px 32px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                ← Back to Teams
-              </button>
-              
               <button
                 onClick={handleStartGame}
                 disabled={!canStartGame || submitting}
@@ -844,7 +833,7 @@ export function GameSetup({
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Cancel Button */}
