@@ -211,7 +211,7 @@ export default function AdminPage() {
 
       if (activeTournamentResponse.success && activeTournamentResponse.data) {
         const tournament = activeTournamentResponse.data as any;         // Set states based on tournament status only
-        const isActiveTournament = tournament.status === 'active';
+        const isActiveTournament = tournament.status === 'in_progress';
         setIsActive(isActiveTournament);
         setSettingsLocked(isActiveTournament);
         setTournamentLive(isActiveTournament);

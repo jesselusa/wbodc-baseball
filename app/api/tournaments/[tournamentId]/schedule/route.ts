@@ -102,7 +102,7 @@ export async function POST(
       away_team_id: match.awayTeam.id,
       status: 'scheduled',
       game_type: 'tournament',
-      innings: tournament.pool_play_innings || 3,
+      total_innings: tournament.pool_play_innings || 3,
       scheduled_start: null, // Will be set by time slot distribution
       actual_start: null,
       actual_end: null,

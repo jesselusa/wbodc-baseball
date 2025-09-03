@@ -149,18 +149,18 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
               fontWeight: '500',
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
-              background: tournament.status === 'active' 
+              background: tournament.status === 'in_progress' 
                 ? 'rgba(34, 197, 94, 0.1)' 
                 : tournament.status === 'upcoming'
                 ? 'rgba(139, 138, 148, 0.1)'
                 : 'rgba(105, 103, 117, 0.1)',
-              color: tournament.status === 'active' 
+              color: tournament.status === 'in_progress' 
                 ? '#22c55e' 
                 : tournament.status === 'upcoming'
                 ? '#8b8a94'
                 : '#696775',
             }}>
-              {tournament.status === 'active' && (
+              {tournament.status === 'in_progress' && (
                 <div style={{
                   width: '6px',
                   height: '6px',
@@ -169,7 +169,7 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
                   animation: 'pulse 2s infinite',
                 }}></div>
               )}
-              {tournament.status === 'active' ? 'Live' : tournament.status}
+              {tournament.status === 'in_progress' ? 'Live' : tournament.status}
             </span>
 
             {/* Date Range */}

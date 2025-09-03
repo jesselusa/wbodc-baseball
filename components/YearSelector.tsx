@@ -140,17 +140,17 @@ export default function YearSelector({
                   fontWeight: '500',
                   background: tournament.status === 'completed' 
                     ? '#dcfce7' 
-                    : tournament.status === 'active'
+                    : tournament.status === 'in_progress'
                       ? '#dbeafe'
                       : '#f3f4f6',
                   color: tournament.status === 'completed' 
                     ? '#166534' 
-                    : tournament.status === 'active'
+                    : tournament.status === 'in_progress'
                       ? '#1e40af'
                       : '#374151',
                   border: `1px solid ${tournament.status === 'completed' 
                     ? '#bbf7d0' 
-                    : tournament.status === 'active'
+                    : tournament.status === 'in_progress'
                       ? '#bfdbfe'
                       : '#d1d5db'}`
                 }}

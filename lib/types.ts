@@ -47,7 +47,7 @@ export interface Tournament {
   start_date: string;
   end_date?: string;
   logo_url?: string;
-  status: 'upcoming' | 'active' | 'completed';
+  status: 'upcoming' | 'in_progress' | 'completed';
   created_at: string;
   updated_at: string;
 }
@@ -61,7 +61,7 @@ export interface TournamentRecord {
   location: string;
   winner?: string;
   tournament_number: number;
-  status: 'upcoming' | 'active' | 'completed'; // simplified status: upcoming=not started, active=in progress, completed=finished
+  status: 'upcoming' | 'in_progress' | 'completed'; // simplified status: upcoming=not started, active=in progress, completed=finished
   // Tournament settings
   pool_play_games: number;
   pool_play_innings: number;

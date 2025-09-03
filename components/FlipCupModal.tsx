@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { FlipCupEventPayload, FlipCupResult, GameSnapshot } from '../lib/types';
+import React, { useState, useEffect } from 'react';
+import { FlipCupEventPayload, FlipCupResult, GameSnapshot, Player } from '../lib/types';
+import { fetchPlayers } from '../lib/api';
 
 export interface FlipCupModalProps {
   isOpen: boolean;
@@ -25,6 +26,32 @@ export function FlipCupModal({
   const [selectedResult, setSelectedResult] = useState<FlipCupResult | null>(null);
   const [selectedErrors, setSelectedErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+
+  // Load players for name resolution
+  useEffect(() => {
+    if (isOpen && players.length === 0) {
+      loadPlayers();
+    }
+  }, [isOpen, players.length]);
+
+  const loadPlayers = async () => {
+    try {
+      const response = await fetchPlayers();
+      if (response.success && response.data) {
+        setPlayers(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load players:', error);
+    }
+  };
+
+  // Helper function to get player name by ID
+  const getPlayerName = (playerId: string | null): string => {
+    if (!playerId) return 'Unknown';
+    const player = players.find(p => p.id === playerId);
+    return player?.name || playerId; // Fallback to ID if name not found
+  };
 
   // Don't render if not open
   if (!isOpen) return null;
@@ -80,64 +107,143 @@ export function FlipCupModal({
     : gameSnapshot.away_lineup;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto ${className}`}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '1rem'
+    }}>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        maxWidth: '500px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }} className={className}>
         {/* Header */}
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-bold text-gray-900">Flip Cup Result</h2>
-          <p className="text-sm text-gray-600 mt-1">
+        <div style={{
+          padding: '1.5rem',
+          borderBottom: '1px solid #e4e2e8',
+          background: '#fafafa'
+        }}>
+          <h2 style={{
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#1c1b20',
+            marginBottom: '0.25rem'
+          }}>Flip Cup Result</h2>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#6b7280'
+          }}>
             {cupHitLabels[cupHit]} attempt - Who won the flip cup?
           </p>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div style={{ padding: '1.5rem' }}>
           {/* Cup Hit Info */}
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 mb-2">Cup Hit Details</h3>
-            <div className="text-sm text-blue-800">
+          <div style={{
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#1e40af',
+              marginBottom: '0.5rem'
+            }}>Cup Hit Details</h3>
+            <div style={{
+              fontSize: '0.875rem',
+              color: '#1d4ed8'
+            }}>
               <p><strong>Potential Result:</strong> {cupHitLabels[cupHit]}</p>
-              <p><strong>Batter:</strong> {gameSnapshot.batter_id || 'Unknown'}</p>
-              <p><strong>Catcher:</strong> {gameSnapshot.catcher_id || 'Unknown'}</p>
+              <p><strong>Batter:</strong> {getPlayerName(gameSnapshot.batter_id)}</p>
+              <p><strong>Catcher:</strong> {getPlayerName(gameSnapshot.catcher_id)}</p>
             </div>
           </div>
 
           {/* Result Selection */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Flip Cup Winner</h3>
-            <div className="space-y-3">
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.75rem'
+            }}>Flip Cup Winner</h3>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}>
               <button
                 onClick={() => setSelectedResult('offense wins')}
-                className={`
-                  w-full p-4 rounded-lg border-2 transition-all duration-200
-                  ${selectedResult === 'offense wins'
-                    ? 'border-green-500 bg-green-50 text-green-900'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: selectedResult === 'offense wins' ? '2px solid #22c55e' : '2px solid #d1d5db',
+                  backgroundColor: selectedResult === 'offense wins' ? '#f0fdf4' : '#ffffff',
+                  color: selectedResult === 'offense wins' ? '#166534' : '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedResult !== 'offense wins') {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
                   }
-                `}
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedResult !== 'offense wins') {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                  }
+                }}
               >
-                <div className="text-center">
-                  <div className="font-semibold">Offense Wins</div>
-                  <div className="text-sm mt-1">
-                    Batter gets {cupHitLabels[cupHit].toLowerCase()}
-                  </div>
+                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Offense Wins</div>
+                <div style={{ fontSize: '0.875rem' }}>
+                  Batter gets {cupHitLabels[cupHit].toLowerCase()}
                 </div>
               </button>
 
               <button
                 onClick={() => setSelectedResult('defense wins')}
-                className={`
-                  w-full p-4 rounded-lg border-2 transition-all duration-200
-                  ${selectedResult === 'defense wins'
-                    ? 'border-red-500 bg-red-50 text-red-900'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  border: selectedResult === 'defense wins' ? '2px solid #ef4444' : '2px solid #d1d5db',
+                  backgroundColor: selectedResult === 'defense wins' ? '#fef2f2' : '#ffffff',
+                  color: selectedResult === 'defense wins' ? '#991b1b' : '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedResult !== 'defense wins') {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
                   }
-                `}
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedResult !== 'defense wins') {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                  }
+                }}
               >
-                <div className="text-center">
-                  <div className="font-semibold">Defense Wins</div>
-                  <div className="text-sm mt-1">
-                    Batter is out
-                  </div>
+                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Defense Wins</div>
+                <div style={{ fontSize: '0.875rem' }}>
+                  Batter is out
                 </div>
               </button>
             </div>
@@ -145,27 +251,61 @@ export function FlipCupModal({
 
           {/* Error Tracking (optional) */}
           {selectedResult === 'offense wins' && fieldingLineup.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.75rem'
+              }}>
                 Fielding Errors (Optional)
               </h3>
-              <p className="text-xs text-gray-500 mb-3">
+              <p style={{
+                fontSize: '0.75rem',
+                color: '#6b7280',
+                marginBottom: '0.75rem'
+              }}>
                 Select any fielders who made errors during the play
               </p>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                maxHeight: '8rem',
+                overflowY: 'auto'
+              }}>
                 {fieldingLineup.map((playerId) => (
                   <label
                     key={playerId}
-                    className="flex items-center space-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <input
                       type="checkbox"
                       checked={selectedErrors.includes(playerId)}
                       onChange={() => handleErrorToggle(playerId)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      style={{
+                        width: '1rem',
+                        height: '1rem',
+                        borderRadius: '4px',
+                        border: '1px solid #d1d5db',
+                        accentColor: '#3b82f6'
+                      }}
                     />
-                    <span className="text-sm text-gray-900">
-                      Player {playerId}
+                    <span style={{
+                      fontSize: '0.875rem',
+                      color: '#374151'
+                    }}>
+                      {getPlayerName(playerId)}
                     </span>
                   </label>
                 ))}
@@ -174,9 +314,25 @@ export function FlipCupModal({
           )}
 
           {/* Game Rules Reminder */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-            <h4 className="text-sm font-medium text-yellow-800 mb-1">Flip Cup Rules</h4>
-            <div className="text-xs text-yellow-700 space-y-1">
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid #fed7aa',
+            borderRadius: '8px',
+            padding: '0.75rem'
+          }}>
+            <h4 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#92400e',
+              marginBottom: '0.25rem'
+            }}>Flip Cup Rules</h4>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#b45309',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem'
+            }}>
               <p>• Offense wins = Batter gets the base hit</p>
               <p>• Defense wins = Batter is out</p>
               <p>• Errors can be tracked for statistics</p>
@@ -185,11 +341,39 @@ export function FlipCupModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between">
+        <div style={{
+          padding: '1.5rem',
+          borderTop: '1px solid #e4e2e8',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '0.75rem'
+        }}>
           <button
             onClick={handleCancel}
             disabled={submitting}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: submitting ? 0.5 : 1,
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+              }
+            }}
           >
             Cancel
           </button>
@@ -197,7 +381,27 @@ export function FlipCupModal({
           <button
             onClick={handleSubmit}
             disabled={!selectedResult || submitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500"
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: !selectedResult || submitting ? '#9ca3af' : '#3b82f6',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: !selectedResult || submitting ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (selectedResult && !submitting) {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedResult && !submitting) {
+                e.currentTarget.style.backgroundColor = '#3b82f6';
+              }
+            }}
           >
             {submitting ? 'Recording...' : 'Record Result'}
           </button>

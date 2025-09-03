@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameDisplayData } from '../lib/types';
-import { fetchRecentGames } from '../lib/api';
+import { getCurrentTournament } from '../lib/api';
 import { useMultiGameScores } from '../hooks/useViewerGameUpdates';
 import { CompactScoreboard } from './LiveScoreboard';
 
@@ -14,7 +14,7 @@ interface LiveGameListProps {
 
 export default function LiveGameList({ limit = 10, showViewAllButton = true }: LiveGameListProps) {
   const router = useRouter();
-  const [games, setGames] = useState<GameDisplayData[]>([]);
+  const [games, setGames] = useState<any[]>([]); // Use any[] since tournament games have extra live state fields
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,13 +26,23 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     async function loadGames() {
       setLoading(true);
       try {
-        const response = await fetchRecentGames(limit);
-        if (response.success) {
-          setGames(response.data);
+        // First get current tournament
+        const tournamentResponse = await getCurrentTournament();
+        if (tournamentResponse.success && tournamentResponse.data) {
+          // Then get tournament games with live state
+          const gamesResponse = await fetch(`/api/tournaments/${tournamentResponse.data.id}/games`);
+          const gamesData = await gamesResponse.json();
+          
+          if (gamesResponse.ok && gamesData.success) {
+            setGames(gamesData.data || []);
+          } else {
+            setError('Failed to load tournament games');
+          }
         } else {
-          setError(response.error || 'Failed to load games');
+          setError('No tournament found for the current year. Go to Admin to create and start a tournament.');
         }
       } catch (err) {
+        console.error('Error loading games:', err);
         setError('Failed to load games');
       } finally {
         setLoading(false);
@@ -50,7 +60,9 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
         ...game,
         home_score: liveScore.home,
         away_score: liveScore.away,
-        status: liveScore.status as any
+        // Don't overwrite game.status with snapshot.status - they're different concepts
+        // game.status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' 
+        // snapshot.status: 'not_started' | 'in_progress' | 'paused' | 'completed'
       };
     }
     return game;
@@ -61,13 +73,18 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     return hasValidHomeTeam && hasValidAwayTeam;
   });
 
-  // Split games into completed and upcoming
+  // Split games into live, completed, and upcoming
+  // Filter for live games (in progress)
+  const liveGames = gamesWithLiveData.filter(game => 
+    game.status === 'in_progress'
+  ).slice(0, Math.min(4, limit)); // Limit live games
+
   const completedGames = gamesWithLiveData.filter(game => 
     game.status === 'completed'
   ).slice(0, Math.min(4, limit)); // Limit completed games
 
   const upcomingGames = gamesWithLiveData.filter(game => 
-    game.status === 'scheduled' || game.status === 'active'
+    game.status === 'scheduled'
   ).slice(0, Math.min(4, limit)); // Limit upcoming games
 
   if (loading) {
@@ -102,19 +119,47 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
       }}>
         <div style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '120px',
           color: '#696775',
           fontSize: '16px',
+          textAlign: 'center',
+          gap: '12px',
         }}>
-          Error: {error}
+          <div>{error}</div>
+          {error.includes('No tournament found') && (
+            <a 
+              href="/admin" 
+              style={{
+                color: '#6366f1',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                padding: '8px 16px',
+                border: '1px solid #6366f1',
+                borderRadius: '6px',
+                transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#6366f1';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#6366f1';
+              }}
+            >
+              Go to Admin
+            </a>
+          )}
         </div>
       </div>
     );
   }
 
-  if (completedGames.length === 0 && upcomingGames.length === 0) {
+  if (liveGames.length === 0 && completedGames.length === 0 && upcomingGames.length === 0) {
     return (
       <div style={{
         background: '#f9f8fc',
@@ -136,8 +181,6 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     );
   }
 
-  // Separate live and non-live games for special treatment
-  const liveGames = [...completedGames, ...upcomingGames].filter(game => game.status === 'in_progress');
   const hasLiveGames = liveGames.length > 0;
 
   return (

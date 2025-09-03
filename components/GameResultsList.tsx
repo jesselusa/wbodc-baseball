@@ -33,6 +33,17 @@ export interface HistoricalGame {
     home_runs: number;
     away_runs: number;
   }>;
+  // Live game state (for in-progress games)
+  current_inning?: number;
+  is_top_of_inning?: boolean;
+  outs?: number;
+  balls?: number;
+  strikes?: number;
+  base_runners?: {
+    first: string | null;
+    second: string | null;
+    third: string | null;
+  };
 }
 
 export interface GameResultsListProps {
@@ -570,6 +581,73 @@ export default function GameResultsList({
                   </div>
                 </div>
               </div>
+              
+              {/* Live Game State (for in-progress games) */}
+              {game.status === 'in_progress' && game.current_inning && (
+                <div style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  marginTop: '16px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      color: '#166534',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      🔴 Live Game
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      color: '#166534'
+                    }}>
+                      {game.is_top_of_inning ? 'Top' : 'Bottom'} {game.current_inning}
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                    gap: '12px',
+                    fontSize: '0.75rem'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: '#6b7280', marginBottom: '2px' }}>Count</div>
+                      <div style={{ fontWeight: '600', color: '#166534' }}>
+                        {game.balls || 0}-{game.strikes || 0}
+                      </div>
+                    </div>
+                    
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: '#6b7280', marginBottom: '2px' }}>Outs</div>
+                      <div style={{ fontWeight: '600', color: '#166534' }}>
+                        {game.outs || 0}
+                      </div>
+                    </div>
+                    
+                    {game.base_runners && (game.base_runners.first || game.base_runners.second || game.base_runners.third) && (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ color: '#6b7280', marginBottom: '2px' }}>Runners</div>
+                        <div style={{ fontWeight: '600', color: '#166534', fontSize: '0.7rem' }}>
+                          {game.base_runners.first && '1st '}
+                          {game.base_runners.second && '2nd '}
+                          {game.base_runners.third && '3rd'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Always Show Scoreboard */}

@@ -58,7 +58,13 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
   const getInningRuns = (inning: number, team: 'home' | 'away') => {
     const inningData = innings.find(i => i.inning === inning);
     if (!inningData) return '-';
-    return team === 'home' ? inningData.home_runs : inningData.away_runs;
+    
+    const runs = team === 'home' ? inningData.home_runs : inningData.away_runs;
+    
+    // Return "-" for future innings (marked with -1) or missing data
+    if (runs === -1 || runs === null || runs === undefined) return '-';
+    
+    return runs;
   };
 
   // Mobile team card component (ESPN-inspired)

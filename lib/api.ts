@@ -67,7 +67,7 @@ const mockTournaments: Tournament[] = [
     start_date: '2024-11-01T18:00:00Z',
     end_date: '2024-11-03T23:59:59Z',
     logo_url: null,
-    status: 'active',
+    status: 'in_progress',
     created_at: '2024-10-01T00:00:00Z',
     updated_at: '2024-11-01T18:00:00Z',
   },
@@ -360,12 +360,10 @@ export function validateAtBatEvent(
     return { isValid: false, error: 'Walk requires 4 balls (3 balls + 1 more)' };
   }
   
-  if (result === 'out' && strikes < 2) {
-    return { 
-      isValid: false, 
-      error: 'Strikeout requires 3 strikes (2 strikes + 1 more)' 
-    };
-  }
+  // Note: We don't validate strikeouts here because:
+  // 1. An "out" can result from many things other than strikeouts (fielding plays, etc.)
+  // 2. Umpires should have the flexibility to call outs as needed
+  // 3. Strikeout validation should happen at the pitch level, not at-bat level
   
   return { isValid: true };
 }
@@ -722,6 +720,103 @@ export async function getLiveGameStatus(gameId: string): Promise<LiveGameStatus 
   return error ? null : data;
 }
 
+export interface InningScore {
+  inning: number;
+  home_runs: number;
+  away_runs: number;
+}
+
+/**
+ * Calculate inning-by-inning scores from game events
+ * This is a simplified implementation - a more robust version would replay
+ * the entire game state to track exact run scoring per inning
+ */
+export async function calculateInningScores(gameId: string): Promise<InningScore[]> {
+  try {
+    // Get current game snapshot and game data
+    const { data: currentSnapshot } = await supabase
+      .from('game_snapshots')
+      .select('current_inning, score_home, score_away, is_top_of_inning')
+      .eq('game_id', gameId)
+      .single();
+
+    const { data: gameData } = await supabase
+      .from('games')
+      .select('total_innings, game_type, tournament_id')
+      .eq('id', gameId)
+      .single();
+
+    if (!currentSnapshot) return [];
+
+    let totalInnings = gameData?.total_innings;
+    
+    // If game doesn't have innings configured, get from tournament defaults based on game type
+    if (!totalInnings && gameData?.tournament_id) {
+      const { data: tournamentData } = await supabase
+        .from('tournaments')
+        .select('pool_play_innings, bracket_innings, final_innings')
+        .eq('id', gameData.tournament_id)
+        .single();
+      
+      if (tournamentData) {
+        // Use appropriate inning setting based on game type
+        switch (gameData.game_type) {
+          case 'pool_play':
+          case 'round_robin':
+            totalInnings = tournamentData.pool_play_innings || 5;
+            break;
+          case 'bracket':
+          case 'elimination':
+            totalInnings = tournamentData.bracket_innings || 5;
+            break;
+          case 'championship':
+          case 'final':
+            totalInnings = tournamentData.final_innings || 7;
+            break;
+          default:
+            totalInnings = tournamentData.pool_play_innings || 5;
+        }
+      } else {
+        totalInnings = 5; // Fallback if no tournament data
+      }
+    } else if (!totalInnings) {
+      totalInnings = 5; // Final fallback
+    }
+
+    const currentInning = currentSnapshot.current_inning;
+    const isTopOfInning = currentSnapshot.is_top_of_inning;
+    const inningScores: InningScore[] = [];
+
+    // Initialize innings that have been played or are currently being played
+    for (let i = 1; i <= totalInnings; i++) {
+      if (i < currentInning || (i === currentInning && !isTopOfInning)) {
+        // Inning has been completed or bottom half is in progress
+        inningScores.push({ inning: i, home_runs: 0, away_runs: 0 });
+      } else if (i === currentInning && isTopOfInning) {
+        // Currently in top of this inning
+        inningScores.push({ inning: i, home_runs: 0, away_runs: 0 });
+      } else {
+        // Future inning - will show "-" in the ScoreBoard component
+        inningScores.push({ inning: i, home_runs: -1, away_runs: -1 });
+      }
+    }
+
+    // Put all current runs in the current inning (simplified approach)
+    if (currentInning <= totalInnings) {
+      const currentInningScore = inningScores[currentInning - 1];
+      if (currentInningScore && currentInningScore.home_runs !== -1) {
+        currentInningScore.home_runs = currentSnapshot.score_home;
+        currentInningScore.away_runs = currentSnapshot.score_away;
+      }
+    }
+    
+    return inningScores;
+  } catch (error) {
+    console.error('Error calculating inning scores:', error);
+    return [];
+  }
+}
+
 export async function getGameEvents(
   gameId: string, 
   limit: number = 50, 
@@ -791,7 +886,7 @@ export async function updateGameSnapshotWithStateMachine(
           .update({
             home_team_id: sideEffect.data.home_team_id,
             away_team_id: sideEffect.data.away_team_id,
-            status: 'active',
+            status: 'in_progress',
             started_at: sideEffect.data.started_at
           })
           .eq('id', currentSnapshot.game_id);
@@ -800,6 +895,10 @@ export async function updateGameSnapshotWithStateMachine(
           console.error('Error updating games table:', gameUpdateError);
           // Don't throw here, just log the error
         }
+      } else if (sideEffect.type === 'score_change') {
+        // Note: Games table updates are handled server-side via API
+        // This side effect is processed by the server-side event handler
+        console.log('[StateMachine] Score change detected, will be synced server-side');
       }
       // Handle other side effects as needed
     }
@@ -1129,7 +1228,7 @@ export async function fetchActiveTournament(): Promise<ApiResponse<Tournament | 
     const { data: tournaments, error } = await supabase
       .from('tournaments')
       .select('*')
-      .eq('status', 'active')
+      .eq('status', 'in_progress')
       .limit(1);
 
     if (error) {
@@ -1430,7 +1529,7 @@ export async function saveTournamentConfig(config: {
         bracket_innings: config.bracket_innings,
         final_innings: config.final_innings,
         team_size: config.team_size,
-        status: config.is_active ? 'active' : 'upcoming',
+        status: config.is_active ? 'in_progress' : 'upcoming',
         locked_status: config.settings_locked || false,
         updated_at: new Date().toISOString()
       })
@@ -1521,8 +1620,8 @@ export async function loadTournamentConfig(tournamentId: string): Promise<ApiRes
         final_innings: data.final_innings,
         num_teams: data.num_teams,
         team_size: data.team_size,
-        is_active: data.status === 'active',
-        settings_locked: data.status === 'active'
+        is_active: data.status === 'in_progress',
+        settings_locked: data.status === 'in_progress'
       },
       success: true
     };
@@ -1925,7 +2024,7 @@ export async function createTournament(data: {
   end_date?: string;
   location: string;
   tournament_number: number;
-  status?: 'upcoming' | 'active' | 'completed';
+  status?: 'upcoming' | 'in_progress' | 'completed';
   pool_play_games?: number;
   pool_play_innings?: number;
   bracket_type?: BracketType;
@@ -1991,7 +2090,7 @@ export async function updateTournamentSettings(
     end_date?: string;
     location?: string;
     tournament_number?: number;
-    status?: 'upcoming' | 'active' | 'completed';
+    status?: 'upcoming' | 'in_progress' | 'completed';
   }
 ): Promise<ApiResponse<TournamentRecord>> {
   try {

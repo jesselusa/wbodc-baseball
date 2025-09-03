@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/realtime';
 
 interface Tournament {
   id: string;
   name: string;
-  status: 'pending' | 'active' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed';
   start_date: string;
   end_date: string;
   location: string;
@@ -108,6 +109,52 @@ export function useCurrentTournament(): UseCurrentTournamentReturn {
       fetchCurrentTournament();
     }
   }, [isClient, fetchCurrentTournament]);
+
+  // Set up real-time subscription for game updates
+  useEffect(() => {
+    if (!tournament) return;
+
+    console.log('[useCurrentTournament] Setting up real-time subscription for tournament:', tournament.id);
+
+    const subscription = supabase
+      .channel(`tournament-${tournament.id}-games`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'games',
+          filter: `tournament_id=eq.${tournament.id}`
+        }, 
+        (payload) => {
+          console.log('[useCurrentTournament] Game update received:', payload);
+          // Refetch games when any game in this tournament changes
+          fetchCurrentTournament();
+        }
+      )
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public', 
+          table: 'game_snapshots'
+        },
+        (payload) => {
+          console.log('[useCurrentTournament] Game snapshot update received:', payload);
+          // Check if this snapshot update is for a game in our tournament
+          const newRecord = payload.new as any;
+          const oldRecord = payload.old as any;
+          const updatedGameId = newRecord?.game_id || oldRecord?.game_id;
+          if (updatedGameId && games.some(g => g.id === updatedGameId)) {
+            fetchCurrentTournament();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('[useCurrentTournament] Cleaning up subscription');
+      subscription.unsubscribe();
+    };
+  }, [tournament, games, fetchCurrentTournament]);
 
   return {
     tournament,

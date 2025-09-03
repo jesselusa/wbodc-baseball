@@ -1,4 +1,4 @@
-import { GameSnapshot, GameEvent, EventType, EventPayload, PitchEventPayload, FlipCupEventPayload, AtBatEventPayload, GameStartEventPayload, GameEndEventPayload, TakeoverEventPayload, BaseRunners } from './types';
+import { GameSnapshot, GameEvent, EventType, EventPayload, PitchEventPayload, FlipCupEventPayload, AtBatEventPayload, GameStartEventPayload, GameEndEventPayload, TakeoverEventPayload, UndoEventPayload, BaseRunners } from './types';
 
 /**
  * Baseball Game State Machine
@@ -63,6 +63,9 @@ export class BaseballGameStateMachine {
         
         case 'takeover':
           return this.handleTakeoverEvent(currentSnapshot, event.payload as TakeoverEventPayload);
+        
+        case 'undo':
+          return this.handleUndoEvent(currentSnapshot, event.payload as UndoEventPayload, previousEvents);
         
         default:
           return { 
@@ -387,6 +390,21 @@ export class BaseballGameStateMachine {
     return { snapshot: newSnapshot };
   }
 
+  private static handleUndoEvent(
+    snapshot: GameSnapshot,
+    payload: UndoEventPayload,
+    previousEvents?: GameEvent[]
+  ): StateTransitionResult {
+    // For now, undo functionality requires rebuilding the state from scratch
+    // This is a simplified implementation that just returns the current snapshot
+    // A full implementation would need to replay all events except the undone one
+    
+    return { 
+      snapshot: snapshot, 
+      error: 'Undo functionality not yet implemented - please use database-level event deletion' 
+    };
+  }
+
   /**
    * Utility Functions
    */
@@ -451,57 +469,77 @@ export class BaseballGameStateMachine {
   ): BaseRunners {
     const newRunners: BaseRunners = { first: null, second: null, third: null };
 
-    // Move existing runners (from third to first to avoid conflicts)
+    // Move existing runners (process in order: third, second, first to avoid conflicts)
+    
+    // Third base runner
     if (runners.third) {
       const newPosition = 3 + bases;
       if (newPosition < 4) {
-        // Runner doesn't score, stays on third (this shouldn't happen with bases >= 1)
+        // Runner stays on base (shouldn't happen with normal hits, but handle it)
         newRunners.third = runners.third;
       }
-      // If newPosition >= 4, runner scores (no placement needed)
+      // If newPosition >= 4, runner scores (no placement needed - correctly handled)
     }
 
+    // Second base runner  
     if (runners.second) {
       const newPosition = 2 + bases;
       if (newPosition < 4) {
-        if (newPosition === 3 && !newRunners.third) newRunners.third = runners.second;
-        else if (newPosition === 2 && !newRunners.second) newRunners.second = runners.second;
-        else if (newPosition === 1 && !newRunners.first) newRunners.first = runners.second;
-        else if (forceAdvance) {
-          // Force advance - find next available base
+        // Place runner on their calculated base if available
+        if (newPosition === 3 && !newRunners.third) {
+          newRunners.third = runners.second;
+        } else if (newPosition === 2 && !newRunners.second) {
+          newRunners.second = runners.second;
+        } else if (newPosition === 1 && !newRunners.first) {
+          newRunners.first = runners.second;
+        } else if (forceAdvance) {
+          // Force advance - find next available base going forward
           if (!newRunners.third) newRunners.third = runners.second;
           else if (!newRunners.second) newRunners.second = runners.second;
           else if (!newRunners.first) newRunners.first = runners.second;
         }
       }
+      // If newPosition >= 4, runner scores (no placement needed)
     }
 
+    // First base runner
     if (runners.first) {
       const newPosition = 1 + bases;
       if (newPosition < 4) {
-        if (newPosition === 3 && !newRunners.third) newRunners.third = runners.first;
-        else if (newPosition === 2 && !newRunners.second) newRunners.second = runners.first;
-        else if (newPosition === 1 && !newRunners.first) newRunners.first = runners.first;
-        else if (forceAdvance) {
-          // Force advance - find next available base
+        // Place runner on their calculated base if available
+        if (newPosition === 3 && !newRunners.third) {
+          newRunners.third = runners.first;
+        } else if (newPosition === 2 && !newRunners.second) {
+          newRunners.second = runners.first;
+        } else if (newPosition === 1 && !newRunners.first) {
+          newRunners.first = runners.first;
+        } else if (forceAdvance) {
+          // Force advance - find next available base going forward
           if (!newRunners.third) newRunners.third = runners.first;
           else if (!newRunners.second) newRunners.second = runners.first;
           else if (!newRunners.first) newRunners.first = runners.first;
         }
       }
+      // If newPosition >= 4, runner scores (no placement needed)
     }
 
     // Place batter on base (unless home run)
     if (bases < 4) {
-      if (bases === 3 && !newRunners.third) newRunners.third = batterId;
-      else if (bases === 2 && !newRunners.second) newRunners.second = batterId;
-      else if (bases === 1 && !newRunners.first) newRunners.first = batterId;
-      else if (forceAdvance) {
-        // Force advance batter - find available base
+      if (bases === 3 && !newRunners.third) {
+        newRunners.third = batterId;
+      } else if (bases === 2 && !newRunners.second) {
+        newRunners.second = batterId;
+      } else if (bases === 1 && !newRunners.first) {
+        newRunners.first = batterId;
+      } else if (forceAdvance) {
+        // Force advance batter - this is typically only for walks
+        // Place batter on lowest available base
         if (!newRunners.first) newRunners.first = batterId;
         else if (!newRunners.second) newRunners.second = batterId;
         else if (!newRunners.third) newRunners.third = batterId;
       }
+      // If batter can't be placed anywhere (bases loaded), this is an error state
+      // that should be handled at a higher level
     }
 
     return newRunners;

@@ -59,7 +59,7 @@ export default function TeamsPage() {
   const checkTournamentStatus = async (): Promise<boolean> => {
     try {
       const response = await getCurrentTournament();
-      return response.success && response.data && response.data.status === 'active';
+      return response.success && response.data && response.data.status === 'in_progress';
     } catch {
       return false;
     }

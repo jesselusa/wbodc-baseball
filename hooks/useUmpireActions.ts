@@ -267,6 +267,11 @@ export function usePitchByPitchScoring(gameId: string, umpireId: string) {
     setPendingCupHit(null);
   }, []);
 
+  const openFlipCupModal = useCallback((cupHit: 1 | 2 | 3 | 4) => {
+    setPendingCupHit(cupHit);
+    setFlipCupModalOpen(true);
+  }, []);
+
   return {
     ...umpireActions,
     handlePitchResult,
@@ -274,6 +279,7 @@ export function usePitchByPitchScoring(gameId: string, umpireId: string) {
     handleAtBatComplete,
     flipCupModalOpen,
     pendingCupHit,
-    cancelFlipCup
+    cancelFlipCup,
+    openFlipCupModal
   };
 } 

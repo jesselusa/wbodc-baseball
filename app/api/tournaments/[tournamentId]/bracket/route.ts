@@ -176,7 +176,7 @@ export async function POST(
         away_team_id: match.awayTeamId,
         status: 'scheduled',
         game_type: 'tournament',
-        innings: tournament.bracket_innings || 3,
+        total_innings: tournament.bracket_innings || 3,
         scheduled_start: null,
         actual_start: null,
         actual_end: null,

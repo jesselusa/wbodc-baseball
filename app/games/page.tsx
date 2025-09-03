@@ -207,7 +207,7 @@ function GamesContent() {
                   color: '#696775',
                   margin: '0'
                 }}>
-                  {tournament.status === 'active' ? 'Tournament in Progress' : 
+                  {tournament.status === 'in_progress' ? 'Tournament in Progress' : 
                    tournament.status === 'completed' ? 'Tournament Completed' : 
                    'Tournament Scheduled'}
                 </p>
@@ -217,10 +217,10 @@ function GamesContent() {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '8px 16px',
-                background: tournament.status === 'active' ? 'rgba(34, 197, 94, 0.1)' :
+                background: tournament.status === 'in_progress' ? 'rgba(34, 197, 94, 0.1)' :
                            tournament.status === 'completed' ? 'rgba(139, 138, 148, 0.1)' :
                            'rgba(59, 130, 246, 0.1)',
-                color: tournament.status === 'active' ? '#15803d' :
+                color: tournament.status === 'in_progress' ? '#15803d' :
                        tournament.status === 'completed' ? '#696775' :
                        '#2563eb',
                 borderRadius: '20px',
@@ -228,7 +228,7 @@ function GamesContent() {
                 fontWeight: '600',
                 textTransform: 'uppercase'
               }}>
-                {tournament.status === 'active' ? '●' : 
+                {tournament.status === 'in_progress' ? '●' : 
                  tournament.status === 'completed' ? '✓' : '⏰'}
                 {tournament.status}
               </div>

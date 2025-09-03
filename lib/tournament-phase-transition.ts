@@ -130,7 +130,7 @@ export async function transitionToBracketPhase(
         tournament_id: tournamentId,
         round_type: 'bracket',
         round_number: 1,
-        status: 'active',
+        status: 'in_progress',
         start_date: new Date().toISOString(),
         end_date: tournament.end_date
       })
@@ -237,10 +237,10 @@ export async function transitionToBracketPhase(
     console.log(`[PhaseTransition] Created ${createdGames.length} bracket games`);
 
     // Update tournament status if needed
-    if (tournament.status === 'active') {
+    if (tournament.status === 'in_progress') {
       const { error: updateError } = await supabase
         .from('tournaments')
-        .update({ status: 'active' }) // Keep as active since bracket phase is starting
+        .update({ status: 'in_progress' }) // Keep as in_progress since bracket phase is starting
         .eq('id', tournamentId);
 
       if (updateError) {
@@ -408,7 +408,7 @@ export async function processPendingPhaseTransitions(): Promise<PhaseTransitionR
     const { data: activeTournaments, error: tournamentsError } = await supabase
       .from('tournaments')
       .select('id')
-      .eq('status', 'active');
+      .eq('status', 'in_progress');
 
     if (tournamentsError || !activeTournaments) {
       console.error('[PhaseTransition] Error fetching active tournaments:', tournamentsError);

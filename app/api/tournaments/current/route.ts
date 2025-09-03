@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const { data: tournament, error } = await supabaseAdmin
       .from('tournaments')
       .select('*')
-      .eq('status', 'active')
+      .eq('status', 'in_progress')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

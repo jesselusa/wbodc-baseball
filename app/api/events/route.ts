@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { submitEvent, validateEvent, getGameSnapshot, getGameEvents } from '../../../lib/api';
+import { supabaseAdmin } from '../../../lib/supabase-admin';
 import type { EventSubmissionRequest, EventSubmissionResponse } from '../../../lib/types';
 
 // POST /api/events - Submit a new game event
@@ -53,6 +54,35 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+    
+    // Server-side: Update games table with current scores from snapshot
+    try {
+      const snapshot = result.snapshot;
+      
+      // Determine the correct Game status based on GameSnapshot status
+      let gameStatus;
+      if (snapshot.status === 'completed') {
+        gameStatus = 'completed';
+      } else if (snapshot.status === 'in_progress' || snapshot.status === 'paused') {
+        gameStatus = 'in_progress';
+      } else {
+        gameStatus = 'scheduled'; // Default for not_started
+      }
+      
+      await supabaseAdmin
+        .from('games')
+        .update({
+          home_score: snapshot.score_home,
+          away_score: snapshot.score_away,
+          status: gameStatus,
+          current_inning: snapshot.current_inning,
+          is_top_inning: snapshot.is_top_of_inning
+        })
+        .eq('id', snapshot.game_id);
+    } catch (gamesUpdateError) {
+      console.error('Error updating games table server-side:', gamesUpdateError);
+      // Don't fail the whole request for this, just log it
     }
     
     // Return successful response

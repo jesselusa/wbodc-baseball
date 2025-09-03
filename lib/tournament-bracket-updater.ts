@@ -269,7 +269,7 @@ async function createBracketGame(
         away_team_id: bracketMatch.away_team_id,
         status: 'scheduled',
         game_type: 'tournament',
-        innings: tournament.bracket_innings || 3,
+        total_innings: tournament.bracket_innings || 3,
         scheduled_start: null,
         actual_start: null,
         actual_end: null,

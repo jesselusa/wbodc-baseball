@@ -379,7 +379,7 @@ export class GameRealtimeManager {
         .eq('game_id', this.gameId);
 
       let result;
-      if (game.status === 'active') {
+      if (game.status === 'in_progress') {
         // Active games MUST have snapshots - error if missing
         result = await query.single();
       } else {

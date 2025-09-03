@@ -159,7 +159,7 @@ export async function POST(
     const { error } = await supabaseAdmin
       .from('tournaments')
       .update({ 
-        status: 'active',
+        status: 'in_progress',
         started_at: new Date().toISOString()
       })
       .eq('id', tournamentId);

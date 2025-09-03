@@ -3,7 +3,7 @@
 import { Metadata } from 'next';
 import { notFound, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { fetchGameById, getLiveGameStatus, fetchTeamPlayers, supabase } from '../../../lib/api';
+import { fetchGameById, getLiveGameStatus, fetchTeamPlayers, calculateInningScores, supabase } from '../../../lib/api';
 import { GameDisplayData, LiveGameStatus, GameSnapshot, Player } from '../../../lib/types';
 import { useViewerGameUpdates } from '../../../hooks/useViewerGameUpdates';
 import ScoreBoard from '../../../components/ScoreBoard';
@@ -127,15 +127,8 @@ export default function GamePage({ params }: GamePageProps) {
     if (!initialGame) return;
     
     try {
-      const { data: innings, error } = await supabase
-        .from('inning_scores')
-        .select('game_id, inning, home_runs, away_runs')
-        .eq('game_id', initialGame.id)
-        .order('inning', { ascending: true });
-
-      if (!error && innings) {
-        setInningScores(innings);
-      }
+      const scores = await calculateInningScores(initialGame.id);
+      setInningScores(scores);
     } catch (error) {
       console.error('Error fetching inning scores:', error);
     }
@@ -528,6 +521,89 @@ export default function GamePage({ params }: GamePageProps) {
                     </div>
                   </div>
                 </div>
+                
+                {/* Live Game State (for in-progress games) */}
+                {isGameInProgress && currentState && (
+                  <div style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    padding: '16px 20px',
+                    marginTop: '20px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        color: '#166534',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        🔴 Live Game State
+                      </div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#166534'
+                      }}>
+                        {currentState.is_top_of_inning ? 'Top' : 'Bottom'} {currentState.current_inning}
+                      </div>
+                    </div>
+                    
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(100px, 1fr))',
+                      gap: '16px',
+                      fontSize: '0.875rem'
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ color: '#6b7280', marginBottom: '4px' }}>Count</div>
+                        <div style={{ fontWeight: '600', color: '#166534', fontSize: '1.1rem' }}>
+                          {currentState.balls || 0}-{currentState.strikes || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Balls-Strikes</div>
+                      </div>
+                      
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ color: '#6b7280', marginBottom: '4px' }}>Outs</div>
+                        <div style={{ fontWeight: '600', color: '#166534', fontSize: '1.1rem' }}>
+                          {currentState.outs || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Current Inning</div>
+                      </div>
+                      
+                      {currentState.base_runners && (currentState.base_runners.first || currentState.base_runners.second || currentState.base_runners.third) && (
+                        <div style={{ textAlign: 'center', gridColumn: isMobile ? 'span 2' : 'auto' }}>
+                          <div style={{ color: '#6b7280', marginBottom: '4px' }}>Runners on Base</div>
+                          <div style={{ 
+                            fontWeight: '600', 
+                            color: '#166534', 
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            flexWrap: 'wrap'
+                          }}>
+                            {currentState.base_runners.first && (
+                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>1st</span>
+                            )}
+                            {currentState.base_runners.second && (
+                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>2nd</span>
+                            )}
+                            {currentState.base_runners.third && (
+                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>3rd</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Scoreboard Section */}
@@ -543,7 +619,7 @@ export default function GamePage({ params }: GamePageProps) {
                       total_runs: currentState?.score_away ?? initialGame.away_score
                     },
                     innings: inningScores,
-                    total_innings: initialGame.innings || 5
+                    total_innings: initialGame.total_innings || initialGame.innings || 5
                   }}
                 />
               </div>

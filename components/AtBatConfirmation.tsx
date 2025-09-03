@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AtBatEventPayload, 
   AtBatResult, 
   GameSnapshot, 
-  BaseRunners 
+  BaseRunners,
+  Player
 } from '../lib/types';
+import { fetchPlayers } from '../lib/api';
 
 export interface AtBatConfirmationProps {
   isOpen: boolean;
@@ -28,6 +30,32 @@ export function AtBatConfirmation({
   className = ''
 }: AtBatConfirmationProps) {
   const [submitting, setSubmitting] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+
+  // Load players for name resolution
+  useEffect(() => {
+    if (isOpen && players.length === 0) {
+      loadPlayers();
+    }
+  }, [isOpen, players.length]);
+
+  const loadPlayers = async () => {
+    try {
+      const response = await fetchPlayers();
+      if (response.success && response.data) {
+        setPlayers(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load players:', error);
+    }
+  };
+
+  // Helper function to get player name by ID
+  const getPlayerName = (playerId: string | null): string => {
+    if (!playerId) return 'Unknown';
+    const player = players.find(p => p.id === playerId);
+    return player?.name || playerId; // Fallback to ID if name not found
+  };
 
   // Don't render if not open
   if (!isOpen) return null;
@@ -125,50 +153,123 @@ export function AtBatConfirmation({
   const isPositiveResult = !['out'].includes(atBatResult);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto ${className}`}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '1rem'
+    }}>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        maxWidth: '600px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }} className={className}>
         {/* Header */}
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-xl font-bold text-gray-900">Confirm At-Bat Result</h2>
-          <p className="text-sm text-gray-600 mt-1">
+        <div style={{
+          padding: '1.5rem',
+          borderBottom: '1px solid #e4e2e8',
+          background: '#fafafa'
+        }}>
+          <h2 style={{
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#1c1b20',
+            marginBottom: '0.25rem'
+          }}>Confirm At-Bat Result</h2>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#6b7280'
+          }}>
             Review the at-bat outcome before recording
           </p>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div style={{ padding: '1.5rem' }}>
           {/* At-Bat Result */}
-          <div className={`rounded-lg p-4 border-2 ${resultColors[atBatResult]}`}>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold mb-2">
-                {resultLabels[atBatResult]}
-              </h3>
-              <p className="text-sm">
-                {resultDescriptions[atBatResult]}
-              </p>
-            </div>
+          <div style={{
+            borderRadius: '8px',
+            padding: '1rem',
+            border: '2px solid',
+            borderColor: atBatResult === 'out' ? '#ef4444' :
+                        ['single', 'walk'].includes(atBatResult) ? '#22c55e' :
+                        atBatResult === 'double' ? '#3b82f6' :
+                        atBatResult === 'triple' ? '#8b5cf6' : '#f59e0b',
+            backgroundColor: atBatResult === 'out' ? '#fef2f2' :
+                           ['single', 'walk'].includes(atBatResult) ? '#f0fdf4' :
+                           atBatResult === 'double' ? '#eff6ff' :
+                           atBatResult === 'triple' ? '#f3e8ff' : '#fffbeb',
+            color: atBatResult === 'out' ? '#991b1b' :
+                  ['single', 'walk'].includes(atBatResult) ? '#166534' :
+                  atBatResult === 'double' ? '#1e40af' :
+                  atBatResult === 'triple' ? '#7c3aed' : '#92400e',
+            textAlign: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              marginBottom: '0.5rem'
+            }}>
+              {resultLabels[atBatResult]}
+            </h3>
+            <p style={{
+              fontSize: '0.875rem'
+            }}>
+              {resultDescriptions[atBatResult]}
+            </p>
           </div>
 
           {/* Current Situation */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 mb-3">Current Situation</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div style={{
+            background: '#f9fafb',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.75rem'
+            }}>Current Situation</h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: '1rem',
+              fontSize: '0.875rem'
+            }}>
               <div>
-                <span className="text-gray-600">Count:</span>
-                <span className="ml-2 font-medium">{gameSnapshot.balls}-{gameSnapshot.strikes}</span>
+                <span style={{ color: '#6b7280' }}>Count:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
+                  {gameSnapshot.balls}-{gameSnapshot.strikes}
+                </span>
               </div>
               <div>
-                <span className="text-gray-600">Outs:</span>
-                <span className="ml-2 font-medium">{gameSnapshot.outs}</span>
+                <span style={{ color: '#6b7280' }}>Outs:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
+                  {gameSnapshot.outs}
+                </span>
               </div>
               <div>
-                <span className="text-gray-600">Inning:</span>
-                <span className="ml-2 font-medium">
+                <span style={{ color: '#6b7280' }}>Inning:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
                   {gameSnapshot.is_top_of_inning ? 'Top' : 'Bottom'} {gameSnapshot.current_inning}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Score:</span>
-                <span className="ml-2 font-medium">
+                <span style={{ color: '#6b7280' }}>Score:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
                   {gameSnapshot.score_away}-{gameSnapshot.score_home}
                 </span>
               </div>
@@ -176,20 +277,47 @@ export function AtBatConfirmation({
           </div>
 
           {/* Base Runners */}
-          <div>
-            <h3 className="font-medium text-gray-900 mb-3">Runners on Base</h3>
-            <BaseRunnersSummary runners={gameSnapshot.base_runners} />
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.75rem'
+            }}>Runners on Base</h3>
+            <BaseRunnersSummary runners={gameSnapshot.base_runners} getPlayerName={getPlayerName} />
           </div>
 
           {/* Expected Outcome */}
-          <div className={`rounded-lg p-4 border ${isPositiveResult ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <h3 className={`font-medium mb-3 ${isPositiveResult ? 'text-green-900' : 'text-red-900'}`}>
+          <div style={{
+            borderRadius: '8px',
+            padding: '1rem',
+            border: '1px solid',
+            borderColor: isPositiveResult ? '#bbf7d0' : '#fecaca',
+            backgroundColor: isPositiveResult ? '#f0fdf4' : '#fef2f2',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: isPositiveResult ? '#166534' : '#991b1b',
+              marginBottom: '0.75rem'
+            }}>
               Expected Outcome
             </h3>
-            <ul className={`text-sm space-y-1 ${isPositiveResult ? 'text-green-800' : 'text-red-800'}`}>
+            <ul style={{
+              fontSize: '0.875rem',
+              color: isPositiveResult ? '#15803d' : '#b91c1c',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem'
+            }}>
               {expectedOutcomes.map((outcome, index) => (
-                <li key={index} className="flex items-center">
-                  <span className="mr-2">•</span>
+                <li key={index} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>•</span>
                   {outcome}
                 </li>
               ))}
@@ -197,21 +325,66 @@ export function AtBatConfirmation({
           </div>
 
           {/* Player Info */}
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 mb-2">At-Bat Details</h3>
-            <div className="text-sm text-blue-800 space-y-1">
-              <p><strong>Batter:</strong> {gameSnapshot.batter_id || 'Unknown'}</p>
-              <p><strong>Catcher:</strong> {gameSnapshot.catcher_id || 'Unknown'}</p>
+          <div style={{
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#1e40af',
+              marginBottom: '0.5rem'
+            }}>At-Bat Details</h3>
+            <div style={{
+              fontSize: '0.875rem',
+              color: '#1d4ed8',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem'
+            }}>
+              <p><strong>Batter:</strong> {getPlayerName(gameSnapshot.batter_id)}</p>
+              <p><strong>Catcher:</strong> {getPlayerName(gameSnapshot.catcher_id)}</p>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between">
+        <div style={{
+          padding: '1.5rem',
+          borderTop: '1px solid #e4e2e8',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '0.75rem'
+        }}>
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: submitting ? 0.5 : 1,
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+              }
+            }}
           >
             Cancel
           </button>
@@ -219,13 +392,28 @@ export function AtBatConfirmation({
           <button
             onClick={handleConfirm}
             disabled={submitting}
-            className={`
-              px-6 py-2 text-white rounded-md focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed
-              ${isPositiveResult 
-                ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
-                : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: submitting ? '#9ca3af' : (isPositiveResult ? '#22c55e' : '#ef4444'),
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: submitting ? 0.5 : 1,
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = isPositiveResult ? '#16a34a' : '#dc2626';
               }
-            `}
+            }}
+            onMouseLeave={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = isPositiveResult ? '#22c55e' : '#ef4444';
+              }
+            }}
           >
             {submitting ? 'Recording...' : `Confirm ${resultLabels[atBatResult]}`}
           </button>
@@ -238,37 +426,74 @@ export function AtBatConfirmation({
 // BaseRunnersSummary component for showing current runners
 interface BaseRunnersSummaryProps {
   runners: BaseRunners;
+  getPlayerName: (playerId: string | null) => string;
 }
 
-function BaseRunnersSummary({ runners }: BaseRunnersSummaryProps) {
+function BaseRunnersSummary({ runners, getPlayerName }: BaseRunnersSummaryProps) {
   const hasRunners = runners.first || runners.second || runners.third;
 
   if (!hasRunners) {
     return (
-      <div className="text-sm text-gray-500 italic">
+      <div style={{
+        fontSize: '0.875rem',
+        color: '#6b7280',
+        fontStyle: 'italic'
+      }}>
         No runners on base
       </div>
     );
   }
 
   return (
-    <div className="flex space-x-4 text-sm">
+    <div style={{
+      display: 'flex',
+      gap: '1rem',
+      fontSize: '0.875rem',
+      flexWrap: 'wrap'
+    }}>
       {runners.first && (
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span>1st: {runners.first}</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}>
+          <div style={{
+            width: '0.75rem',
+            height: '0.75rem',
+            backgroundColor: '#3b82f6',
+            borderRadius: '50%'
+          }}></div>
+          <span>1st: {getPlayerName(runners.first)}</span>
         </div>
       )}
       {runners.second && (
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span>2nd: {runners.second}</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}>
+          <div style={{
+            width: '0.75rem',
+            height: '0.75rem',
+            backgroundColor: '#3b82f6',
+            borderRadius: '50%'
+          }}></div>
+          <span>2nd: {getPlayerName(runners.second)}</span>
         </div>
       )}
       {runners.third && (
-        <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span>3rd: {runners.third}</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}>
+          <div style={{
+            width: '0.75rem',
+            height: '0.75rem',
+            backgroundColor: '#3b82f6',
+            borderRadius: '50%'
+          }}></div>
+          <span>3rd: {getPlayerName(runners.third)}</span>
         </div>
       )}
     </div>

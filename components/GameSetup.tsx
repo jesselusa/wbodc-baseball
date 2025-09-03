@@ -104,24 +104,21 @@ export function GameSetup({
           const gamesData = await gamesResponse.json();
 
           if (gamesResponse.ok && gamesData.success) {
-            // Filter to only show games that haven't started yet and have known teams
-            // Explicitly exclude: in_progress, completed, cancelled games
+            // Filter to show games that can be started or rejoined
+            // Allow: scheduled games (to start) and in_progress games (to rejoin)
             const availableGames = gamesData.data?.filter((game: TournamentGame) => {
-              // Only allow scheduled games (not started, completed, or cancelled)
-              const isScheduled = game.status === 'scheduled';
+              // Allow scheduled games (to start) and active games (to rejoin as umpire)
+              const isAvailable = game.status === 'scheduled' || game.status === 'in_progress';
               
               // Ensure both teams are real (not placeholder teams)
               const hasValidTeams = game.home_team?.name !== 'Unknown Team' && 
                                    game.away_team?.name !== 'Unknown Team' &&
                                    game.home_team?.name !== 'TBD' &&
-                                   game.away_team?.name !== 'TBD';
+                                   game.away_team?.name !== 'TBD' &&
+                                   game.home_team?.name &&
+                                   game.away_team?.name;
               
-              // Additional safety: check that the game hasn't been started
-              const notStarted = !game.started_at;
-              
-      
-              
-              return isScheduled && hasValidTeams && notStarted;
+              return isAvailable && hasValidTeams;
             }) || [];
             
             setGames(availableGames);
@@ -207,12 +204,21 @@ export function GameSetup({
           return;
         }
         
-        if (currentGameState.status !== 'scheduled' || currentGameState.started_at) {
-          setError('This game has already been started by another user. Please refresh and select a different game.');
+        // Allow scheduled games (to start) and active/in_progress games (to rejoin)
+        if (currentGameState.status !== 'scheduled' && currentGameState.status !== 'in_progress') {
+          setError('This game is not available (completed or cancelled). Please refresh and select a different game.');
           return;
         }
       }
 
+      // Check if this is rejoining an active/in-progress game
+      if (selectedGame.status === 'in_progress') {
+        // For active/in-progress games, just navigate to the umpire interface
+        window.location.href = `/umpire/${selectedGame.id}`;
+        return;
+      }
+
+      // For scheduled games, proceed with normal game start
       const gameData: GameSetupData = {
         home_team_id: selectedGame.home_team_id,
         away_team_id: selectedGame.away_team_id,
@@ -343,7 +349,7 @@ export function GameSetup({
           marginLeft: 'auto',
           marginRight: 'auto'
         }}>
-          Select a scheduled game from the tournament to start playing
+          Select a game from the tournament to start playing or rejoin as umpire
         </p>
       </div>
 
@@ -434,7 +440,7 @@ export function GameSetup({
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <option value="">Select a scheduled game...</option>
+              <option value="">Select a game to start or rejoin...</option>
               {games.map(game => {
                 let gameLabel = `${game.home_team?.name || 'Home'} vs ${game.away_team?.name || 'Away'}`;
                 
@@ -446,6 +452,13 @@ export function GameSetup({
                   }
                 } else if (game.game_type?.includes('pool')) {
                   gameLabel = `Pool Play - ${gameLabel}`;
+                }
+                
+                // Add status indicator
+                if (game.status === 'in_progress') {
+                  gameLabel = `🔴 ${gameLabel} (IN PROGRESS - Rejoin)`;
+                } else if (game.status === 'scheduled') {
+                  gameLabel = `⚪ ${gameLabel} (Start Game)`;
                 }
                 
                 return (
@@ -828,7 +841,13 @@ export function GameSetup({
                     Starting Game...
                   </>
                 ) : (
-                  <>⚾ Start Game</>
+                  <>⚾ {(() => {
+                    const selectedGame = getSelectedGame();
+                    if (selectedGame?.status === 'in_progress') {
+                      return 'Rejoin Game';
+                    }
+                    return 'Start Game';
+                  })()}</>
                 )}
               </button>
             </div>

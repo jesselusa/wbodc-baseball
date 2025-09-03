@@ -85,7 +85,7 @@ export default function TournamentSettings({
   // Calculate if settings are locked
   const settingsLocked = useMemo(() => {
     // Settings are locked if tournament is active OR if explicitly disabled
-    return currentTournament?.status === 'active' || disabled;
+    return currentTournament?.status === 'in_progress' || disabled;
   }, [currentTournament?.status, disabled]);
 
   // Handle mobile detection and default dates (client-side only to avoid hydration issues)
@@ -227,10 +227,10 @@ export default function TournamentSettings({
     const newErrors: Record<string, string> = {};
 
     // Tournament details validation (only when not locked)
-    if (!(currentTournament?.status === 'active') && !tournamentForm.name.trim()) {
+    if (!(currentTournament?.status === 'in_progress') && !tournamentForm.name.trim()) {
       newErrors.name = 'Tournament name is required';
     }
-    if (!(currentTournament?.status === 'active') && !tournamentForm.location.trim()) {
+    if (!(currentTournament?.status === 'in_progress') && !tournamentForm.location.trim()) {
       newErrors.location = 'Location is required';
     }
 
@@ -476,14 +476,14 @@ export default function TournamentSettings({
                     type="text"
                     value={tournamentForm.name}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, name: e.target.value })}
-                    disabled={currentTournament.status === 'active'}
+                    disabled={currentTournament.status === 'in_progress'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: `1px solid ${errors.name ? '#ef4444' : '#e4e2e8'}`,
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px', // 16px prevents zoom on iOS
-                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white'
+                      backgroundColor: currentTournament.status === 'in_progress' ? '#f9fafb' : 'white'
                     }}
                   />
                   {errors.name && (
@@ -514,15 +514,15 @@ export default function TournamentSettings({
                         end_date: prev.end_date < newStartDate ? newStartDate : prev.end_date
                       }));
                     }}
-                    disabled={currentTournament.status === 'active'}
+                    disabled={currentTournament.status === 'in_progress'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
-                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'in_progress' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'in_progress' ? 'not-allowed' : 'pointer'
                     }}
                   />
                 </div>
@@ -541,15 +541,15 @@ export default function TournamentSettings({
                     value={tournamentForm.end_date}
                     min={tournamentForm.start_date} // End date can't be before start date
                     onChange={(e) => setTournamentForm({ ...tournamentForm, end_date: e.target.value })}
-                    disabled={currentTournament.status === 'active'}
+                    disabled={currentTournament.status === 'in_progress'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
-                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'in_progress' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'in_progress' ? 'not-allowed' : 'pointer'
                     }}
                   />
                 </div>
@@ -575,14 +575,14 @@ export default function TournamentSettings({
                     type="text"
                     value={tournamentForm.location}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, location: e.target.value })}
-                    disabled={currentTournament.status === 'active'}
+                    disabled={currentTournament.status === 'in_progress'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: `1px solid ${errors.location ? '#ef4444' : '#e4e2e8'}`,
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white'
+                      backgroundColor: currentTournament.status === 'in_progress' ? '#f9fafb' : 'white'
                     }}
                   />
                   {errors.location && (
@@ -604,15 +604,15 @@ export default function TournamentSettings({
                   <select
                     value={tournamentForm.tournament_number}
                     onChange={(e) => setTournamentForm({ ...tournamentForm, tournament_number: parseInt(e.target.value) })}
-                    disabled={currentTournament.status === 'active'}
+                    disabled={currentTournament.status === 'in_progress'}
                     style={{
                       width: '100%',
                       padding: isMobile ? '14px 16px' : '10px 12px',
                       border: '1px solid #e4e2e8',
                       borderRadius: '8px',
                       fontSize: isMobile ? '16px' : '14px',
-                      backgroundColor: currentTournament.status === 'active' ? '#f9fafb' : 'white',
-                      cursor: currentTournament.status === 'active' ? 'not-allowed' : 'pointer'
+                      backgroundColor: currentTournament.status === 'in_progress' ? '#f9fafb' : 'white',
+                      cursor: currentTournament.status === 'in_progress' ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {Array.from({ length: 20 }, (_, i) => (
@@ -633,7 +633,7 @@ export default function TournamentSettings({
               <div style={{
                 fontSize: '14px',
                 fontWeight: '600',
-                color: currentTournament.status === 'active' ? '#22c55e' : '#f59e0b',
+                color: currentTournament.status === 'in_progress' ? '#22c55e' : '#f59e0b',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px'
@@ -642,9 +642,9 @@ export default function TournamentSettings({
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: currentTournament.status === 'active' ? '#22c55e' : '#f59e0b'
+                  background: currentTournament.status === 'in_progress' ? '#22c55e' : '#f59e0b'
                 }}></div>
-                Status: {currentTournament.status === 'active' ? 'Locked' : 'Configuring'}
+                Status: {currentTournament.status === 'in_progress' ? 'Locked' : 'Configuring'}
               </div>
               {tournamentForm.start_date && (
                 <div style={{
@@ -1340,7 +1340,7 @@ export default function TournamentSettings({
         </div>
         
         <div style={{ display: 'flex', gap: '12px' }}>
-          {!(currentTournament?.status === 'active') && (
+          {!(currentTournament?.status === 'in_progress') && (
             <>
               {onReset && (
                 <button

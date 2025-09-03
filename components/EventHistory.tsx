@@ -104,222 +104,353 @@ export function EventHistory({
     return labels[result] || result;
   };
 
-  const getEventDescription = (event: GameEvent) => {
-    switch (event.type) {
-      case 'pitch':
-        return `Batter: ${(event.payload as any).batter_id}, Catcher: ${(event.payload as any).catcher_id}`;
-      case 'flip_cup':
-        const errors = (event.payload as any).fielding_errors?.length > 0 
-          ? ` (Errors: ${(event.payload as any).fielding_errors.join(', ')})` 
-          : '';
-        return `Cup hit resolved${errors}`;
-      case 'at_bat':
-        return `Batter: ${(event.payload as any).batter_id}, Catcher: ${(event.payload as any).catcher_id}`;
-      case 'game_start':
-        return `Teams: ${(event.payload as any).away_team_id} vs ${(event.payload as any).home_team_id}`;
-      case 'undo':
-        return `Undid event: ${(event.payload as any).target_event_id}`;
-      case 'edit':
-        return `Edited event: ${(event.payload as any).target_event_id}`;
-      default:
-        return '';
-    }
-  };
-
-  const canUndo = (event: GameEvent) => {
-    // Can't undo undo/edit events, and can't undo if it's not the most recent event
-    if (['undo', 'edit'].includes(event.type)) return false;
-    if (recentEvents.length === 0) return false;
-    return event.id === recentEvents[0].id;
-  };
-
-  const canEdit = (event: GameEvent) => {
-    // Can edit most events except undo/edit/game_start/game_end
-    return !['undo', 'edit', 'game_start', 'game_end'].includes(event.type);
-  };
-
-  const handleUndo = (event: GameEvent) => {
+  const handleUndo = (eventId: string) => {
     const payload: UndoEventPayload = {
-      target_event_id: event.id,
-      reason: 'User requested undo'
+      target_event_id: eventId
     };
     onUndo(payload);
   };
 
-  const handleEdit = (event: GameEvent) => {
-    setEditingEvent(event.id);
-    // For now, just show expanded view. Real edit functionality would need a form
-    setExpandedEvent(expandedEvent === event.id ? null : event.id);
+  const handleEdit = (eventId: string, newPayload: any) => {
+    const payload: EditEventPayload = {
+      target_event_id: eventId,
+      new_data: newPayload
+    };
+    onEdit(payload);
+    setEditingEvent(null);
   };
 
-  const toggleExpanded = (eventId: string) => {
+  const toggleEventExpansion = (eventId: string) => {
     setExpandedEvent(expandedEvent === eventId ? null : eventId);
   };
 
   if (recentEvents.length === 0) {
     return (
-      <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Event History</h3>
-        <div className="text-center py-8">
-          <div className="text-gray-400 text-4xl mb-2">📝</div>
-          <p className="text-gray-500">No events recorded yet</p>
-          <p className="text-sm text-gray-400 mt-1">Events will appear here as the game progresses</p>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        padding: '1.5rem',
+        textAlign: 'center'
+      }} className={className}>
+        <div style={{
+          color: '#6b7280',
+          fontSize: '0.875rem'
+        }}>
+          <p>No events recorded yet</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow ${className}`}>
-      <div className="px-6 py-4 border-b">
-        <h3 className="text-lg font-medium text-gray-900">Event History</h3>
-        <p className="text-sm text-gray-500 mt-1">
-          Recent {recentEvents.length} of {events.length} events
+    <div style={{
+      background: '#ffffff',
+      borderRadius: '12px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      overflow: 'hidden'
+    }} className={className}>
+      {/* Header */}
+      <div style={{
+        padding: '1.5rem',
+        borderBottom: '1px solid #e4e2e8',
+        background: '#fafafa'
+      }}>
+        <h2 style={{
+          fontSize: '1.125rem',
+          fontWeight: '700',
+          color: '#1c1b20',
+          marginBottom: '0.25rem'
+        }}>Event History</h2>
+        <p style={{
+          fontSize: '0.875rem',
+          color: '#6b7280'
+        }}>
+          Recent game events and actions
         </p>
       </div>
 
-      <div className="max-h-96 overflow-y-auto">
-        {recentEvents.map((event, index) => (
-          <div 
-            key={event.id} 
-            className={`border-b border-gray-100 last:border-b-0 ${
-              index === 0 ? 'bg-blue-50' : 'hover:bg-gray-50'
-            }`}
-          >
-            <div className="px-6 py-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="text-lg">{getEventIcon(event.type)}</div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {getEventTitle(event)}
-                      </h4>
-                      <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                        {formatTimestamp(event.created_at)}
-                      </span>
-                    </div>
-                    
-                    {getEventDescription(event) && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {getEventDescription(event)}
-                      </p>
-                    )}
+      <div style={{ padding: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem'
+        }}>
+          {recentEvents.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              isExpanded={expandedEvent === event.id}
+              isEditing={editingEvent === event.id}
+              onToggleExpansion={() => toggleEventExpansion(event.id)}
+              onUndo={() => handleUndo(event.id)}
+              onEdit={(newPayload) => handleEdit(event.id, newPayload)}
+              onStartEdit={() => setEditingEvent(event.id)}
+              onCancelEdit={() => setEditingEvent(null)}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                    {index === 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2">
-                        Most Recent
-                      </span>
-                    )}
-                  </div>
-                </div>
+// EventCard component for individual events
+interface EventCardProps {
+  event: GameEvent;
+  isExpanded: boolean;
+  isEditing: boolean;
+  onToggleExpansion: () => void;
+  onUndo: () => void;
+  onEdit: (newPayload: any) => void;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  disabled: boolean;
+}
 
-                <div className="flex items-center space-x-2 ml-4">
-                  <button
-                    onClick={() => toggleExpanded(event.id)}
-                    className="text-gray-400 hover:text-gray-600 text-sm"
-                    title="View details"
-                  >
-                    {expandedEvent === event.id ? '▼' : '▶'}
-                  </button>
+function EventCard({
+  event,
+  isExpanded,
+  isEditing,
+  onToggleExpansion,
+  onUndo,
+  onEdit,
+  onStartEdit,
+  onCancelEdit,
+  disabled
+}: EventCardProps) {
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
-                  {canEdit(event) && (
-                    <button
-                      onClick={() => handleEdit(event)}
-                      disabled={disabled}
-                      className="text-blue-600 hover:text-blue-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Edit event"
-                    >
-                      ✏️
-                    </button>
-                  )}
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'pitch': return '⚾';
+      case 'flip_cup': return '🥤';
+      case 'at_bat': return '🏏';
+      case 'game_start': return '▶️';
+      case 'game_end': return '⏹️';
+      case 'undo': return '↩️';
+      case 'edit': return '✏️';
+      case 'takeover': return '🔄';
+      default: return '📝';
+    }
+  };
 
-                  {canUndo(event) && (
-                    <button
-                      onClick={() => handleUndo(event)}
-                      disabled={disabled}
-                      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Undo event"
-                    >
-                      ↩️
-                    </button>
-                  )}
-                </div>
-              </div>
+  const getEventTitle = (event: GameEvent) => {
+    switch (event.type) {
+      case 'pitch':
+        return `Pitch: ${formatPitchResult((event.payload as any).result)}`;
+      case 'flip_cup':
+        return `Flip Cup: ${(event.payload as any).result === 'offense wins' ? 'Offense Wins' : 'Defense Wins'}`;
+      case 'at_bat':
+        return `At-Bat: ${formatAtBatResult((event.payload as any).result)}`;
+      case 'game_start':
+        return 'Game Started';
+      case 'game_end':
+        return 'Game Ended';
+      case 'undo':
+        return `Undo: ${(event.payload as any).target_event_id}`;
+      case 'edit':
+        return `Edit: ${(event.payload as any).target_event_id}`;
+      case 'takeover':
+        return `Umpire Takeover: ${(event.payload as any).new_umpire_id}`;
+      default:
+        return `${event.type} event`;
+    }
+  };
 
-              {/* Expanded Details */}
-              {expandedEvent === event.id && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Event ID:</span>
-                      <span className="ml-2 font-mono text-xs">{event.id}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Umpire:</span>
-                      <span className="ml-2">{event.umpire_id}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Type:</span>
-                      <span className="ml-2 capitalize">{event.type}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Timestamp:</span>
-                      <span className="ml-2">{new Date(event.created_at).toLocaleString()}</span>
-                    </div>
-                  </div>
+  const formatPitchResult = (result: PitchResult) => {
+    const labels: Record<PitchResult, string> = {
+      'ball': 'Ball',
+      'strike': 'Strike',
+      'foul ball': 'Foul Ball',
+      'first cup hit': '1st Cup Hit',
+      'second cup hit': '2nd Cup Hit',
+      'third cup hit': '3rd Cup Hit',
+      'fourth cup hit': '4th Cup Hit'
+    };
+    return labels[result] || result;
+  };
 
-                  {event.previous_event_id && (
-                    <div className="mt-2 text-sm">
-                      <span className="text-gray-500">Previous Event:</span>
-                      <span className="ml-2 font-mono text-xs">{event.previous_event_id}</span>
-                    </div>
-                  )}
+  const formatAtBatResult = (result: AtBatResult) => {
+    const labels: Record<AtBatResult, string> = {
+      'out': 'Out',
+      'walk': 'Walk',
+      'single': 'Single',
+      'double': 'Double',
+      'triple': 'Triple',
+      'homerun': 'Home Run'
+    };
+    return labels[result] || result;
+  };
 
-                  <div className="mt-3">
-                    <span className="text-gray-500 text-sm">Payload:</span>
-                    <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-x-auto">
-                      {JSON.stringify(event.payload, null, 2)}
-                    </pre>
-                  </div>
-
-                  {editingEvent === event.id && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                      <p className="text-sm text-yellow-800 mb-2">
-                        <strong>Edit Mode:</strong> Event editing functionality would be implemented here.
-                      </p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditingEvent(null)}
-                          className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                        >
-                          Cancel Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            // TODO: Implement actual edit functionality
-                            setEditingEvent(null);
-                          }}
-                          className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Save Changes
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+  return (
+    <div style={{
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      transition: 'all 0.2s'
+    }}>
+      {/* Event Header */}
+      <div style={{
+        padding: '0.75rem',
+        background: '#f9fafb',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem'
+      }} onClick={onToggleExpansion}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          flex: 1
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>
+            {getEventIcon(event.type)}
+          </span>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151'
+            }}>
+              {getEventTitle(event)}
+            </div>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#6b7280',
+              marginTop: '0.125rem'
+            }}>
+              {formatTimestamp(event.created_at)}
             </div>
           </div>
-        ))}
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{
+            fontSize: '0.75rem',
+            color: '#6b7280',
+            padding: '0.25rem 0.5rem',
+            backgroundColor: '#e5e7eb',
+            borderRadius: '4px'
+          }}>
+            {event.umpire_id || 'Unknown'}
+          </span>
+          
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '1rem',
+            color: '#6b7280',
+            cursor: 'pointer',
+            padding: '0.25rem',
+            transition: 'transform 0.2s',
+            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}>
+            ▼
+          </button>
+        </div>
       </div>
 
-      {events.length > maxEvents && (
-        <div className="px-6 py-3 border-t bg-gray-50 text-center">
-          <p className="text-sm text-gray-600">
-            Showing {maxEvents} of {events.length} total events
-          </p>
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div style={{
+          padding: '0.75rem',
+          borderTop: '1px solid #e5e7eb',
+          background: '#ffffff'
+        }}>
+          {/* Event Details */}
+          <div style={{
+            marginBottom: '0.75rem',
+            fontSize: '0.875rem',
+            color: '#374151'
+          }}>
+            <pre style={{
+              background: '#f9fafb',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}>
+              {JSON.stringify(event.payload, null, 2)}
+            </pre>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            justifyContent: 'flex-end'
+          }}>
+            <button
+              onClick={onUndo}
+              disabled={disabled}
+              style={{
+                padding: '0.5rem 0.75rem',
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: '500',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.5 : 1,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.backgroundColor = '#dc2626';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.backgroundColor = '#ef4444';
+                }
+              }}
+            >
+              Undo
+            </button>
+            
+            <button
+              onClick={onStartEdit}
+              disabled={disabled}
+              style={{
+                padding: '0.5rem 0.75rem',
+                backgroundColor: '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: '500',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.5 : 1,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                }
+              }}
+            >
+              Edit
+            </button>
+          </div>
         </div>
       )}
     </div>

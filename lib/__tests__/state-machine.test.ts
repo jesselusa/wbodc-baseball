@@ -315,6 +315,49 @@ describe('BaseballGameStateMachine', () => {
       expect(result.snapshot.base_runners.second).toBe(null);
       expect(result.snapshot.base_runners.third).toBe('runner-2'); // Runner from second advances to third
     });
+
+    test('should handle triple with runner on first correctly', () => {
+      const snapshot = createBasicSnapshot({
+        base_runners: { first: 'runner-1', second: null, third: null },
+        score_away: 2
+      });
+
+      const event = createEvent('at_bat', { 
+        result: 'triple', 
+        batter_id: 'batter-1', 
+        catcher_id: 'catcher-1' 
+      } as AtBatEventPayload);
+
+      const result = BaseballGameStateMachine.transition(snapshot, event);
+
+      expect(result.error).toBeUndefined();
+      expect(result.snapshot.score_away).toBe(3); // Runner from first scores (1+3=4)
+      expect(result.snapshot.base_runners.first).toBe(null); // Should be empty
+      expect(result.snapshot.base_runners.second).toBe(null); // Should be empty
+      expect(result.snapshot.base_runners.third).toBe('batter-1'); // Batter goes to third
+    });
+
+    test('should handle triple with bases loaded correctly', () => {
+      const snapshot = createBasicSnapshot({
+        base_runners: { first: 'runner-1', second: 'runner-2', third: 'runner-3' },
+        score_home: 0,
+        is_top_of_inning: false // Home team batting
+      });
+
+      const event = createEvent('at_bat', { 
+        result: 'triple', 
+        batter_id: 'batter-1', 
+        catcher_id: 'catcher-1' 
+      } as AtBatEventPayload);
+
+      const result = BaseballGameStateMachine.transition(snapshot, event);
+
+      expect(result.error).toBeUndefined();
+      expect(result.snapshot.score_home).toBe(3); // All 3 runners score
+      expect(result.snapshot.base_runners.first).toBe(null); // Should be empty
+      expect(result.snapshot.base_runners.second).toBe(null); // Should be empty
+      expect(result.snapshot.base_runners.third).toBe('batter-1'); // Only batter on third
+    });
   });
 
   describe('Game Start Events', () => {

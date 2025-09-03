@@ -1,0 +1,325 @@
+import React, { useState } from 'react';
+import { GameEndEventPayload, GameSnapshot } from '../lib/types';
+
+export interface EndGameModalProps {
+  isOpen: boolean;
+  gameSnapshot: GameSnapshot;
+  onConfirm: (payload: GameEndEventPayload) => void;
+  onCancel: () => void;
+  className?: string;
+}
+
+/**
+ * EndGameModal component for confirming final game scores
+ * Allows umpire to input final scores and end the game
+ */
+export function EndGameModal({
+  isOpen,
+  gameSnapshot,
+  onConfirm,
+  onCancel,
+  className = ''
+}: EndGameModalProps) {
+  const [homeScore, setHomeScore] = useState(gameSnapshot.score_home);
+  const [awayScore, setAwayScore] = useState(gameSnapshot.score_away);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Don't render if not open
+  if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+
+    const payload: GameEndEventPayload = {
+      final_score_home: homeScore,
+      final_score_away: awayScore,
+      notes: `Game ended by umpire on ${new Date().toLocaleString()}`
+    };
+
+    onConfirm(payload);
+    setSubmitting(false);
+  };
+
+  const handleCancel = () => {
+    // Reset scores to current game state
+    setHomeScore(gameSnapshot.score_home);
+    setAwayScore(gameSnapshot.score_away);
+    onCancel();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '1rem'
+    }}>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        maxWidth: '500px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }} className={className}>
+        {/* Header */}
+        <div style={{
+          padding: '1.5rem',
+          borderBottom: '1px solid #e4e2e8',
+          background: '#fafafa'
+        }}>
+          <h2 style={{
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#1c1b20',
+            marginBottom: '0.25rem'
+          }}>End Game</h2>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#6b7280'
+          }}>
+            Confirm the final scores to end this game
+          </p>
+        </div>
+
+        <div style={{ padding: '1.5rem' }}>
+          {/* Warning Message */}
+          <div style={{
+            background: '#fef3c7',
+            border: '1px solid #fbbf24',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+              <div>
+                <h4 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#92400e',
+                  marginBottom: '0.25rem'
+                }}>Confirm Game End</h4>
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: '#b45309',
+                  margin: 0
+                }}>
+                  This action cannot be undone. Make sure the final scores are correct.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Game Info */}
+          <div style={{
+            background: '#f9fafb',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.75rem'
+            }}>Current Game Status</h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: '1rem',
+              fontSize: '0.875rem'
+            }}>
+              <div>
+                <span style={{ color: '#6b7280' }}>Inning:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
+                  {gameSnapshot.is_top_of_inning ? 'Top' : 'Bottom'} {gameSnapshot.current_inning}
+                </span>
+              </div>
+              <div>
+                <span style={{ color: '#6b7280' }}>Outs:</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
+                  {gameSnapshot.outs}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Score Input */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            {/* Away Team Score */}
+            <div>
+              <label style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem',
+                display: 'block'
+              }}>
+                Away Team Final Score
+              </label>
+              <input
+                type="number"
+                value={awayScore}
+                onChange={(e) => setAwayScore(Math.max(0, parseInt(e.target.value) || 0))}
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  backgroundColor: '#ffffff'
+                }}
+              />
+            </div>
+
+            {/* Home Team Score */}
+            <div>
+              <label style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.5rem',
+                display: 'block'
+              }}>
+                Home Team Final Score
+              </label>
+              <input
+                type="number"
+                value={homeScore}
+                onChange={(e) => setHomeScore(Math.max(0, parseInt(e.target.value) || 0))}
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  backgroundColor: '#ffffff'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Winner Display */}
+          {homeScore !== awayScore && (
+            <div style={{
+              background: homeScore > awayScore ? '#f0fdf4' : '#eff6ff',
+              border: `1px solid ${homeScore > awayScore ? '#bbf7d0' : '#bfdbfe'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              textAlign: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h4 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: homeScore > awayScore ? '#166534' : '#1e40af',
+                marginBottom: '0.25rem'
+              }}>
+                Winner: {homeScore > awayScore ? 'Home Team' : 'Away Team'}
+              </h4>
+              <p style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: homeScore > awayScore ? '#15803d' : '#2563eb',
+                margin: 0
+              }}>
+                {Math.max(homeScore, awayScore)} - {Math.min(homeScore, awayScore)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{
+          padding: '1.5rem',
+          borderTop: '1px solid #e4e2e8',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '0.75rem'
+        }}>
+          <button
+            onClick={handleCancel}
+            disabled={submitting}
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: submitting ? 0.5 : 1,
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#e5e7eb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+              }
+            }}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleConfirm}
+            disabled={submitting}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: submitting ? '#9ca3af' : '#dc2626',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s',
+              fontSize: '0.875rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#b91c1c';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!submitting) {
+                e.currentTarget.style.backgroundColor = '#dc2626';
+              }
+            }}
+          >
+            {submitting ? 'Ending Game...' : 'End Game'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
