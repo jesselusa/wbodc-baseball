@@ -109,6 +109,26 @@ export default function UmpirePage() {
       console.log('[Umpire] Setting new snapshot state:', newSnapshot);
       setGameSnapshot(newSnapshot);
       
+      // Update liveStatus to refresh player names when game state changes
+      const refreshLiveStatus = async () => {
+        try {
+          console.log('[Umpire] Refreshing liveStatus for updated player names...');
+          const updatedLiveStatus = await getLiveGameStatus(gameId);
+          if (updatedLiveStatus) {
+            console.log('[Umpire] Updated liveStatus:', {
+              batter_name: updatedLiveStatus.batter_name,
+              catcher_name: updatedLiveStatus.catcher_name,
+              away_lineup_position: realtimeSnapshot.away_lineup_position
+            });
+            setLiveStatus(updatedLiveStatus);
+          }
+        } catch (err) {
+          console.warn('[Umpire] Failed to refresh liveStatus:', err);
+        }
+      };
+      
+      refreshLiveStatus();
+      
       // Force re-render by incrementing counter
       setUpdateCounter(prev => prev + 1);
       console.log('[Umpire] Forcing re-render with updateCounter:', updateCounter + 1);
