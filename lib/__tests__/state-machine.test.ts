@@ -70,14 +70,14 @@ describe('BaseballGameStateMachine', () => {
       expect(result.snapshot.strikes).toBe(2);
     });
 
-    test('should not add strike on foul ball with 2 strikes', () => {
+    test('should add strike on foul ball with 2 strikes (unique baseball rule)', () => {
       const snapshot = createBasicSnapshot({ strikes: 2 });
       const event = createEvent('pitch', { result: 'foul ball', batter_id: 'batter-1', catcher_id: 'catcher-1' } as PitchEventPayload);
 
       const result = BaseballGameStateMachine.transition(snapshot, event);
 
       expect(result.error).toBeUndefined();
-      expect(result.snapshot.strikes).toBe(2); // Should not increase
+      expect(result.snapshot.strikes).toBe(3); // Should increase to 3 strikes (strikeout)
     });
 
     test('should handle cup hits without changing count', () => {

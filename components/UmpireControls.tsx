@@ -50,6 +50,13 @@ export function UmpireControls({
       return;
     }
     
+    // Check if this foul ball would result in a strikeout (unique baseball rule)
+    if (result === 'foul ball' && wouldBeStrikeout) {
+      setLastPitchResult('foul ball'); // For UI display
+      onTriggerAtBatModal('out'); // This will trigger the confirmation modal
+      return;
+    }
+    
     // Check if this pitch is a cup hit (requires flip cup modal first)
     if (['first cup hit', 'second cup hit', 'third cup hit', 'fourth cup hit'].includes(result)) {
       // Cup hits need to submit the pitch event first, then trigger flip cup modal

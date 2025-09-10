@@ -130,10 +130,8 @@ export class BaseballGameStateMachine {
         break;
       
       case 'foul ball':
-        // Foul ball is a strike unless batter already has 2 strikes
-        if (newSnapshot.strikes < 2) {
-          newSnapshot.strikes += 1;
-        }
+        // In our unique baseball, foul ball is always a strike (even with 2 strikes)
+        newSnapshot.strikes = Math.min(newSnapshot.strikes + 1, 3);
         break;
       
       case 'ball':
