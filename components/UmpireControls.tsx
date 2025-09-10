@@ -10,7 +10,7 @@ export interface UmpireControlsProps {
   gameSnapshot: GameSnapshot;
   onPitchResult: (payload: PitchEventPayload) => void;
   onFlipCupNeeded: (cupHit: 1 | 2 | 3 | 4) => void;
-  onAtBatComplete: (result: AtBatResult) => void;
+  onTriggerAtBatModal: (result: AtBatResult) => void;
   onEndGame: () => void;
   disabled?: boolean;
   className?: string;
@@ -24,7 +24,7 @@ export function UmpireControls({
   gameSnapshot,
   onPitchResult,
   onFlipCupNeeded,
-  onAtBatComplete,
+  onTriggerAtBatModal,
   onEndGame,
   disabled = false,
   className = ''
@@ -39,14 +39,14 @@ export function UmpireControls({
     // Check if this ball would result in a walk - trigger confirmation instead of direct submission
     if (result === 'ball' && wouldBeWalk) {
       setLastPitchResult('ball'); // For UI display
-      onAtBatComplete('walk'); // This will trigger the confirmation modal
+      onTriggerAtBatModal('walk'); // This will trigger the confirmation modal
       return;
     }
     
     // Check if this strike would result in a strikeout - trigger confirmation instead of direct submission
     if (result === 'strike' && wouldBeStrikeout) {
       setLastPitchResult('strike'); // For UI display
-      onAtBatComplete('out'); // This will trigger the confirmation modal
+      onTriggerAtBatModal('out'); // This will trigger the confirmation modal
       return;
     }
     
@@ -312,79 +312,6 @@ export function UmpireControls({
           </div>
         </div>
 
-        {/* At-Bat Completion */}
-        <div>
-          <h3 style={{
-            fontSize: '0.875rem',
-            fontWeight: '600',
-            color: '#374151',
-            marginBottom: '0.75rem'
-          }}>Complete At-Bat</h3>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-            gap: '0.5rem'
-          }}>
-            <button
-              onClick={() => onAtBatComplete('walk')}
-              disabled={disabled}
-              style={{
-                padding: '0.75rem',
-                backgroundColor: '#10b981',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.5 : 1,
-                transition: 'all 0.2s',
-                fontSize: '0.875rem'
-              }}
-              onMouseEnter={(e) => {
-                if (!disabled) {
-                  e.currentTarget.style.backgroundColor = '#059669';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!disabled) {
-                  e.currentTarget.style.backgroundColor = '#10b981';
-                }
-              }}
-            >
-              Walk
-            </button>
-            
-            <button
-              onClick={() => onAtBatComplete('out')}
-              disabled={disabled}
-              style={{
-                padding: '0.75rem',
-                backgroundColor: '#6b7280',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.5 : 1,
-                transition: 'all 0.2s',
-                fontSize: '0.875rem'
-              }}
-              onMouseEnter={(e) => {
-                if (!disabled) {
-                  e.currentTarget.style.backgroundColor = '#4b5563';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!disabled) {
-                  e.currentTarget.style.backgroundColor = '#6b7280';
-                }
-              }}
-            >
-              Out
-            </button>
-          </div>
-        </div>
 
         {/* End Game */}
         <div style={{ 

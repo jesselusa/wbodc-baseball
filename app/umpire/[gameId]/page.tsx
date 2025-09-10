@@ -690,7 +690,7 @@ export default function UmpirePage() {
                       // Manually open the flip cup modal
                       umpireActions.openFlipCupModal(cupHit);
                     }}
-                    onAtBatComplete={handleAtBatComplete}
+                    onTriggerAtBatModal={handleAtBatComplete}
                     onEndGame={() => setEndGameModalOpen(true)}
                     disabled={umpireActions.state.submitting}
                   />
