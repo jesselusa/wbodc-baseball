@@ -495,7 +495,7 @@ export function validateGameEndEvent(
   payload: GameEndEventPayload,
   gameSnapshot: GameSnapshot
 ): ValidationResult {
-  const { final_score_home, final_score_away, notes } = payload;
+  const { final_score_home, final_score_away, notes, scoring_method } = payload;
   
   // Basic field validation
   if (final_score_home < 0 || final_score_away < 0) {
@@ -512,11 +512,14 @@ export function validateGameEndEvent(
   }
   
   // Score validation
-  if (final_score_home !== gameSnapshot.score_home || final_score_away !== gameSnapshot.score_away) {
-    return { 
-      isValid: false, 
-      error: 'Final scores must match current game snapshot scores' 
-    };
+  // For quick_result completion, allow overriding current snapshot scores
+  if (scoring_method !== 'quick_result') {
+    if (final_score_home !== gameSnapshot.score_home || final_score_away !== gameSnapshot.score_away) {
+      return { 
+        isValid: false, 
+        error: 'Final scores must match current game snapshot scores' 
+      };
+    }
   }
   
   // Notes validation
@@ -618,7 +621,9 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
           last_event_id: null,
           umpire_id: null,
           status: 'not_started',
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          scoring_method: 'live',
+          is_quick_result: false
         };
       } else {
         return {

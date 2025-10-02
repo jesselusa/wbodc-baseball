@@ -77,6 +77,11 @@ export function GameSetup({
   const [selectedGameId, setSelectedGameId] = useState<string>('');
   const [innings, setInnings] = useState<3 | 5 | 7 | 9>(7);
   const [umpireId, setUmpireId] = useState<string>('');
+  const [scoringMethod, setScoringMethod] = useState<'live' | 'quick_result'>('live');
+  const [quickHomeScore, setQuickHomeScore] = useState<number>(0);
+  const [quickAwayScore, setQuickAwayScore] = useState<number>(0);
+  const [quickNotes, setQuickNotes] = useState<string>('');
+  const [showQuickConfirm, setShowQuickConfirm] = useState<boolean>(false);
 
   // Load initial data
   useEffect(() => {
@@ -177,7 +182,17 @@ export function GameSetup({
   const getSelectedGame = () => games.find(g => g.id === selectedGameId);
   const getPlayerById = (playerId: string) => players.find(p => p.id === playerId);
 
-  const canStartGame = selectedGameId && umpireId;
+  const canStartGame = (() => {
+    if (!selectedGameId || !umpireId) return false;
+    if (scoringMethod === 'quick_result') {
+      // Validate quick result scores
+      const nonNegative = quickHomeScore >= 0 && quickAwayScore >= 0;
+      const notTie = quickHomeScore !== quickAwayScore;
+      const anyPositive = quickHomeScore > 0 || quickAwayScore > 0;
+      return nonNegative && notTie && anyPositive;
+    }
+    return true;
+  })();
 
   const handleStartGame = async () => {
     if (!canStartGame) return;
@@ -218,7 +233,7 @@ export function GameSetup({
         return;
       }
 
-      // For scheduled games, proceed with normal game start
+      // For scheduled games, proceed with normal game start or quick result
       const gameData: GameSetupData = {
         home_team_id: selectedGame.home_team_id,
         away_team_id: selectedGame.away_team_id,
@@ -227,14 +242,50 @@ export function GameSetup({
         game_id: selectedGameId // Pass the existing game ID
       };
 
-      if (onGameStarted) {
-        await onGameStarted(gameData);
+      if (scoringMethod === 'quick_result') {
+        gameData.quick_result = {
+          final_score_home: quickHomeScore,
+          final_score_away: quickAwayScore,
+          notes: quickNotes || undefined
+        };
+      }
+
+      if (scoringMethod === 'quick_result') {
+        // Confirm before proceeding with quick result
+        setShowQuickConfirm(true);
+        // The actual submission will happen in confirmQuickResult()
+      } else {
+        if (onGameStarted) {
+          await onGameStarted(gameData);
+        }
       }
     } catch (err) {
       console.error('Error starting game:', err);
       setError('Failed to start game. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const confirmQuickResult = async () => {
+    // Called after user confirms quick result
+    const selectedGame = getSelectedGame();
+    if (!selectedGame) return;
+    const gameData: GameSetupData = {
+      home_team_id: selectedGame.home_team_id,
+      away_team_id: selectedGame.away_team_id,
+      innings,
+      umpire_id: umpireId,
+      game_id: selectedGameId,
+      quick_result: {
+        final_score_home: quickHomeScore,
+        final_score_away: quickAwayScore,
+        notes: quickNotes || undefined
+      }
+    };
+    setShowQuickConfirm(false);
+    if (onGameStarted) {
+      await onGameStarted(gameData);
     }
   };
 
@@ -740,7 +791,114 @@ export function GameSetup({
                   ))}
                 </select>
               </div>
+
+              {/* Scoring Method */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '8px'
+                }}>
+                  Scoring Method
+                </label>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="radio"
+                      name="scoring_method"
+                      value="live"
+                      checked={scoringMethod === 'live'}
+                      onChange={() => setScoringMethod('live')}
+                    />
+                    Live Scoring (default)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="radio"
+                      name="scoring_method"
+                      value="quick_result"
+                      checked={scoringMethod === 'quick_result'}
+                      onChange={() => setScoringMethod('quick_result')}
+                    />
+                    Quick Result
+                  </label>
+                </div>
+              </div>
             </div>
+
+            {/* Quick Result Inputs */}
+            {scoringMethod === 'quick_result' && selectedGameId && (
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                background: 'rgba(234,179,8,0.08)',
+                border: '1px solid rgba(234,179,8,0.25)',
+                borderRadius: '12px'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  margin: '0 0 12px 0'
+                }}>Quick Result</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Final Home Score ({getSelectedGame()?.home_team?.name || 'Home'})
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={quickHomeScore}
+                      onChange={(e) => setQuickHomeScore(parseInt(e.target.value || '0', 10))}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Final Away Score ({getSelectedGame()?.away_team?.name || 'Away'})
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={quickAwayScore}
+                      onChange={(e) => setQuickAwayScore(parseInt(e.target.value || '0', 10))}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8'
+                      }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Notes (optional)
+                    </label>
+                    <textarea
+                      value={quickNotes}
+                      onChange={(e) => setQuickNotes(e.target.value)}
+                      placeholder="Add any context about using quick result..."
+                      style={{
+                        width: '100%',
+                        minHeight: '80px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Game Summary */}
             {selectedGameId && (
@@ -800,7 +958,9 @@ export function GameSetup({
                 disabled={!canStartGame || submitting}
                 style={{
                   background: canStartGame && !submitting
-                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    ? (scoringMethod === 'quick_result'
+                        ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                        : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)')
                     : 'linear-gradient(135deg, #d1cdd7 0%, #e4e2e8 100%)',
                   color: 'white',
                   border: 'none',
@@ -810,20 +970,26 @@ export function GameSetup({
                   fontWeight: '600',
                   cursor: canStartGame && !submitting ? 'pointer' : 'not-allowed',
                   transition: 'all 0.2s ease',
-                  boxShadow: canStartGame && !submitting ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  boxShadow: canStartGame && !submitting
+                    ? (scoringMethod === 'quick_result' ? '0 2px 8px rgba(245, 158, 11, 0.35)' : '0 2px 8px rgba(34, 197, 94, 0.3)')
+                    : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   if (canStartGame && !submitting) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                    e.currentTarget.style.background = scoringMethod === 'quick_result'
+                      ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
+                      : 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (canStartGame && !submitting) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    e.currentTarget.style.background = scoringMethod === 'quick_result'
+                      ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                      : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }
                 }}
@@ -838,15 +1004,15 @@ export function GameSetup({
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></div>
-                    Starting Game...
+                    {scoringMethod === 'quick_result' ? 'Submitting Quick Result...' : 'Starting Game...'}
                   </>
                 ) : (
-                  <>⚾ {(() => {
+                  <>{scoringMethod === 'quick_result' ? '🏁 Submit Quick Result' : '⚾ '}{(() => {
                     const selectedGame = getSelectedGame();
                     if (selectedGame?.status === 'in_progress') {
                       return 'Rejoin Game';
                     }
-                    return 'Start Game';
+                    return scoringMethod === 'quick_result' ? '' : 'Start Game';
                   })()}</>
                 )}
               </button>
@@ -886,6 +1052,45 @@ export function GameSetup({
           Cancel Setup
         </button>
       </div>
+
+      {/* Quick Result Confirmation Modal */}
+      {showQuickConfirm && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1c1b20' }}>Confirm Quick Result</h3>
+            <p style={{ color: '#696775', marginTop: '8px' }}>This will skip live scoring and record the final result immediately.</p>
+            <div style={{ marginTop: '12px', background: '#fafafa', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+              <div style={{ fontSize: '14px', color: '#1c1b20' }}>
+                {getSelectedGame()?.home_team?.name || 'Home'} {quickHomeScore} - {quickAwayScore} {getSelectedGame()?.away_team?.name || 'Away'}
+              </div>
+              {quickNotes && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#696775' }}>“{quickNotes}”</div>
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={() => setShowQuickConfirm(false)}
+                style={{
+                  background: 'transparent', color: '#1c1b20', border: '1px solid #e4e2e8', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmQuickResult}
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer'
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading Spinner Animation */}
       <style jsx>{`

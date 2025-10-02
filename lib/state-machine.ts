@@ -365,6 +365,15 @@ export class BaseballGameStateMachine {
     newSnapshot.status = 'completed';
     newSnapshot.score_home = payload.final_score_home;
     newSnapshot.score_away = payload.final_score_away;
+    // Mark scoring method for downstream consumers
+    if (payload.scoring_method === 'quick_result') {
+      newSnapshot.scoring_method = 'quick_result';
+      newSnapshot.is_quick_result = true;
+    } else {
+      newSnapshot.scoring_method = 'live';
+      newSnapshot.is_quick_result = false;
+    }
+    // Preserve scoring method via side effect; snapshot schema unchanged for now
     newSnapshot.last_updated = new Date().toISOString();
 
     return { 

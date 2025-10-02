@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameSetup } from '../../../components/GameSetup';
 import BackButton from '../../../components/BackButton';
-import { GameSetupData, GameStartEventPayload } from '../../../lib/types';
+import { GameSetupData, GameStartEventPayload, GameEndEventPayload } from '../../../lib/types';
 import { createNewGame, submitEvent, fetchTeamPlayers } from '../../../lib/api';
 
 /**
@@ -65,19 +65,45 @@ export default function GameSetupPage() {
         innings: gameData.innings || 7
       };
 
-      const eventResponse = await submitEvent({
+      const startResponse = await submitEvent({
         game_id: gameId,
         type: 'game_start',
         payload: gameStartPayload,
         umpire_id: gameData.umpire_id
       });
 
-      if (eventResponse.success) {
-        // Navigate to the umpire interface with the new game ID
-        router.push(`/umpire/${gameId}`);
-      } else {
-        setError(eventResponse.error || 'Failed to start game');
+      if (!startResponse.success) {
+        setError(startResponse.error || 'Failed to start game');
+        return;
       }
+
+      // If quick result was requested, immediately submit game_end
+      if (gameData.quick_result) {
+        const endPayload: GameEndEventPayload = {
+          final_score_home: gameData.quick_result.final_score_home,
+          final_score_away: gameData.quick_result.final_score_away,
+          notes: gameData.quick_result.notes,
+          scoring_method: 'quick_result'
+        };
+
+        const endResponse = await submitEvent({
+          game_id: gameId,
+          type: 'game_end',
+          payload: endPayload,
+          umpire_id: gameData.umpire_id
+        });
+
+        if (!endResponse.success) {
+          setError(endResponse.error || 'Failed to submit quick result');
+          return;
+        }
+        // Navigate to the results page or games list
+        router.push(`/results`);
+        return;
+      }
+
+      // Otherwise continue to umpire interface for live scoring
+      router.push(`/umpire/${gameId}`);
     } catch (err) {
       console.error('Error creating/starting game:', err);
       setError('Failed to create and start game');

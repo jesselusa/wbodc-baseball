@@ -268,6 +268,7 @@ export interface GameEndEventPayload {
   final_score_home: number;
   final_score_away: number;
   notes?: string;
+  scoring_method?: 'live' | 'quick_result';
 }
 
 export type EventPayload = 
@@ -322,6 +323,9 @@ export interface GameSnapshot {
   umpire_id?: string;
   status: GameSnapshotStatus;
   last_updated: string;
+  // Quick result metadata
+  scoring_method?: 'live' | 'quick_result';
+  is_quick_result?: boolean;
 }
 
 // Live game status view type
@@ -456,6 +460,12 @@ export interface GameSetupData {
   innings: 3 | 5 | 7 | 9;
   umpire_id: string;
   game_id?: string; // Optional - for starting existing tournament games
+  // Quick result option from setup flow (optional)
+  quick_result?: {
+    final_score_home: number;
+    final_score_away: number;
+    notes?: string;
+  };
 }
 
 // Real-time subscription types

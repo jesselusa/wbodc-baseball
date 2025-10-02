@@ -11,6 +11,7 @@
 - `app/api/events/route.ts` - Ensure event submission supports quick result game_end payload.
 - `lib/tournament-standings-updater.ts` - Verify standings update on quick-result completion.
 - `lib/tournament-bracket-updater.ts` - Verify bracket progression on quick-result completion.
+- `supabase/migrations/20251002_add_quick_result_columns.sql` - Adds `scoring_method` and `is_quick_result` to `game_snapshots`.
 
 ### Notes
 
@@ -21,19 +22,23 @@
 
 - [ ] 1.0 Data model and validation updates
 
-  - [ ] 1.1 Extend `GameEndEventPayload` with `scoring_method: 'live' | 'quick_result'`
-  - [ ] 1.2 Extend `GameSnapshot` with `scoring_method` and `is_quick_result`
-  - [ ] 1.3 Update state machine `handleGameEndEvent` to persist scoring method and set `is_quick_result`
-  - [ ] 1.4 Update `validateGameEndEvent` to accept `notes` and support quick-result submission rules
-  - [ ] 1.5 Ensure `updateGameSnapshotWithStateMachine` persists the new fields
+  - [x] 1.1 Extend `GameEndEventPayload` with `scoring_method: 'live' | 'quick_result'`
+  - [x] 1.2 Extend `GameSnapshot` with `scoring_method` and `is_quick_result`
+  - [x] 1.3 Update state machine `handleGameEndEvent` to persist scoring method and set `is_quick_result`
+  - [x] 1.4 Update `validateGameEndEvent` to accept `notes` and support quick-result submission rules
+  - [x] 1.5 Ensure `updateGameSnapshotWithStateMachine` persists the new fields
+  - [x] 1.6 Apply DB migration: add `scoring_method text` and `is_quick_result boolean` to `game_snapshots`
+    - [x] 1.6.1 Create migration SQL file under `supabase/` (or DB ops process)
+    - [x] 1.6.2 Apply migration in your environment
+    - [x] 1.6.3 Verify columns exist and default values where applicable
 
-- [ ] 2.0 Game Setup: scoring method and quick result path
+- [x] 2.0 Game Setup: scoring method and quick result path
 
-  - [ ] 2.1 Add scoring method selector (default Live Scoring) in `GameSetup`
-  - [ ] 2.2 Conditionally render quick result fields (home/away scores with team names, optional notes)
-  - [ ] 2.3 Add confirmation dialog (warn skip live scoring; show scores)
-  - [ ] 2.4 Submit quick-result: start game (if scheduled) then immediately submit `game_end` with `scoring_method: 'quick_result'`
-  - [ ] 2.5 Navigate to results or admin screen after completion
+  - [x] 2.1 Add scoring method selector (default Live Scoring) in `GameSetup`
+  - [x] 2.2 Conditionally render quick result fields (home/away scores with team names, optional notes)
+  - [x] 2.3 Add confirmation dialog (warn skip live scoring; show scores)
+  - [x] 2.4 Submit quick-result: start game (if scheduled) then immediately submit `game_end` with `scoring_method: 'quick_result'`
+  - [x] 2.5 Navigate to results or admin screen after completion
 
 - [ ] 3.0 Mid-game Quick End flow (umpire interface)
 
@@ -49,6 +54,11 @@
   - [ ] 4.3 Add test coverage for both updaters on quick-result
 
 - [ ] 5.0 Tests and QA
+
+### Notes
+
+- DB migration needed: add `scoring_method text` and `is_quick_result boolean` to `game_snapshots`. If migrations are managed elsewhere, create a sub-task to track schema change.
+
   - [ ] 5.1 Unit tests for types, state machine, and API validation
   - [ ] 5.2 Component tests for `GameSetup` and `QuickEndGameModal`
   - [ ] 5.3 Integration test: quick-result end updates standings/brackets
