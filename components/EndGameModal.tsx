@@ -168,7 +168,7 @@ export function EndGameModal({
           }}>
             {/* Away Team Score */}
             <div>
-              <label style={{
+              <label htmlFor="endgame-away-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
@@ -179,6 +179,7 @@ export function EndGameModal({
               </label>
               <input
                 type="number"
+                id="endgame-away-score"
                 value={awayScore}
                 onChange={(e) => setAwayScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -197,7 +198,7 @@ export function EndGameModal({
 
             {/* Home Team Score */}
             <div>
-              <label style={{
+              <label htmlFor="endgame-home-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
@@ -208,6 +209,7 @@ export function EndGameModal({
               </label>
               <input
                 type="number"
+                id="endgame-home-score"
                 value={homeScore}
                 onChange={(e) => setHomeScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -256,7 +258,7 @@ export function EndGameModal({
 
           {/* Notes */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
+            <label htmlFor="endgame-notes" style={{
               fontSize: '0.875rem',
               fontWeight: '600',
               color: '#374151',
@@ -266,6 +268,7 @@ export function EndGameModal({
               Notes (optional)
             </label>
             <textarea
+              id="endgame-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}

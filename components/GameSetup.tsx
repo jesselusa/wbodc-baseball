@@ -845,11 +845,12 @@ export function GameSetup({
                 }}>Quick Result</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                    <label htmlFor="quick-home-score" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
                       Final Home Score ({getSelectedGame()?.home_team?.name || 'Home'})
                     </label>
                     <input
                       type="number"
+                      id="quick-home-score"
                       min={0}
                       value={quickHomeScore}
                       onChange={(e) => setQuickHomeScore(parseInt(e.target.value || '0', 10))}
@@ -862,11 +863,12 @@ export function GameSetup({
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                    <label htmlFor="quick-away-score" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
                       Final Away Score ({getSelectedGame()?.away_team?.name || 'Away'})
                     </label>
                     <input
                       type="number"
+                      id="quick-away-score"
                       min={0}
                       value={quickAwayScore}
                       onChange={(e) => setQuickAwayScore(parseInt(e.target.value || '0', 10))}
@@ -879,10 +881,11 @@ export function GameSetup({
                     />
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                    <label htmlFor="quick-notes" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
                       Notes (optional)
                     </label>
                     <textarea
+                      id="quick-notes"
                       value={quickNotes}
                       onChange={(e) => setQuickNotes(e.target.value)}
                       placeholder="Add any context about using quick result..."

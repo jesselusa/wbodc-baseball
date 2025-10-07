@@ -47,11 +47,11 @@
   - [x] 3.3 Submit `game_end` with `scoring_method: 'quick_result'`
   - [x] 3.4 Refresh snapshot/live status and route to viewer/results
 
-- [ ] 4.0 Tournament integration checks
+- [x] 4.0 Tournament integration checks
 
-  - [ ] 4.1 Verify standings updater runs on quick-result completion
-  - [ ] 4.2 Verify bracket updater runs on quick-result completion
-  - [ ] 4.3 Add test coverage for both updaters on quick-result
+  - [x] 4.1 Verify standings updater runs on quick-result completion
+  - [x] 4.2 Verify bracket updater runs on quick-result completion
+  - [x] 4.3 Add test coverage for both updaters on quick-result
 
 - [ ] 5.0 Tests and QA
 
@@ -59,7 +59,7 @@
 
 - DB migration needed: add `scoring_method text` and `is_quick_result boolean` to `game_snapshots`. If migrations are managed elsewhere, create a sub-task to track schema change.
 
-  - [ ] 5.1 Unit tests for types, state machine, and API validation
+  - [x] 5.1 Unit tests for types, state machine, and API validation
   - [ ] 5.2 Component tests for `GameSetup` and `QuickEndGameModal`
   - [ ] 5.3 Integration test: quick-result end updates standings/brackets
   - [ ] 5.4 Manual QA checklist for setup and mid-game flows
