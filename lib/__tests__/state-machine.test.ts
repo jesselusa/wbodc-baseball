@@ -34,6 +34,7 @@ describe('BaseballGameStateMachine', () => {
     type: type as any,
     payload,
     umpire_id: 'umpire-1',
+    sequence_number: 1,
     created_at: '2024-01-01T00:00:00Z'
   });
 
@@ -362,7 +363,7 @@ describe('BaseballGameStateMachine', () => {
 
   describe('Game Start Events', () => {
     test('should initialize game correctly', () => {
-      const snapshot = createBasicSnapshot({ status: 'scheduled' });
+      const snapshot = createBasicSnapshot({ status: 'not_started' });
       
       const event = createEvent('game_start', {
         umpire_id: 'umpire-1',
@@ -385,6 +386,43 @@ describe('BaseballGameStateMachine', () => {
       expect(result.snapshot.score_away).toBe(0);
       expect(result.snapshot.batter_id).toBe('away-1'); // Away team bats first
       expect(result.snapshot.base_runners).toEqual({ first: null, second: null, third: null });
+    });
+  });
+
+  describe('Game End Events (Quick Result vs Live)', () => {
+    test('should mark completed with live method by default (no quick flag)', () => {
+      const snapshot = createBasicSnapshot({ status: 'in_progress', score_home: 2, score_away: 1 });
+      const event = createEvent('game_end', {
+        final_score_home: 2,
+        final_score_away: 1
+      });
+
+      const result = BaseballGameStateMachine.transition(snapshot, event);
+
+      expect(result.error).toBeUndefined();
+      expect(result.snapshot.status).toBe('completed');
+      expect(result.snapshot.score_home).toBe(2);
+      expect(result.snapshot.score_away).toBe(1);
+      expect(result.snapshot.scoring_method).toBe('live');
+      expect(result.snapshot.is_quick_result).toBe(false);
+    });
+
+    test('should mark completed with quick_result and set flag when provided', () => {
+      const snapshot = createBasicSnapshot({ status: 'in_progress', score_home: 0, score_away: 0 });
+      const event = createEvent('game_end', {
+        final_score_home: 7,
+        final_score_away: 4,
+        scoring_method: 'quick_result'
+      });
+
+      const result = BaseballGameStateMachine.transition(snapshot, event);
+
+      expect(result.error).toBeUndefined();
+      expect(result.snapshot.status).toBe('completed');
+      expect(result.snapshot.score_home).toBe(7);
+      expect(result.snapshot.score_away).toBe(4);
+      expect(result.snapshot.scoring_method).toBe('quick_result');
+      expect(result.snapshot.is_quick_result).toBe(true);
     });
   });
 
@@ -424,7 +462,7 @@ describe('BaseballGameStateMachine', () => {
     });
 
     test('should reject gameplay events when game not in progress', () => {
-      const snapshot = createBasicSnapshot({ status: 'scheduled' });
+      const snapshot = createBasicSnapshot({ status: 'not_started' });
       const event = createEvent('pitch', { result: 'strike', batter_id: 'batter-1', catcher_id: 'catcher-1' });
 
       const result = BaseballGameStateMachine.transition(snapshot, event);

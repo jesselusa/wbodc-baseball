@@ -40,12 +40,12 @@
   - [x] 2.4 Submit quick-result: start game (if scheduled) then immediately submit `game_end` with `scoring_method: 'quick_result'`
   - [x] 2.5 Navigate to results or admin screen after completion
 
-- [ ] 3.0 Mid-game Quick End flow (umpire interface)
+- [x] 3.0 Mid-game Quick End flow (umpire interface)
 
-  - [ ] 3.1 Add "Quick End Game" entry in secondary actions area
-  - [ ] 3.2 Build `QuickEndGameModal` (prefill scores, optional notes, confirm)
-  - [ ] 3.3 Submit `game_end` with `scoring_method: 'quick_result'`
-  - [ ] 3.4 Refresh snapshot/live status and route to viewer/results
+  - [x] 3.1 Add "Quick End Game" entry in secondary actions area
+  - [x] 3.2 Build `QuickEndGameModal` (prefill scores, optional notes, confirm)
+  - [x] 3.3 Submit `game_end` with `scoring_method: 'quick_result'`
+  - [x] 3.4 Refresh snapshot/live status and route to viewer/results
 
 - [ ] 4.0 Tournament integration checks
 

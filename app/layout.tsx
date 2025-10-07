@@ -31,7 +31,7 @@ export default function RootLayout({
         style={{
           margin: 0,
           padding: 0,
-          paddingTop: '64px', // Account for fixed navbar height
+          paddingTop: 'var(--nav-height, 64px)', // Account for fixed navbar height
           background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
           color: '#1c1b20',
           fontFamily: 'system-ui, -apple-system, sans-serif',

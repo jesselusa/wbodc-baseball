@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { submitEvent, validateEvent, getGameSnapshot, getGameEvents } from '../../../lib/api';
 import { supabaseAdmin } from '../../../lib/supabase-admin';
 import type { EventSubmissionRequest, EventSubmissionResponse } from '../../../lib/types';
+import { updateStandingsOnGameComplete } from '../../../lib/tournament-standings-updater';
+import { updateBracketOnGameComplete } from '../../../lib/tournament-bracket-updater';
 
 // POST /api/events - Submit a new game event
 export async function POST(request: NextRequest) {
@@ -85,6 +87,33 @@ export async function POST(request: NextRequest) {
       // Don't fail the whole request for this, just log it
     }
     
+    // If the snapshot indicates completion, trigger tournament updates (standings/bracket)
+    if (result.snapshot.status === 'completed') {
+      try {
+        // Fetch minimal game info to decide which updaters to run
+        const { data: gameRow } = await supabaseAdmin
+          .from('games')
+          .select('id, tournament_id, is_round_robin')
+          .eq('id', result.snapshot.game_id)
+          .single();
+
+        if (gameRow && gameRow.tournament_id) {
+          // Run updates in parallel; each is internally safe/no-op when not applicable
+          await Promise.all([
+            // Standings: only for round robin
+            gameRow.is_round_robin
+              ? updateStandingsOnGameComplete(gameRow.tournament_id, gameRow.id)
+              : Promise.resolve(null),
+            // Bracket: try to advance winner if this game maps to a bracket match
+            updateBracketOnGameComplete(gameRow.tournament_id, gameRow.id)
+          ]);
+        }
+      } catch (tournamentUpdateError) {
+        console.error('Error running tournament updates on game completion:', tournamentUpdateError);
+        // Do not fail the request if tournament updates fail; they can be retried separately
+      }
+    }
+
     // Return successful response
     return NextResponse.json({
       success: true,

@@ -8,6 +8,7 @@ import { LiveGameState } from '../../../components/LiveGameState';
 import { FlipCupModal } from '../../../components/FlipCupModal';
 import { AtBatConfirmation } from '../../../components/AtBatConfirmation';
 import { EndGameModal } from '../../../components/EndGameModal';
+// QuickEndGameModal removed in favor of single End Game modal
 import { EventHistory } from '../../../components/EventHistory';
 import { UmpireTakeover } from '../../../components/UmpireTakeover';
 import { ConnectionStatus } from '../../../components/ConnectionStatus';
@@ -221,10 +222,34 @@ export default function UmpirePage() {
   };
 
   const handleEndGame = async (payload: GameEndEventPayload) => {
-    // TODO: Implement end game functionality
-    console.log('End game payload:', payload);
-    setEndGameModalOpen(false);
+    // Determine if this is a quick-result (allow overriding scores)
+    const isQuickResult = currentSnapshot
+      ? payload.final_score_home !== currentSnapshot.score_home || payload.final_score_away !== currentSnapshot.score_away
+      : false;
+
+    const finalPayload: GameEndEventPayload = {
+      ...payload,
+      scoring_method: isQuickResult ? 'quick_result' : 'live'
+    };
+
+    const response = await umpireActions.submitGameEnd(gameId, finalPayload, umpireId);
+    if (response?.success) {
+      setEndGameModalOpen(false);
+      try {
+        const [snapshotResponse, statusResponse] = await Promise.all([
+          getGameSnapshot(gameId),
+          getLiveGameStatus(gameId)
+        ]);
+        if (snapshotResponse) setGameSnapshot(snapshotResponse);
+        if (statusResponse) setLiveStatus(statusResponse);
+      } catch (e) {
+        // non-fatal
+      }
+      router.push(`/game/${gameId}`);
+    }
   };
+
+  // Use a single End Game modal; decide quick_result vs live at submit time
 
   // Takeover handler
   const handleTakeover = async (payload: TakeoverEventPayload) => {
@@ -376,10 +401,10 @@ export default function UmpirePage() {
     }}>
       {/* Header */}
       <div style={{
-        background: '#ffffff',
+        background: '#fdfcfe',
         borderBottom: '1px solid #e4e2e8',
         position: 'sticky',
-        top: '64px',
+        top: 0,
         zIndex: 10,
         backdropFilter: 'blur(10px)'
       }}>
@@ -807,6 +832,8 @@ export default function UmpirePage() {
           onCancel={() => setEndGameModalOpen(false)}
         />
       )}
+
+      {/* Single End Game modal only (quick or live determined on submit) */}
 
       <style jsx>{`
         @keyframes spin {

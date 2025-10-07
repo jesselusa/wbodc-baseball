@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GameEndEventPayload, GameSnapshot } from '../lib/types';
 
-export interface EndGameModalProps {
+export interface QuickEndGameModalProps {
   isOpen: boolean;
   gameSnapshot: GameSnapshot;
   onConfirm: (payload: GameEndEventPayload) => void;
@@ -10,39 +10,36 @@ export interface EndGameModalProps {
 }
 
 /**
- * EndGameModal component for confirming final game scores
- * Allows umpire to input final scores and end the game
+ * QuickEndGameModal: Allows skipping to final result with confirmation.
+ * Includes notes and sets scoring_method to 'quick_result'.
  */
-export function EndGameModal({
+export function QuickEndGameModal({
   isOpen,
   gameSnapshot,
   onConfirm,
   onCancel,
   className = ''
-}: EndGameModalProps) {
+}: QuickEndGameModalProps) {
   const [homeScore, setHomeScore] = useState(gameSnapshot.score_home);
   const [awayScore, setAwayScore] = useState(gameSnapshot.score_away);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Don't render if not open
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
     setSubmitting(true);
-
     const payload: GameEndEventPayload = {
       final_score_home: homeScore,
       final_score_away: awayScore,
-      notes: notes?.trim() ? notes.trim() : `Game ended by umpire on ${new Date().toLocaleString()}`
+      notes: notes?.trim() ? notes.trim() : undefined,
+      scoring_method: 'quick_result'
     };
-
     onConfirm(payload);
     setSubmitting(false);
   };
 
   const handleCancel = () => {
-    // Reset scores to current game state
     setHomeScore(gameSnapshot.score_home);
     setAwayScore(gameSnapshot.score_away);
     setNotes('');
@@ -67,7 +64,7 @@ export function EndGameModal({
         background: '#ffffff',
         borderRadius: '12px',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        maxWidth: '500px',
+        maxWidth: '520px',
         width: '100%',
         maxHeight: '90vh',
         overflow: 'auto'
@@ -83,99 +80,45 @@ export function EndGameModal({
             fontWeight: '700',
             color: '#1c1b20',
             marginBottom: '0.25rem'
-          }}>End Game</h2>
+          }}>Quick End Game</h2>
           <p style={{
             fontSize: '0.875rem',
             color: '#6b7280'
           }}>
-            Confirm the final scores to end this game
+            Skip remaining live scoring and record a final result.
           </p>
         </div>
 
         <div style={{ padding: '1.5rem' }}>
-          {/* Warning Message */}
+          {/* Warning */}
           <div style={{
             background: '#fef3c7',
             border: '1px solid #fbbf24',
             borderRadius: '8px',
             padding: '1rem',
-            marginBottom: '1.5rem'
+            marginBottom: '1.25rem'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '1.25rem' }}>⚠️</span>
               <div>
-                <h4 style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#92400e',
-                  marginBottom: '0.25rem'
-                }}>Confirm Game End</h4>
-                <p style={{
-                  fontSize: '0.75rem',
-                  color: '#b45309',
-                  margin: 0
-                }}>
-                  This action cannot be undone. Make sure the final scores are correct.
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#92400e', marginBottom: '0.25rem' }}>Confirm Quick Result</h4>
+                <p style={{ fontSize: '0.75rem', color: '#b45309', margin: 0 }}>
+                  This will end the game immediately and save these final scores.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Current Game Info */}
-          <div style={{
-            background: '#f9fafb',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '0.75rem'
-            }}>Current Game Status</h3>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-              gap: '1rem',
-              fontSize: '0.875rem'
-            }}>
-              <div>
-                <span style={{ color: '#6b7280' }}>Inning:</span>
-                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
-                  {gameSnapshot.is_top_of_inning ? 'Top' : 'Bottom'} {gameSnapshot.current_inning}
-                </span>
-              </div>
-              <div>
-                <span style={{ color: '#6b7280' }}>Outs:</span>
-                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>
-                  {gameSnapshot.outs}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Score Input */}
+          {/* Score Inputs */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '1rem',
-            marginBottom: '1.5rem'
+            marginBottom: '1rem'
           }}>
-            {/* Away Team Score */}
             <div>
-              <label style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.5rem',
-                display: 'block'
-              }}>
-                Away Team Final Score
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+                Away Final Score
               </label>
               <input
                 type="number"
@@ -188,23 +131,15 @@ export function EndGameModal({
                   border: '1px solid #d1d5db',
                   borderRadius: '8px',
                   fontSize: '1rem',
-                  fontWeight: '600',
+                  fontWeight: 600,
                   textAlign: 'center',
                   backgroundColor: '#ffffff'
                 }}
               />
             </div>
-
-            {/* Home Team Score */}
             <div>
-              <label style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.5rem',
-                display: 'block'
-              }}>
-                Home Team Final Score
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+                Home Final Score
               </label>
               <input
                 type="number"
@@ -217,7 +152,7 @@ export function EndGameModal({
                   border: '1px solid #d1d5db',
                   borderRadius: '8px',
                   fontSize: '1rem',
-                  fontWeight: '600',
+                  fontWeight: 600,
                   textAlign: 'center',
                   backgroundColor: '#ffffff'
                 }}
@@ -225,51 +160,16 @@ export function EndGameModal({
             </div>
           </div>
 
-          {/* Winner Display */}
-          {homeScore !== awayScore && (
-            <div style={{
-              background: homeScore > awayScore ? '#f0fdf4' : '#eff6ff',
-              border: `1px solid ${homeScore > awayScore ? '#bbf7d0' : '#bfdbfe'}`,
-              borderRadius: '8px',
-              padding: '1rem',
-              textAlign: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <h4 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: homeScore > awayScore ? '#166534' : '#1e40af',
-                marginBottom: '0.25rem'
-              }}>
-                Winner: {homeScore > awayScore ? 'Home Team' : 'Away Team'}
-              </h4>
-              <p style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: homeScore > awayScore ? '#15803d' : '#2563eb',
-                margin: 0
-              }}>
-                {Math.max(homeScore, awayScore)} - {Math.min(homeScore, awayScore)}
-              </p>
-            </div>
-          )}
-
           {/* Notes */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '0.5rem',
-              display: 'block'
-            }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
               Notes (optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="e.g., End of live scoring or quick result due to time"
+              placeholder="e.g., Quick result due to time constraints"
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -280,9 +180,27 @@ export function EndGameModal({
               }}
             />
           </div>
+
+          {/* Winner Indicator */}
+          {homeScore !== awayScore && (
+            <div style={{
+              background: homeScore > awayScore ? '#f0fdf4' : '#eff6ff',
+              border: `1px solid ${homeScore > awayScore ? '#bbf7d0' : '#bfdbfe'}`,
+              borderRadius: '8px',
+              padding: '1rem',
+              textAlign: 'center'
+            }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: homeScore > awayScore ? '#166534' : '#1e40af', marginBottom: '0.25rem' }}>
+                Winner: {homeScore > awayScore ? 'Home Team' : 'Away Team'}
+              </h4>
+              <p style={{ fontSize: '1.25rem', fontWeight: 700, color: homeScore > awayScore ? '#15803d' : '#2563eb', margin: 0 }}>
+                {Math.max(homeScore, awayScore)} - {Math.min(homeScore, awayScore)}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div style={{
           padding: '1.5rem',
           borderTop: '1px solid #e4e2e8',
@@ -319,36 +237,37 @@ export function EndGameModal({
           >
             Cancel
           </button>
-
           <button
             onClick={handleConfirm}
             disabled={submitting}
             style={{
               padding: '0.75rem 1.5rem',
-              backgroundColor: submitting ? '#9ca3af' : '#dc2626',
+              backgroundColor: submitting ? '#9ca3af' : '#111827',
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
-              fontWeight: '600',
+              fontWeight: 600,
               cursor: submitting ? 'not-allowed' : 'pointer',
               transition: 'background-color 0.2s',
               fontSize: '0.875rem'
             }}
             onMouseEnter={(e) => {
               if (!submitting) {
-                e.currentTarget.style.backgroundColor = '#b91c1c';
+                e.currentTarget.style.backgroundColor = '#0b1220';
               }
             }}
             onMouseLeave={(e) => {
               if (!submitting) {
-                e.currentTarget.style.backgroundColor = '#dc2626';
+                e.currentTarget.style.backgroundColor = '#111827';
               }
             }}
           >
-            {submitting ? 'Ending Game...' : 'End Game'}
+            {submitting ? 'Saving...' : 'Confirm Quick End'}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+

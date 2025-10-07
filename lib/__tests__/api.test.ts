@@ -1,10 +1,99 @@
+// Mock Supabase to avoid ESM issues and network calls
+jest.mock('@supabase/supabase-js', () => {
+  const sampleGames = [
+    { id: 'game1', home_team_id: 'team1', away_team_id: 'team2', tournament_id: 'tournament1', status: 'completed', updated_at: '2024-11-01T20:15:00Z', started_at: '2024-11-01T19:05:00Z', completed_at: '2024-11-01T20:15:00Z', home_score: 5, away_score: 3 },
+    { id: 'gameB', home_team_id: 'team3', away_team_id: 'team4', tournament_id: 'tournament1', status: 'in_progress', updated_at: '2024-11-01T20:05:00Z', started_at: '2024-11-01T20:00:00Z', home_score: 2, away_score: 1 },
+    { id: 'gameC', home_team_id: 'team5', away_team_id: 'team6', tournament_id: 'tournament1', status: 'scheduled', updated_at: '2024-11-01T19:55:00Z', home_score: 0, away_score: 0 },
+  ];
+  const sampleTeams = [
+    { id: 'team1', name: 'Team 1' },
+    { id: 'team2', name: 'Team 2' },
+    { id: 'team3', name: 'Team 3' },
+    { id: 'team4', name: 'Team 4' },
+    { id: 'team5', name: 'Team 5' },
+    { id: 'team6', name: 'Team 6' },
+  ];
+  const sampleTournaments = [
+    { id: 'tournament1', name: 'Test Tournament', status: 'in_progress', start_date: '2024-11-01', end_date: '2024-11-03', created_at: '2024-11-01', updated_at: '2024-11-01' },
+    { id: 'tournament2', name: 'Another Tournament', status: 'completed', start_date: '2024-10-01', end_date: '2024-10-03', created_at: '2024-10-01', updated_at: '2024-10-03' }
+  ];
+
+  function makeQuery(table) {
+    const qb: any = {
+      _table: table,
+      _filters: {},
+      _in: null,
+      select: function () { return this; },
+      eq: function (k, v) { this._filters[k] = v; return this; },
+      in: function (k, values) { this._in = { column: k, values }; return this; },
+      or: function () { return this; },
+      order: function () { return this; },
+      limit: function () { return this; },
+      single: async function () {
+        let data = baseDataFor(this._table);
+        data = applyFilters(data, this._filters, this._in);
+        return { data: data[0] || null, error: null };
+      }
+    };
+
+    Object.defineProperty(qb, 'data', {
+      get() { return null; }
+    });
+    Object.defineProperty(qb, 'error', {
+      get() { return null; }
+    });
+
+    return new Proxy(qb, {
+      get(target, prop) {
+        if (prop === Symbol.toStringTag) return 'Query';
+        if (prop === 'then') {
+          // Allow await qb to resolve to { data, error }
+          return (resolve) => {
+            let data = baseDataFor(target._table);
+            data = applyFilters(data, target._filters, target._in);
+            resolve({ data, error: null });
+          };
+        }
+        return target[prop];
+      }
+    });
+  }
+
+  function baseDataFor(table) {
+    if (table === 'games') return sampleGames.slice();
+    if (table === 'teams') return sampleTeams.slice();
+    if (table === 'tournaments') return sampleTournaments.slice();
+    return [];
+  }
+
+  function applyFilters(data, filters, inFilter) {
+    let result = data;
+    // eq filters
+    Object.keys(filters || {}).forEach((k) => {
+      result = result.filter((row) => row[k] === filters[k]);
+    });
+    // in filter
+    if (inFilter && inFilter.values && inFilter.values.length) {
+      result = result.filter((row) => inFilter.values.includes(row[inFilter.column]));
+    }
+    return result;
+  }
+
+  return {
+    createClient: jest.fn(() => ({
+      from: (table) => makeQuery(table)
+    }))
+  };
+});
 import {
   fetchGames,
   fetchGameById,
   fetchTournaments,
   fetchActiveTournament,
   fetchRecentGames,
+  validateGameEndEvent
 } from '../api';
+import { GameSnapshot } from '../types';
 
 describe('API Functions', () => {
   describe('fetchGames', () => {
@@ -109,23 +198,23 @@ describe('API Functions', () => {
     });
 
     it('filters tournaments by status', async () => {
-      const result = await fetchTournaments({ status: ['active'] });
+      const result = await fetchTournaments({ status: ['in_progress'] as any });
       
       if (result.success && result.data) {
         result.data.forEach(tournament => {
-          expect(tournament.status).toBe('active');
+          expect(tournament.status).toBe('in_progress');
         });
       }
     });
   });
 
   describe('fetchActiveTournament', () => {
-    it('returns active tournament when one exists', async () => {
+    it('returns in-progress tournament when one exists', async () => {
       const result = await fetchActiveTournament();
       
       expect(result.success).toBe(true);
       if (result.data) {
-        expect(result.data.status).toBe('active');
+        expect(result.data.status).toBe('in_progress');
       }
     });
 
@@ -283,6 +372,45 @@ describe('API Functions', () => {
           }
         });
       }
+    });
+  });
+
+  describe('Quick Result Validation', () => {
+    const baseSnapshot: GameSnapshot = {
+      game_id: 'g1',
+      current_inning: 3,
+      is_top_of_inning: true,
+      outs: 1,
+      balls: 0,
+      strikes: 0,
+      score_home: 2,
+      score_away: 2,
+      home_team_id: 'h1',
+      away_team_id: 'a1',
+      base_runners: { first: null, second: null, third: null },
+      home_lineup: ['h1p1'],
+      away_lineup: ['a1p1'],
+      home_lineup_position: 0,
+      away_lineup_position: 0,
+      status: 'in_progress',
+      last_updated: new Date().toISOString()
+    };
+
+    it('rejects live end when final scores differ from snapshot', () => {
+      const result = validateGameEndEvent({
+        final_score_home: 3,
+        final_score_away: 2
+      } as any, baseSnapshot);
+      expect(result.isValid).toBe(false);
+    });
+
+    it('accepts quick_result end when final scores differ from snapshot', () => {
+      const result = validateGameEndEvent({
+        final_score_home: 3,
+        final_score_away: 2,
+        scoring_method: 'quick_result'
+      } as any, baseSnapshot);
+      expect(result.isValid).toBe(true);
     });
   });
 }); 

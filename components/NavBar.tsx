@@ -306,6 +306,9 @@ export function NavBar() {
         </>
       )}
       <style jsx>{`
+        :root {
+          --nav-height: ${HEADER_HEIGHT}px;
+        }
         @media (min-width: 768px) {
           .desktop-nav {
             display: flex !important;
@@ -323,7 +326,7 @@ export function NavBar() {
           }
         }
         body {
-          padding-top: ${HEADER_HEIGHT}px;
+          padding-top: var(--nav-height);
         }
       `}</style>
     </nav>
