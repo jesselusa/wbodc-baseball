@@ -60,6 +60,49 @@
 - DB migration needed: add `scoring_method text` and `is_quick_result boolean` to `game_snapshots`. If migrations are managed elsewhere, create a sub-task to track schema change.
 
   - [x] 5.1 Unit tests for types, state machine, and API validation
-  - [ ] 5.2 Component tests for `GameSetup` and `QuickEndGameModal`
-  - [ ] 5.3 Integration test: quick-result end updates standings/brackets
-  - [ ] 5.4 Manual QA checklist for setup and mid-game flows
+  - [x] 5.2 Component tests for `GameSetup` and `QuickEndGameModal`
+  - [x] 5.3 Integration test: quick-result end updates standings/brackets
+  - [x] 5.4 Manual QA checklist for setup and mid-game flows
+
+### 5.4 Manual QA Checklist
+
+- Game Setup (scheduled game)
+
+  - Select a scheduled tournament game in Game Setup.
+  - Verify default scoring method is Live Scoring.
+  - Switch to Quick Result; inputs display with team names in labels.
+  - Enter non-negative, non-tied scores; notes optional.
+  - Ensure Start button shows “Submit Quick Result” and only enables with valid inputs.
+  - Click submit; confirmation displays scores and notes; confirm ends game.
+  - Verify DB: `game_snapshots.scoring_method='quick_result'`, `is_quick_result=true`; game row status=completed and scores saved.
+  - Standings/bracket reflect the winner.
+
+- Game Setup (in-progress game)
+
+  - Selecting an in-progress game shows “Rejoin Game”.
+  - Confirm Quick Result option does not block rejoin path from setup.
+
+- Mid-game (umpire interface)
+
+  - During live scoring, click End Game; modal opens with editable scores + notes.
+  - If scores differ from snapshot and you confirm, result is saved as quick result.
+  - If scores match snapshot and you confirm, result is saved as live end.
+  - After confirm, route to viewer; snapshot status=completed.
+  - Standings/bracket update accordingly.
+
+- Validation and safety
+
+  - Quick Result blocks ties and negative scores.
+  - Cancel in confirmation returns to Setup without submission.
+  - If a completed game is quick-resulted again, a confirmation is shown and action succeeds; downstream reflects new result.
+
+- Tournament impacts
+
+  - Round-robin standings update wins/losses, runs, games played.
+  - Bracket progression advances winner when applicable.
+
+- Edge cases
+  - 1-0 or similar minimal non-tie is allowed.
+  - Notes can be empty or populated; saved when provided.
+  - Simulate network error: visible error and no duplicate submissions on retry.
+  - Refresh after completion shows game as completed in Setup/Dashboard.
