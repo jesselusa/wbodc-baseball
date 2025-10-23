@@ -9,6 +9,7 @@ export interface Player {
   current_town?: string;
   hometown?: string;
   championships_won?: number;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -211,7 +212,7 @@ export interface Game {
 }
 
 // Live scoring types for real-time event system
-export type EventType = 'pitch' | 'flip_cup' | 'at_bat' | 'undo' | 'edit' | 'takeover' | 'game_start' | 'game_end';
+export type EventType = 'pitch' | 'flip_cup' | 'at_bat' | 'undo' | 'edit' | 'takeover' | 'game_start' | 'game_end' | 'inning_end';
 
 export type PitchResult = 'strike' | 'foul ball' | 'ball' | 'first cup hit' | 'second cup hit' | 'third cup hit' | 'fourth cup hit';
 export type FlipCupResult = 'offense wins' | 'defense wins';
@@ -268,6 +269,15 @@ export interface GameEndEventPayload {
   final_score_home: number;
   final_score_away: number;
   notes?: string;
+  scoring_method?: 'live' | 'quick_result';
+}
+
+export interface InningEndEventPayload {
+  inning_number: number;
+  is_top_of_inning: boolean;
+  score_home: number;
+  score_away: number;
+  notes?: string;
 }
 
 export type EventPayload = 
@@ -278,7 +288,8 @@ export type EventPayload =
   | EditEventPayload 
   | TakeoverEventPayload 
   | GameStartEventPayload 
-  | GameEndEventPayload;
+  | GameEndEventPayload
+  | InningEndEventPayload;
 
 // Game event for the event log
 export interface GameEvent {
@@ -322,6 +333,9 @@ export interface GameSnapshot {
   umpire_id?: string;
   status: GameSnapshotStatus;
   last_updated: string;
+  // Quick result metadata
+  scoring_method?: 'live' | 'quick_result';
+  is_quick_result?: boolean;
 }
 
 // Live game status view type
@@ -456,6 +470,17 @@ export interface GameSetupData {
   innings: 3 | 5 | 7 | 9;
   umpire_id: string;
   game_id?: string; // Optional - for starting existing tournament games
+  // Batting lineups (array of player IDs in batting order)
+  lineups?: {
+    home: string[]; // player_ids in batting order
+    away: string[]; // player_ids in batting order
+  };
+  // Quick result option from setup flow (optional)
+  quick_result?: {
+    final_score_home: number;
+    final_score_away: number;
+    notes?: string;
+  };
 }
 
 // Real-time subscription types

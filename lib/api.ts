@@ -375,21 +375,27 @@ export function validateUndoEvent(
 ): ValidationResult {
   const { target_event_id, reason } = payload;
   
+  console.log('[validateUndoEvent] Validating undo event:', { target_event_id, reason });
+  
   // Basic field validation
   if (!target_event_id) {
+    console.error('[validateUndoEvent] Missing target_event_id');
     return { isValid: false, error: 'Target event ID is required for undo events' };
   }
   
   // Game state validation
   if (gameSnapshot.status === 'completed') {
+    console.error('[validateUndoEvent] Game is completed');
     return { isValid: false, error: 'Cannot undo events in completed games' };
   }
   
   // Reason validation (optional but recommended)
   if (reason && reason.length > 500) {
+    console.error('[validateUndoEvent] Reason too long');
     return { isValid: false, error: 'Undo reason must be 500 characters or less' };
   }
   
+  console.log('[validateUndoEvent] Validation passed');
   return { isValid: true };
 }
 
@@ -495,7 +501,7 @@ export function validateGameEndEvent(
   payload: GameEndEventPayload,
   gameSnapshot: GameSnapshot
 ): ValidationResult {
-  const { final_score_home, final_score_away, notes } = payload;
+  const { final_score_home, final_score_away, notes, scoring_method } = payload;
   
   // Basic field validation
   if (final_score_home < 0 || final_score_away < 0) {
@@ -512,11 +518,14 @@ export function validateGameEndEvent(
   }
   
   // Score validation
-  if (final_score_home !== gameSnapshot.score_home || final_score_away !== gameSnapshot.score_away) {
-    return { 
-      isValid: false, 
-      error: 'Final scores must match current game snapshot scores' 
-    };
+  // For quick_result completion, allow overriding current snapshot scores
+  if (scoring_method !== 'quick_result') {
+    if (final_score_home !== gameSnapshot.score_home || final_score_away !== gameSnapshot.score_away) {
+      return { 
+        isValid: false, 
+        error: 'Final scores must match current game snapshot scores' 
+      };
+    }
   }
   
   // Notes validation
@@ -618,7 +627,9 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
           last_event_id: null,
           umpire_id: null,
           status: 'not_started',
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          scoring_method: 'live',
+          is_quick_result: false
         };
       } else {
         return {
@@ -642,7 +653,92 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
       previousEvent = prevEvent || undefined;
     }
     
-    // Validate the event
+    // Special handling: undo should delete the target event and rebuild snapshot
+    if (request.type === 'undo') {
+      const undoPayload = request.payload as UndoEventPayload;
+
+      // Basic validation
+      const basicValidation = validateUndoEvent(undoPayload, currentSnapshot);
+      if (!basicValidation.isValid) {
+        return {
+          event: {} as GameEvent,
+          snapshot: {} as GameSnapshot,
+          success: false,
+          error: basicValidation.error
+        };
+      }
+
+      // Fetch most recent gameplay event (exclude undo/edit)
+      const { data: latestEvents, error: latestErr } = await supabase
+        .from('game_events')
+        .select('*')
+        .eq('game_id', request.game_id)
+        .not('type', 'in', '(undo,edit)')
+        .order('sequence_number', { ascending: false })
+        .limit(1);
+
+      if (latestErr) {
+        return {
+          event: {} as GameEvent,
+          snapshot: {} as GameSnapshot,
+          success: false,
+          error: `Failed to load latest event: ${latestErr.message}`
+        };
+      }
+
+      const latestEvent = latestEvents && latestEvents[0];
+      if (!latestEvent) {
+        return {
+          event: {} as GameEvent,
+          snapshot: currentSnapshot,
+          success: false,
+          error: 'No events to undo'
+        };
+      }
+
+      if (latestEvent.id !== undoPayload.target_event_id) {
+        return {
+          event: {} as GameEvent,
+          snapshot: currentSnapshot,
+          success: false,
+          error: 'Can only undo the most recent event'
+        };
+      }
+
+      // Delete the target event
+      const { error: delErr } = await supabase
+        .from('game_events')
+        .delete()
+        .eq('id', undoPayload.target_event_id);
+
+      if (delErr) {
+        return {
+          event: {} as GameEvent,
+          snapshot: currentSnapshot,
+          success: false,
+          error: `Failed to delete event: ${delErr.message}`
+        };
+      }
+
+      // Rebuild snapshot by replaying remaining events
+      const rebuilt = await rebuildSnapshotForGame(request.game_id);
+      if (!rebuilt.success) {
+        return {
+          event: {} as GameEvent,
+          snapshot: currentSnapshot,
+          success: false,
+          error: rebuilt.error || 'Failed to rebuild snapshot'
+        };
+      }
+
+      return {
+        event: {} as GameEvent,
+        snapshot: rebuilt.snapshot as GameSnapshot,
+        success: true
+      };
+    }
+
+    // Validate the event (non-undo)
     const validation = validateEvent(request.type, request.payload, currentSnapshot, previousEvent);
     if (!validation.isValid) {
       return {
@@ -692,6 +788,88 @@ export async function submitEvent(request: EventSubmissionRequest): Promise<Even
       error: 'Unexpected error during event submission'
     };
   }
+}
+
+// Rebuild snapshot by replaying all remaining events for a game
+async function rebuildSnapshotForGame(gameId: string): Promise<{ success: boolean; snapshot?: GameSnapshot; error?: string }> {
+  // Load events in order
+  const { data: events, error: eventsErr } = await supabase
+    .from('game_events')
+    .select('*')
+    .eq('game_id', gameId)
+    .order('sequence_number', { ascending: true });
+
+  if (eventsErr || !events) {
+    return { success: false, error: 'Could not fetch game events' };
+  }
+
+  // Find game_start
+  const gameStart = events.find(e => e.type === 'game_start');
+  if (!gameStart) {
+    return { success: false, error: 'Missing game_start event' };
+  }
+
+  // Start from minimal snapshot built for game_start using state machine
+  // Get current snapshot row (for created_at preservation if needed)
+  const { data: existingSnapshot } = await supabase
+    .from('game_snapshots')
+    .select('*')
+    .eq('game_id', gameId)
+    .single();
+
+  // Build initial snapshot by transitioning with game_start
+  // Create a minimal pre-start snapshot for transition
+  const preStartSnapshot: GameSnapshot = {
+    game_id: gameId,
+    current_inning: 1,
+    is_top_of_inning: true,
+    outs: 0,
+    balls: 0,
+    strikes: 0,
+    score_home: 0,
+    score_away: 0,
+    home_team_id: '',
+    away_team_id: '',
+    batter_id: null,
+    catcher_id: null,
+    base_runners: { first: null, second: null, third: null },
+    home_lineup: [],
+    away_lineup: [],
+    home_lineup_position: 0,
+    away_lineup_position: 0,
+    last_event_id: null,
+    umpire_id: null,
+    status: 'not_started',
+    last_updated: new Date().toISOString(),
+    scoring_method: 'live',
+    is_quick_result: false,
+    ...(existingSnapshot?.created_at ? { created_at: existingSnapshot.created_at } as any : {})
+  } as any;
+
+  let snapshot = BaseballGameStateMachine.transition(preStartSnapshot, gameStart as any, events).snapshot;
+
+  // Replay remaining events except undo/edit
+  const remaining = events.filter(e => e.id !== gameStart.id && e.type !== 'undo' && e.type !== 'edit');
+  for (const e of remaining) {
+    const result = BaseballGameStateMachine.transition(snapshot, e as any, events);
+    if (result.error) {
+      return { success: false, error: result.error };
+    }
+    snapshot = result.snapshot;
+  }
+
+  // Persist snapshot
+  const { data: saved, error: saveErr } = await supabase
+    .from('game_snapshots')
+    .upsert(snapshot as any)
+    .select()
+    .single();
+
+  if (saveErr) {
+    return { success: false, error: 'Failed to save rebuilt snapshot' };
+  }
+
+  return { success: true, snapshot: saved as GameSnapshot };
 }
 
 // Existing API functions (placeholder - will be updated in subsequent tasks)
@@ -863,8 +1041,10 @@ export async function updateGameSnapshotWithStateMachine(
   event: GameEvent, 
   currentSnapshot: GameSnapshot
 ): Promise<GameSnapshot> {
-  // Get recent events for context (needed for flip cup hit type determination)
-  const recentEvents = await getRecentGameEvents(currentSnapshot.game_id, 10);
+  // Get events for context
+  // For undo events, we need all events; for other events, recent events are sufficient
+  const limit = event.type === 'undo' ? 1000 : 10;
+  const recentEvents = await getRecentGameEvents(currentSnapshot.game_id, limit);
   
   // Process the event using the state machine
   const result = BaseballGameStateMachine.transition(currentSnapshot, event, recentEvents);
@@ -905,9 +1085,12 @@ export async function updateGameSnapshotWithStateMachine(
   }
   
   // Save the updated snapshot to the database
+  // Remove any fields that don't exist in the database schema
+  const { updated_at, ...snapshotToSave } = newSnapshot as any;
+  
   const { data, error } = await supabase
     .from('game_snapshots')
-    .upsert(newSnapshot)
+    .upsert(snapshotToSave)
     .select()
     .single();
   
@@ -1312,12 +1495,18 @@ export async function fetchTeams(): Promise<ApiResponse<Team[]>> {
   }
 }
 
-export async function fetchPlayers(): Promise<ApiResponse<Player[]>> {
+export async function fetchPlayers(includeInactive: boolean = false): Promise<ApiResponse<Player[]>> {
   try {
-    const { data: players, error } = await supabase
+    let query = supabase
       .from('players')
-      .select('id, name, nickname, email, avatar_url, current_town, hometown, championships_won, created_at, updated_at')
-      .order('name', { ascending: true });
+      .select('id, name, nickname, email, avatar_url, current_town, hometown, championships_won, is_active, created_at, updated_at');
+    
+    // By default, only fetch active players
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+    
+    const { data: players, error } = await query.order('name', { ascending: true });
 
     if (error) {
       console.error('Error fetching players:', error);
@@ -1337,6 +1526,7 @@ export async function fetchPlayers(): Promise<ApiResponse<Player[]>> {
       current_town: player.current_town,
       hometown: player.hometown,
       championships_won: player.championships_won,
+      is_active: player.is_active,
       created_at: player.created_at,
       updated_at: player.updated_at,
     })) || [];
@@ -2375,6 +2565,42 @@ export async function getTournamentWithTeams(tournamentId: string): Promise<ApiR
       data: null,
       success: false,
       error: 'Failed to fetch tournament data'
+    };
+  }
+}
+
+/**
+ * Fix game lineup by replacing invalid players with valid team players
+ */
+export async function fixGameLineup(gameId: string): Promise<ApiResponse<any>> {
+  try {
+    const response = await fetch(`/api/games/${gameId}/fix-lineup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        data: null,
+        success: false,
+        error: data.error || 'Failed to fix game lineup'
+      };
+    }
+
+    return {
+      data: data,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error fixing game lineup:', error);
+    return {
+      data: null,
+      success: false,
+      error: 'Failed to fix game lineup'
     };
   }
 }

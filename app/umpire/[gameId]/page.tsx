@@ -8,12 +8,14 @@ import { LiveGameState } from '../../../components/LiveGameState';
 import { FlipCupModal } from '../../../components/FlipCupModal';
 import { AtBatConfirmation } from '../../../components/AtBatConfirmation';
 import { EndGameModal } from '../../../components/EndGameModal';
+import { EndInningModal } from '../../../components/EndInningModal';
+// QuickEndGameModal removed in favor of single End Game modal
 import { EventHistory } from '../../../components/EventHistory';
 import { UmpireTakeover } from '../../../components/UmpireTakeover';
 import { ConnectionStatus } from '../../../components/ConnectionStatus';
 import { useGameEvents } from '../../../hooks/useGameEvents';
 import { usePitchByPitchScoring } from '../../../hooks/useUmpireActions';
-import { GameSnapshot, GameSetupData, LiveGameStatus, AtBatResult, AtBatEventPayload, FlipCupEventPayload, UndoEventPayload, EditEventPayload, TakeoverEventPayload, GameEndEventPayload } from '../../../lib/types';
+import { GameSnapshot, GameSetupData, LiveGameStatus, AtBatResult, AtBatEventPayload, FlipCupEventPayload, UndoEventPayload, EditEventPayload, TakeoverEventPayload, GameEndEventPayload, InningEndEventPayload } from '../../../lib/types';
 import { getGameSnapshot, getLiveGameStatus } from '../../../lib/api';
 
 /**
@@ -37,6 +39,7 @@ export default function UmpirePage() {
   const [atBatConfirmationOpen, setAtBatConfirmationOpen] = useState(false);
   const [pendingAtBatResult, setPendingAtBatResult] = useState<'walk' | 'out' | 'single' | 'double' | 'triple' | 'homerun' | null>(null);
   const [endGameModalOpen, setEndGameModalOpen] = useState(false);
+  const [endInningModalOpen, setEndInningModalOpen] = useState(false);
   const [updateCounter, setUpdateCounter] = useState(0); // Force re-renders
 
   // Real-time hooks
@@ -55,6 +58,16 @@ export default function UmpirePage() {
 
   // Umpire actions hook
   const umpireActions = usePitchByPitchScoring(gameId, umpireId);
+
+  // Auto-dismiss success message after 2 seconds
+  useEffect(() => {
+    if (umpireActions.state.lastSuccess) {
+      const timer = setTimeout(() => {
+        umpireActions.clearSuccess();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [umpireActions.state.lastSuccess, umpireActions]);
 
   // Load initial game data
   useEffect(() => {
@@ -101,13 +114,20 @@ export default function UmpirePage() {
         score_away: realtimeSnapshot.score_away,
         outs: realtimeSnapshot.outs,
         current_inning: realtimeSnapshot.current_inning,
-        base_runners: realtimeSnapshot.base_runners
+        base_runners: realtimeSnapshot.base_runners,
+        umpire_id: realtimeSnapshot.umpire_id
       });
       
       // Force a fresh object to ensure React re-renders
       const newSnapshot = { ...realtimeSnapshot };
       console.log('[Umpire] Setting new snapshot state:', newSnapshot);
       setGameSnapshot(newSnapshot);
+      
+      // Update umpire ID if it changed
+      if (realtimeSnapshot.umpire_id && realtimeSnapshot.umpire_id !== umpireId) {
+        console.log('[Umpire] Updating umpire ID from snapshot:', realtimeSnapshot.umpire_id);
+        setUmpireId(realtimeSnapshot.umpire_id);
+      }
       
       // Update liveStatus to refresh player names when game state changes
       const refreshLiveStatus = async () => {
@@ -213,7 +233,24 @@ export default function UmpirePage() {
 
   // Event history handlers
   const handleUndo = async (payload: UndoEventPayload) => {
-    await umpireActions.submitUndo(gameId, payload, umpireId);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          game_id: gameId,
+          type: 'undo',
+          payload,
+          umpire_id: umpireId
+        })
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        console.error('[UmpirePage] Undo failed:', json?.error);
+      }
+    } catch (e) {
+      console.error('[UmpirePage] Undo threw:', e);
+    }
   };
 
   const handleEdit = async (payload: EditEventPayload) => {
@@ -221,10 +258,51 @@ export default function UmpirePage() {
   };
 
   const handleEndGame = async (payload: GameEndEventPayload) => {
-    // TODO: Implement end game functionality
-    console.log('End game payload:', payload);
-    setEndGameModalOpen(false);
+    // Determine if this is a quick-result (allow overriding scores)
+    const isQuickResult = currentSnapshot
+      ? payload.final_score_home !== currentSnapshot.score_home || payload.final_score_away !== currentSnapshot.score_away
+      : false;
+
+    const finalPayload: GameEndEventPayload = {
+      ...payload,
+      scoring_method: isQuickResult ? 'quick_result' : 'live'
+    };
+
+    const response = await umpireActions.submitGameEnd(gameId, finalPayload, umpireId);
+    if (response?.success) {
+      setEndGameModalOpen(false);
+      try {
+        const [snapshotResponse, statusResponse] = await Promise.all([
+          getGameSnapshot(gameId),
+          getLiveGameStatus(gameId)
+        ]);
+        if (snapshotResponse) setGameSnapshot(snapshotResponse);
+        if (statusResponse) setLiveStatus(statusResponse);
+      } catch (e) {
+        // non-fatal
+      }
+      router.push(`/game/${gameId}`);
+    }
   };
+
+  const handleEndInning = async (payload: InningEndEventPayload) => {
+    const response = await umpireActions.submitInningEnd(gameId, payload, umpireId);
+    if (response?.success) {
+      setEndInningModalOpen(false);
+      try {
+        const [snapshotResponse, statusResponse] = await Promise.all([
+          getGameSnapshot(gameId),
+          getLiveGameStatus(gameId)
+        ]);
+        if (snapshotResponse) setGameSnapshot(snapshotResponse);
+        if (statusResponse) setLiveStatus(statusResponse);
+      } catch (e) {
+        // non-fatal
+      }
+    }
+  };
+
+  // Use a single End Game modal; decide quick_result vs live at submit time
 
   // Takeover handler
   const handleTakeover = async (payload: TakeoverEventPayload) => {
@@ -368,40 +446,83 @@ export default function UmpirePage() {
   }
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20'
-    }}>
-      {/* Header */}
+    <>
+      <style jsx>{`
+        @media (max-width: 1023px) {
+          .umpire-grid {
+            grid-template-columns: 1fr !important;
+            grid-auto-rows: auto !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .umpire-header-inner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            height: auto !important;
+            padding: 0.75rem 0 !important;
+            gap: 0.75rem !important;
+          }
+          .umpire-header-left {
+            width: 100%;
+          }
+          .umpire-header-right {
+            width: 100%;
+            justify-content: space-between !important;
+          }
+          .umpire-back-button {
+            padding: 0.375rem 0.5rem !important;
+            font-size: 0.875rem !important;
+          }
+          .umpire-title {
+            font-size: 1.125rem !important;
+          }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
       <div style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #e4e2e8',
-        position: 'sticky',
-        top: '64px',
-        zIndex: 10,
-        backdropFilter: 'blur(10px)'
+        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+        minHeight: '100vh',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        color: '#1c1b20'
       }}>
+        {/* Header */}
+        <div style={{
+          background: '#fdfcfe',
+          borderBottom: '1px solid #e4e2e8',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backdropFilter: 'blur(10px)'
+        }}>
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
           padding: '0 1rem'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: '64px',
-            gap: '1rem'
-          }}>
-            <div style={{
+          <div 
+            className="umpire-header-inner"
+            style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
+              height: '56px',
               gap: '1rem'
-            }}>
+            }}
+          >
+            <div 
+              className="umpire-header-left"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem'
+              }}
+            >
               <button
                 onClick={handleBackToGame}
+                className="umpire-back-button"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -426,21 +547,27 @@ export default function UmpirePage() {
               >
                 ← Back to Game
               </button>
-              <h1 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: '#1c1b20'
-              }}>
+              <h1 
+                className="umpire-title"
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: '#1c1b20'
+                }}
+              >
                 Umpire Interface
               </h1>
             </div>
             
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap'
-            }}>
+            <div 
+              className="umpire-header-right"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                flexWrap: 'wrap'
+              }}
+            >
               <ConnectionStatus 
                 status={connectionStatus} 
                 onReconnect={async () => window.location.reload()}
@@ -449,7 +576,7 @@ export default function UmpirePage() {
               <button
                 onClick={handleManualRefresh}
                 style={{
-                  padding: '0.5rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   backgroundColor: '#6366f1',
                   color: '#ffffff',
                   border: 'none',
@@ -462,29 +589,8 @@ export default function UmpirePage() {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6366f1'}
               >
-                🔄 Refresh
+                🔄
               </button>
-              <div style={{
-                fontSize: '0.75rem',
-                color: '#6b7280',
-                padding: '0.25rem 0.5rem',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '4px'
-              }}>
-                Updates: {updateCounter}
-              </div>
-              {umpireId && (
-                <span style={{
-                  fontSize: '0.875rem',
-                  color: '#6b7280',
-                  padding: '0.25rem 0.75rem',
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '6px',
-                  fontWeight: '500'
-                }}>
-                  Umpire: {umpireId}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -494,7 +600,7 @@ export default function UmpirePage() {
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '1.5rem 1rem'
+        padding: '1rem'
       }}>
         {!gameStarted ? (
           /* Game Setup Phase */
@@ -506,11 +612,12 @@ export default function UmpirePage() {
               gameId={gameId}
               onGameStarted={handleGameStarted}
               onCancel={handleCancel}
+              gameSnapshot={gameSnapshot}
             />
           </div>
         ) : (
           /* Active Game Phase */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'calc(100vh - 56px - 2rem)', minHeight: 0 }}>
             {/* Error Messages */}
             {(hasError || umpireActions.state.lastError) && (
               <div style={{
@@ -606,71 +713,50 @@ export default function UmpirePage() {
               </div>
             )}
 
-            {/* Success Messages */}
+            {/* Success Messages - Fixed Position */}
             {umpireActions.state.lastSuccess && (
               <div style={{
+                position: 'fixed',
+                top: '80px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1000,
                 background: '#f0fdf4',
                 border: '1px solid #bbf7d0',
-                borderRadius: '12px',
-                padding: '1rem',
-                borderLeft: '4px solid #22c55e'
+                borderRadius: '8px',
+                padding: '0.5rem 0.75rem',
+                borderLeft: '3px solid #22c55e',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
               }}>
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem'
-                  }}>
-                    <div style={{
-                      color: '#22c55e',
-                      fontSize: '1.25rem'
-                    }}>✓</div>
-                    <p style={{
-                      fontSize: '0.875rem',
-                      color: '#166534'
-                    }}>Event recorded successfully</p>
-                  </div>
-                  <button
-                    onClick={umpireActions.clearSuccess}
-                    style={{
-                      fontSize: '0.875rem',
-                      color: '#16a34a',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '6px',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    Dismiss
-                  </button>
-                </div>
+                  color: '#22c55e',
+                  fontSize: '1rem'
+                }}>✓</div>
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: '#166534',
+                  margin: 0
+                }}>Event recorded</p>
               </div>
             )}
 
-            {/* Umpire Takeover Section */}
-            <UmpireTakeover
-              currentUmpireId={umpireId}
-              gameId={gameId}
-              onTakeover={handleTakeover}
-              disabled={umpireActions.state.submitting}
-            />
-
             {/* Main Game Interface */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '1.5rem'
-            }}>
-              {/* Game State */}
-              <div>
+            <div 
+              className="umpire-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1rem',
+                minHeight: 0,
+                overflow: 'hidden',
+                gridAutoRows: 'minmax(0, 1fr)'
+              }}
+            >
+              {/* Column 1: Game State */}
+              <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <LiveGameState
                   key={`live-${updateCounter}-${currentSnapshot?.last_updated}`}
                   snapshot={currentSnapshot}
@@ -679,8 +765,8 @@ export default function UmpirePage() {
                 />
               </div>
 
-              {/* Controls */}
-              <div>
+              {/* Column 2: Controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 {currentSnapshot && (
                   <UmpireControls
                     key={`controls-${updateCounter}-${currentSnapshot?.last_updated}`}
@@ -692,21 +778,33 @@ export default function UmpirePage() {
                     }}
                     onTriggerAtBatModal={handleAtBatComplete}
                     onEndGame={() => setEndGameModalOpen(true)}
+                    onEndInning={() => setEndInningModalOpen(true)}
                     disabled={umpireActions.state.submitting}
                   />
                 )}
               </div>
 
-              {/* Event History */}
-              <div>
-                <EventHistory
-                  key={`events-${updateCounter}-${events?.length || 0}`}
-                  events={events || []}
-                  onUndo={handleUndo}
-                  onEdit={handleEdit}
+              {/* Column 3: Umpire Management + Event History */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0, overflow: 'hidden' }}>
+                {/* Umpire Takeover Section */}
+                <UmpireTakeover
+                  currentUmpireId={umpireId}
+                  gameId={gameId}
+                  onTakeover={handleTakeover}
                   disabled={umpireActions.state.submitting}
-                  maxEvents={8}
                 />
+                
+                {/* Event History */}
+                <div style={{ flex: 1, minHeight: 0, height: '100%', overflow: 'hidden' }}>
+                  <EventHistory
+                    key={`events-${updateCounter}-${events?.length || 0}`}
+                    events={events || []}
+                    onUndo={handleUndo}
+                    onEdit={handleEdit}
+                    disabled={umpireActions.state.submitting}
+                    maxEvents={20}
+                  />
+                </div>
               </div>
             </div>
 
@@ -803,17 +901,27 @@ export default function UmpirePage() {
         <EndGameModal
           isOpen={endGameModalOpen}
           gameSnapshot={currentSnapshot}
+          homeTeamName={liveStatus?.home_team_name}
+          awayTeamName={liveStatus?.away_team_name}
           onConfirm={handleEndGame}
           onCancel={() => setEndGameModalOpen(false)}
         />
       )}
 
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
+      {/* End Inning Modal */}
+      {currentSnapshot && (
+        <EndInningModal
+          isOpen={endInningModalOpen}
+          gameSnapshot={currentSnapshot}
+          homeTeamName={liveStatus?.home_team_name}
+          awayTeamName={liveStatus?.away_team_name}
+          onConfirm={handleEndInning}
+          onCancel={() => setEndInningModalOpen(false)}
+        />
+      )}
+
+      {/* Single End Game modal only (quick or live determined on submit) */}
+      </div>
+    </>
   );
 } 

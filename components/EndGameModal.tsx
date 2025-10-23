@@ -4,6 +4,8 @@ import { GameEndEventPayload, GameSnapshot } from '../lib/types';
 export interface EndGameModalProps {
   isOpen: boolean;
   gameSnapshot: GameSnapshot;
+  homeTeamName?: string;
+  awayTeamName?: string;
   onConfirm: (payload: GameEndEventPayload) => void;
   onCancel: () => void;
   className?: string;
@@ -16,12 +18,15 @@ export interface EndGameModalProps {
 export function EndGameModal({
   isOpen,
   gameSnapshot,
+  homeTeamName = 'Home Team',
+  awayTeamName = 'Away Team',
   onConfirm,
   onCancel,
   className = ''
 }: EndGameModalProps) {
   const [homeScore, setHomeScore] = useState(gameSnapshot.score_home);
   const [awayScore, setAwayScore] = useState(gameSnapshot.score_away);
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Don't render if not open
@@ -33,7 +38,7 @@ export function EndGameModal({
     const payload: GameEndEventPayload = {
       final_score_home: homeScore,
       final_score_away: awayScore,
-      notes: `Game ended by umpire on ${new Date().toLocaleString()}`
+      notes: notes?.trim() ? notes.trim() : `Game ended by umpire on ${new Date().toLocaleString()}`
     };
 
     onConfirm(payload);
@@ -44,6 +49,7 @@ export function EndGameModal({
     // Reset scores to current game state
     setHomeScore(gameSnapshot.score_home);
     setAwayScore(gameSnapshot.score_away);
+    setNotes('');
     onCancel();
   };
 
@@ -166,17 +172,18 @@ export function EndGameModal({
           }}>
             {/* Away Team Score */}
             <div>
-              <label style={{
+              <label htmlFor="endgame-away-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
                 marginBottom: '0.5rem',
                 display: 'block'
               }}>
-                Away Team Final Score
+                {awayTeamName} Final Score
               </label>
               <input
                 type="number"
+                id="endgame-away-score"
                 value={awayScore}
                 onChange={(e) => setAwayScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -195,17 +202,18 @@ export function EndGameModal({
 
             {/* Home Team Score */}
             <div>
-              <label style={{
+              <label htmlFor="endgame-home-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
                 marginBottom: '0.5rem',
                 display: 'block'
               }}>
-                Home Team Final Score
+                {homeTeamName} Final Score
               </label>
               <input
                 type="number"
+                id="endgame-home-score"
                 value={homeScore}
                 onChange={(e) => setHomeScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -239,7 +247,7 @@ export function EndGameModal({
                 color: homeScore > awayScore ? '#166534' : '#1e40af',
                 marginBottom: '0.25rem'
               }}>
-                Winner: {homeScore > awayScore ? 'Home Team' : 'Away Team'}
+                Winner: {homeScore > awayScore ? homeTeamName : awayTeamName}
               </h4>
               <p style={{
                 fontSize: '1.25rem',
@@ -251,6 +259,34 @@ export function EndGameModal({
               </p>
             </div>
           )}
+
+          {/* Notes */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label htmlFor="endgame-notes" style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '0.5rem',
+              display: 'block'
+            }}>
+              Notes (optional)
+            </label>
+            <textarea
+              id="endgame-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="e.g., End of live scoring or quick result due to time"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#ffffff'
+              }}
+            />
+          </div>
         </div>
 
         {/* Action Buttons */}

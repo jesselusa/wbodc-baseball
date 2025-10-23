@@ -1,4 +1,4 @@
-import { GameSnapshot, GameEvent, EventType, EventPayload, PitchEventPayload, FlipCupEventPayload, AtBatEventPayload, GameStartEventPayload, GameEndEventPayload, TakeoverEventPayload, UndoEventPayload, BaseRunners } from './types';
+import { GameSnapshot, GameEvent, EventType, EventPayload, PitchEventPayload, FlipCupEventPayload, AtBatEventPayload, GameStartEventPayload, GameEndEventPayload, InningEndEventPayload, TakeoverEventPayload, UndoEventPayload, BaseRunners } from './types';
 
 /**
  * Baseball Game State Machine
@@ -20,7 +20,7 @@ export interface StateTransitionResult {
 }
 
 export interface StateTransitionSideEffect {
-  type: 'score_change' | 'inning_change' | 'lineup_advance' | 'game_end' | 'game_start';
+  type: 'score_change' | 'inning_change' | 'lineup_advance' | 'game_end' | 'game_start' | 'inning_end';
   data: any;
 }
 
@@ -60,6 +60,9 @@ export class BaseballGameStateMachine {
         
         case 'game_end':
           return this.handleGameEndEvent(currentSnapshot, event.payload as GameEndEventPayload);
+        
+        case 'inning_end':
+          return this.handleInningEndEvent(currentSnapshot, event.payload as InningEndEventPayload);
         
         case 'takeover':
           return this.handleTakeoverEvent(currentSnapshot, event.payload as TakeoverEventPayload);
@@ -365,11 +368,65 @@ export class BaseballGameStateMachine {
     newSnapshot.status = 'completed';
     newSnapshot.score_home = payload.final_score_home;
     newSnapshot.score_away = payload.final_score_away;
+    // Mark scoring method for downstream consumers
+    if (payload.scoring_method === 'quick_result') {
+      newSnapshot.scoring_method = 'quick_result';
+      newSnapshot.is_quick_result = true;
+    } else {
+      newSnapshot.scoring_method = 'live';
+      newSnapshot.is_quick_result = false;
+    }
+    // Preserve scoring method via side effect; snapshot schema unchanged for now
     newSnapshot.last_updated = new Date().toISOString();
 
     return { 
       snapshot: newSnapshot, 
       sideEffects: [{ type: 'game_end', data: payload }] 
+    };
+  }
+
+  /**
+   * Handle inning end events
+   * Allows umpire to skip to end of current half-inning and update scores
+   */
+  private static handleInningEndEvent(
+    snapshot: GameSnapshot,
+    payload: InningEndEventPayload
+  ): StateTransitionResult {
+    const newSnapshot = { ...snapshot };
+
+    // Update scores from payload
+    newSnapshot.score_home = payload.score_home;
+    newSnapshot.score_away = payload.score_away;
+
+    // Clear the bases and reset count
+    newSnapshot.base_runners = { first: null, second: null, third: null };
+    newSnapshot.outs = 0;
+    newSnapshot.balls = 0;
+    newSnapshot.strikes = 0;
+
+    // Move to next half-inning
+    if (newSnapshot.is_top_of_inning) {
+      // If top of inning, move to bottom
+      newSnapshot.is_top_of_inning = false;
+    } else {
+      // If bottom of inning, move to next inning
+      newSnapshot.is_top_of_inning = true;
+      newSnapshot.current_inning += 1;
+    }
+
+    // Switch batting/fielding teams
+    const tempTeam = newSnapshot.home_team_id;
+    // Note: We don't actually swap team IDs, we just change is_top_of_inning
+    // The batting team is determined by is_top_of_inning:
+    // - Top of inning: away team bats
+    // - Bottom of inning: home team bats
+
+    newSnapshot.last_updated = new Date().toISOString();
+
+    return {
+      snapshot: newSnapshot,
+      sideEffects: [{ type: 'inning_end', data: payload }]
     };
   }
 
@@ -393,14 +450,114 @@ export class BaseballGameStateMachine {
     payload: UndoEventPayload,
     previousEvents?: GameEvent[]
   ): StateTransitionResult {
-    // For now, undo functionality requires rebuilding the state from scratch
-    // This is a simplified implementation that just returns the current snapshot
-    // A full implementation would need to replay all events except the undone one
+    // To undo an event, we need to replay all events except the target event
+    if (!previousEvents || previousEvents.length === 0) {
+      return { 
+        snapshot, 
+        error: 'No previous events to undo' 
+      };
+    }
+
+    // Find the most recent event (excluding undo/edit events) using sequence_number for correctness
+    const gameplayEvents = previousEvents
+      .filter(e => e.type !== 'undo' && e.type !== 'edit')
+      .sort((a, b) => b.sequence_number - a.sequence_number);
     
-    return { 
-      snapshot: snapshot, 
-      error: 'Undo functionality not yet implemented - please use database-level event deletion' 
+    const mostRecentEvent = gameplayEvents[0];
+    if (!mostRecentEvent) {
+      return { 
+        snapshot, 
+        error: 'No events to undo' 
+      };
+    }
+
+    // Only allow undoing the most recent event
+    if (payload.target_event_id !== mostRecentEvent.id) {
+      return { 
+        snapshot, 
+        error: 'Can only undo the most recent event' 
+      };
+    }
+
+    // Find the event to undo
+    const targetEvent = previousEvents.find(e => e.id === payload.target_event_id);
+    if (!targetEvent) {
+      return { 
+        snapshot, 
+        error: `Target event ${payload.target_event_id} not found` 
+      };
+    }
+
+    // Don't allow undoing certain event types
+    if (targetEvent.type === 'game_start' || targetEvent.type === 'game_end') {
+      return { 
+        snapshot, 
+        error: `Cannot undo ${targetEvent.type} events` 
+      };
+    }
+
+    // Get the initial snapshot from the first game_start event
+    const gameStartEvent = previousEvents.find(e => e.type === 'game_start');
+    if (!gameStartEvent) {
+      return { 
+        snapshot, 
+        error: 'Cannot find game_start event to rebuild state' 
+      };
+    }
+
+    // Build initial snapshot from game_start
+    const startPayload = gameStartEvent.payload as GameStartEventPayload;
+    let rebuiltSnapshot: GameSnapshot = {
+      game_id: snapshot.game_id,
+      current_inning: 1,
+      is_top_of_inning: true,
+      outs: 0,
+      balls: 0,
+      strikes: 0,
+      score_home: 0,
+      score_away: 0,
+      home_team_id: startPayload.home_team_id,
+      away_team_id: startPayload.away_team_id,
+      home_lineup: startPayload.lineups.home,
+      away_lineup: startPayload.lineups.away,
+      home_lineup_position: 0,
+      away_lineup_position: 0,
+      batter_id: startPayload.lineups.away[0] || null,
+      catcher_id: startPayload.lineups.home[0] || null,
+      base_runners: { first: null, second: null, third: null },
+      umpire_id: startPayload.umpire_id,
+      status: 'in_progress',
+      last_event_id: gameStartEvent.id,
+      last_updated: new Date().toISOString()
     };
+
+    // Replay all events strictly before the target event by sequence_number
+    // Skip game_start (already processed), undo, and edit events
+    const eventsBeforeTarget = previousEvents
+      .filter(e => e.type !== 'game_start')
+      .filter(e => e.type !== 'undo')
+      .filter(e => e.type !== 'edit')
+      .filter(e => e.sequence_number < targetEvent.sequence_number)
+      .sort((a, b) => a.sequence_number - b.sequence_number);
+
+    console.log('[StateMachine] Undo: Replaying', eventsBeforeTarget.length, 'events');
+
+    // Replay each event
+    for (const event of eventsBeforeTarget) {
+      console.log('[StateMachine] Replaying event:', event.type, event.id);
+      const result = this.transition(rebuiltSnapshot, event, previousEvents);
+      if (result.error) {
+        console.error('[StateMachine] Error during replay:', result.error);
+        return { 
+          snapshot, 
+          error: `Error replaying event ${event.id} (${event.type}): ${result.error}` 
+        };
+      }
+      rebuiltSnapshot = result.snapshot;
+    }
+
+    console.log('[StateMachine] Undo complete, snapshot rebuilt');
+    return { snapshot: rebuiltSnapshot };
   }
 
   /**

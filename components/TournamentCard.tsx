@@ -21,7 +21,7 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
     if (onTournamentClick) {
       onTournamentClick();
     } else {
-      router.push(`/tournament/${tournament.id}`);
+      router.push('/games');
     }
   };
 

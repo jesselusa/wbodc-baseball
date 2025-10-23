@@ -50,6 +50,7 @@ export interface GameSetupProps {
   gameId: string | null;
   onGameStarted?: (gameData: GameSetupData) => void;
   onCancel?: () => void;
+  gameSnapshot?: any;
   className?: string;
 }
 
@@ -60,7 +61,8 @@ export interface GameSetupProps {
 export function GameSetup({ 
   gameId, 
   onGameStarted, 
-  onCancel, 
+  onCancel,
+  gameSnapshot,
   className = '' 
 }: GameSetupProps) {
   // Data state
@@ -77,6 +79,17 @@ export function GameSetup({
   const [selectedGameId, setSelectedGameId] = useState<string>('');
   const [innings, setInnings] = useState<3 | 5 | 7 | 9>(7);
   const [umpireId, setUmpireId] = useState<string>('');
+  const [scoringMethod, setScoringMethod] = useState<'live' | 'quick_result'>('live');
+  const [quickHomeScore, setQuickHomeScore] = useState<number>(0);
+  const [quickAwayScore, setQuickAwayScore] = useState<number>(0);
+  const [quickNotes, setQuickNotes] = useState<string>('');
+  const [showQuickConfirm, setShowQuickConfirm] = useState<boolean>(false);
+  // Track if teams have been swapped from their original tournament assignment
+  // This allows umpires to assign home/away in real-time at game start
+  const [teamsSwapped, setTeamsSwapped] = useState<boolean>(false);
+  // Batting order state - stores player IDs in batting order
+  const [homeLineup, setHomeLineup] = useState<string[]>([]);
+  const [awayLineup, setAwayLineup] = useState<string[]>([]);
 
   // Load initial data
   useEffect(() => {
@@ -154,6 +167,11 @@ export function GameSetup({
     if (selectedGameId && tournament) {
       const selectedGame = games.find(g => g.id === selectedGameId);
       if (selectedGame) {
+        // If game is in progress, set innings from the game's total_innings
+        if (selectedGame.status === 'in_progress' && selectedGame.total_innings) {
+          setInnings(selectedGame.total_innings as 3 | 5 | 7 | 9);
+        }
+        
         // Load both team rosters
         Promise.all([
           fetchTeamPlayers(selectedGame.home_team_id, tournament.id),
@@ -161,23 +179,100 @@ export function GameSetup({
         ]).then(([homeResponse, awayResponse]) => {
           if (homeResponse.success) {
             setHomeTeamPlayers(homeResponse.data);
+            // Initialize home lineup with player IDs in original order
+            setHomeLineup(homeResponse.data.map(p => p.id));
           }
           if (awayResponse.success) {
             setAwayTeamPlayers(awayResponse.data);
+            // Initialize away lineup with player IDs in original order
+            setAwayLineup(awayResponse.data.map(p => p.id));
           }
         });
       }
     } else {
       setHomeTeamPlayers([]);
       setAwayTeamPlayers([]);
+      setHomeLineup([]);
+      setAwayLineup([]);
     }
+    // Reset swap state when game changes
+    setTeamsSwapped(false);
   }, [selectedGameId, games, tournament]);
 
   // Helper functions
   const getSelectedGame = () => games.find(g => g.id === selectedGameId);
   const getPlayerById = (playerId: string) => players.find(p => p.id === playerId);
+  
+  // Get effective home/away teams (accounting for swap)
+  const getEffectiveTeams = () => {
+    const selectedGame = getSelectedGame();
+    if (!selectedGame) return { homeTeamId: '', awayTeamId: '', homeName: '', awayName: '' };
+    
+    if (teamsSwapped) {
+      return {
+        homeTeamId: selectedGame.away_team_id,
+        awayTeamId: selectedGame.home_team_id,
+        homeName: selectedGame.away_team?.name || 'Away',
+        awayName: selectedGame.home_team?.name || 'Home'
+      };
+    }
+    
+    return {
+      homeTeamId: selectedGame.home_team_id,
+      awayTeamId: selectedGame.away_team_id,
+      homeName: selectedGame.home_team?.name || 'Home',
+      awayName: selectedGame.away_team?.name || 'Away'
+    };
+  };
+  
+  const handleSwapTeams = () => {
+    setTeamsSwapped(!teamsSwapped);
+    // Swap the player arrays
+    const tempPlayers = homeTeamPlayers;
+    setHomeTeamPlayers(awayTeamPlayers);
+    setAwayTeamPlayers(tempPlayers);
+    // Swap the lineups
+    const tempLineup = homeLineup;
+    setHomeLineup(awayLineup);
+    setAwayLineup(tempLineup);
+  };
 
-  const canStartGame = selectedGameId && umpireId;
+  // Lineup management functions
+  const movePlayerUp = (lineup: string[], setLineup: (lineup: string[]) => void, index: number) => {
+    if (index <= 0) return;
+    const newLineup = [...lineup];
+    [newLineup[index - 1], newLineup[index]] = [newLineup[index], newLineup[index - 1]];
+    setLineup(newLineup);
+  };
+
+  const movePlayerDown = (lineup: string[], setLineup: (lineup: string[]) => void, index: number) => {
+    if (index >= lineup.length - 1) return;
+    const newLineup = [...lineup];
+    [newLineup[index], newLineup[index + 1]] = [newLineup[index + 1], newLineup[index]];
+    setLineup(newLineup);
+  };
+
+  const canStartGame = (() => {
+    if (!selectedGameId) return false;
+    
+    const selectedGame = getSelectedGame();
+    const isInProgress = selectedGame?.status === 'in_progress';
+    
+    // For in-progress games, we don't need an umpire (they'll take over manually if needed)
+    if (isInProgress) return true;
+    
+    // For new games, require an umpire
+    if (!umpireId) return false;
+    
+    if (scoringMethod === 'quick_result') {
+      // Validate quick result scores
+      const nonNegative = quickHomeScore >= 0 && quickAwayScore >= 0;
+      const notTie = quickHomeScore !== quickAwayScore;
+      const anyPositive = quickHomeScore > 0 || quickAwayScore > 0;
+      return nonNegative && notTie && anyPositive;
+    }
+    return true;
+  })();
 
   const handleStartGame = async () => {
     if (!canStartGame) return;
@@ -214,27 +309,76 @@ export function GameSetup({
       // Check if this is rejoining an active/in-progress game
       if (selectedGame.status === 'in_progress') {
         // For active/in-progress games, just navigate to the umpire interface
+        // The user can manually take over using the "Become Umpire" button if needed
         window.location.href = `/umpire/${selectedGame.id}`;
         return;
       }
 
-      // For scheduled games, proceed with normal game start
+      // For scheduled games, proceed with normal game start or quick result
+      // Use effective teams (accounting for swap)
+      const effectiveTeams = getEffectiveTeams();
       const gameData: GameSetupData = {
-        home_team_id: selectedGame.home_team_id,
-        away_team_id: selectedGame.away_team_id,
+        home_team_id: effectiveTeams.homeTeamId,
+        away_team_id: effectiveTeams.awayTeamId,
         innings,
         umpire_id: umpireId,
-        game_id: selectedGameId // Pass the existing game ID
+        game_id: selectedGameId, // Pass the existing game ID
+        lineups: {
+          home: homeLineup,
+          away: awayLineup
+        }
       };
 
-      if (onGameStarted) {
-        await onGameStarted(gameData);
+      if (scoringMethod === 'quick_result') {
+        gameData.quick_result = {
+          final_score_home: quickHomeScore,
+          final_score_away: quickAwayScore,
+          notes: quickNotes || undefined
+        };
+      }
+
+      if (scoringMethod === 'quick_result') {
+        // Confirm before proceeding with quick result
+        setShowQuickConfirm(true);
+        // The actual submission will happen in confirmQuickResult()
+      } else {
+        if (onGameStarted) {
+          await onGameStarted(gameData);
+        }
       }
     } catch (err) {
       console.error('Error starting game:', err);
       setError('Failed to start game. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const confirmQuickResult = async () => {
+    // Called after user confirms quick result
+    const selectedGame = getSelectedGame();
+    if (!selectedGame) return;
+    // Use effective teams (accounting for swap)
+    const effectiveTeams = getEffectiveTeams();
+    const gameData: GameSetupData = {
+      home_team_id: effectiveTeams.homeTeamId,
+      away_team_id: effectiveTeams.awayTeamId,
+      innings,
+      umpire_id: umpireId,
+      game_id: selectedGameId,
+      lineups: {
+        home: homeLineup,
+        away: awayLineup
+      },
+      quick_result: {
+        final_score_home: quickHomeScore,
+        final_score_away: quickAwayScore,
+        notes: quickNotes || undefined
+      }
+    };
+    setShowQuickConfirm(false);
+    if (onGameStarted) {
+      await onGameStarted(gameData);
     }
   };
 
@@ -489,6 +633,7 @@ export function GameSetup({
           {/* Game Preview */}
           {selectedGameId && (() => {
             const selectedGame = getSelectedGame();
+            const effectiveTeams = getEffectiveTeams();
             return (
               <div style={{
                 padding: '24px',
@@ -496,15 +641,48 @@ export function GameSetup({
                 borderRadius: '12px',
                 border: '1px solid rgba(34, 197, 94, 0.2)'
               }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  margin: '0 0 16px 0',
-                  color: '#1c1b20',
-                  textAlign: 'center'
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px'
                 }}>
-                  Selected Game
-                </h3>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    margin: '0',
+                    color: '#1c1b20'
+                  }}>
+                    Selected Game
+                  </h3>
+                  <button
+                    onClick={handleSwapTeams}
+                    style={{
+                      background: 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)',
+                      color: '#696775',
+                      border: '1px solid #e4e2e8',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #f2f1f5 0%, #e4e2e8 100%)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    🔄 Swap Home/Away
+                  </button>
+                </div>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -515,21 +693,45 @@ export function GameSetup({
                   color: '#1c1b20',
                   marginBottom: '16px'
                 }}>
-                  <span>{selectedGame?.home_team?.name || 'Home Team'}</span>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      color: '#696775',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '4px'
+                    }}>
+                      Home
+                    </div>
+                    <span>{effectiveTeams.homeName}</span>
+                  </div>
                   <span style={{ color: '#696775' }}>vs</span>
-                  <span>{selectedGame?.away_team?.name || 'Away Team'}</span>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      color: '#696775',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '4px'
+                    }}>
+                      Away
+                    </div>
+                    <span>{effectiveTeams.awayName}</span>
+                  </div>
                 </div>
                 
-                {/* Team Rosters */}
-                {(homeTeamPlayers.length > 0 || awayTeamPlayers.length > 0) && (
+                {/* Batting Order Editor */}
+                {(homeLineup.length > 0 || awayLineup.length > 0) && (
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                     gap: '16px',
                     marginTop: '16px'
                   }}>
-                    {/* Home Team Roster */}
-                    {homeTeamPlayers.length > 0 && (
+                    {/* Home Team Batting Order */}
+                    {homeLineup.length > 0 && (
                       <div style={{
                         padding: '16px',
                         background: 'rgba(255, 255, 255, 0.8)',
@@ -544,35 +746,126 @@ export function GameSetup({
                           letterSpacing: '0.5px',
                           margin: '0 0 12px 0'
                         }}>
-                          {selectedGame?.home_team?.name} ({homeTeamPlayers.length} players)
+                          {effectiveTeams.homeName} - Batting Order
                         </h4>
                         <div style={{
                           display: 'flex',
-                          flexWrap: 'wrap',
+                          flexDirection: 'column',
                           gap: '6px'
                         }}>
-                          {homeTeamPlayers.map(player => (
-                            <div
-                              key={player.id}
-                              style={{
-                                padding: '4px 8px',
-                                background: 'white',
-                                borderRadius: '12px',
-                                border: '1px solid #e4e2e8',
-                                fontSize: '11px',
-                                fontWeight: '500',
-                                color: '#1c1b20'
-                              }}
-                            >
-                              {player.name}
-                            </div>
-                          ))}
+                          {homeLineup.map((playerId, index) => {
+                            const player = homeTeamPlayers.find(p => p.id === playerId);
+                            return (
+                              <div
+                                key={playerId}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px',
+                                  background: 'white',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e4e2e8'
+                                }}
+                              >
+                                <div style={{
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+                                  color: 'white',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  flexShrink: 0
+                                }}>
+                                  {index + 1}
+                                </div>
+                                <div style={{
+                                  flex: 1,
+                                  fontSize: '13px',
+                                  fontWeight: '500',
+                                  color: '#1c1b20'
+                                }}>
+                                  {player?.name || 'Unknown'}
+                                </div>
+                                <div style={{ display: 'flex', gap: '2px' }}>
+                                  <button
+                                    onClick={() => movePlayerUp(homeLineup, setHomeLineup, index)}
+                                    disabled={index === 0}
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #e4e2e8',
+                                      background: index === 0 ? '#f9f8fc' : 'white',
+                                      color: index === 0 ? '#d1cdd7' : '#696775',
+                                      cursor: index === 0 ? 'not-allowed' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '12px',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (index !== 0) {
+                                        e.currentTarget.style.background = '#f9f8fc';
+                                        e.currentTarget.style.borderColor = '#8b8a94';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (index !== 0) {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.borderColor = '#e4e2e8';
+                                      }
+                                    }}
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    onClick={() => movePlayerDown(homeLineup, setHomeLineup, index)}
+                                    disabled={index === homeLineup.length - 1}
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #e4e2e8',
+                                      background: index === homeLineup.length - 1 ? '#f9f8fc' : 'white',
+                                      color: index === homeLineup.length - 1 ? '#d1cdd7' : '#696775',
+                                      cursor: index === homeLineup.length - 1 ? 'not-allowed' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '12px',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (index !== homeLineup.length - 1) {
+                                        e.currentTarget.style.background = '#f9f8fc';
+                                        e.currentTarget.style.borderColor = '#8b8a94';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (index !== homeLineup.length - 1) {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.borderColor = '#e4e2e8';
+                                      }
+                                    }}
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
                     
-                    {/* Away Team Roster */}
-                    {awayTeamPlayers.length > 0 && (
+                    {/* Away Team Batting Order */}
+                    {awayLineup.length > 0 && (
                       <div style={{
                         padding: '16px',
                         background: 'rgba(255, 255, 255, 0.8)',
@@ -587,29 +880,120 @@ export function GameSetup({
                           letterSpacing: '0.5px',
                           margin: '0 0 12px 0'
                         }}>
-                          {selectedGame?.away_team?.name} ({awayTeamPlayers.length} players)
+                          {effectiveTeams.awayName} - Batting Order
                         </h4>
                         <div style={{
                           display: 'flex',
-                          flexWrap: 'wrap',
+                          flexDirection: 'column',
                           gap: '6px'
                         }}>
-                          {awayTeamPlayers.map(player => (
-                            <div
-                              key={player.id}
-                              style={{
-                                padding: '4px 8px',
-                                background: 'white',
-                                borderRadius: '12px',
-                                border: '1px solid #e4e2e8',
-                                fontSize: '11px',
-                                fontWeight: '500',
-                                color: '#1c1b20'
-                              }}
-                            >
-                              {player.name}
-                            </div>
-                          ))}
+                          {awayLineup.map((playerId, index) => {
+                            const player = awayTeamPlayers.find(p => p.id === playerId);
+                            return (
+                              <div
+                                key={playerId}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px',
+                                  background: 'white',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e4e2e8'
+                                }}
+                              >
+                                <div style={{
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+                                  color: 'white',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '11px',
+                                  fontWeight: '600',
+                                  flexShrink: 0
+                                }}>
+                                  {index + 1}
+                                </div>
+                                <div style={{
+                                  flex: 1,
+                                  fontSize: '13px',
+                                  fontWeight: '500',
+                                  color: '#1c1b20'
+                                }}>
+                                  {player?.name || 'Unknown'}
+                                </div>
+                                <div style={{ display: 'flex', gap: '2px' }}>
+                                  <button
+                                    onClick={() => movePlayerUp(awayLineup, setAwayLineup, index)}
+                                    disabled={index === 0}
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #e4e2e8',
+                                      background: index === 0 ? '#f9f8fc' : 'white',
+                                      color: index === 0 ? '#d1cdd7' : '#696775',
+                                      cursor: index === 0 ? 'not-allowed' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '12px',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (index !== 0) {
+                                        e.currentTarget.style.background = '#f9f8fc';
+                                        e.currentTarget.style.borderColor = '#8b8a94';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (index !== 0) {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.borderColor = '#e4e2e8';
+                                      }
+                                    }}
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    onClick={() => movePlayerDown(awayLineup, setAwayLineup, index)}
+                                    disabled={index === awayLineup.length - 1}
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #e4e2e8',
+                                      background: index === awayLineup.length - 1 ? '#f9f8fc' : 'white',
+                                      color: index === awayLineup.length - 1 ? '#d1cdd7' : '#696775',
+                                      cursor: index === awayLineup.length - 1 ? 'not-allowed' : 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '12px',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (index !== awayLineup.length - 1) {
+                                        e.currentTarget.style.background = '#f9f8fc';
+                                        e.currentTarget.style.borderColor = '#8b8a94';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (index !== awayLineup.length - 1) {
+                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.borderColor = '#e4e2e8';
+                                      }
+                                    }}
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -661,40 +1045,50 @@ export function GameSetup({
                   gridTemplateColumns: 'repeat(4, 1fr)',
                   gap: '12px'
                 }}>
-                  {[3, 5, 7, 9].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setInnings(num as 3 | 5 | 7 | 9)}
-                      style={{
-                        padding: '16px',
-                        borderRadius: '12px',
-                        border: innings === num ? '2px solid #8b8a94' : '1px solid #e4e2e8',
-                        background: innings === num 
-                          ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
-                          : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-                        color: innings === num ? 'white' : '#1c1b20',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        textAlign: 'center'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (innings !== num) {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (innings !== num) {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                        }
-                      }}
-                    >
-                      {num}
-                    </button>
-                  ))}
+                  {[3, 5, 7, 9].map(num => {
+                    const selectedGame = getSelectedGame();
+                    const isGameInProgress = selectedGame && selectedGame.status === 'in_progress';
+                    const isDisabled = isGameInProgress;
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => !isDisabled && setInnings(num as 3 | 5 | 7 | 9)}
+                        disabled={isDisabled}
+                        style={{
+                          padding: '16px',
+                          borderRadius: '12px',
+                          border: innings === num ? '2px solid #8b8a94' : '1px solid #e4e2e8',
+                          background: innings === num 
+                            ? 'linear-gradient(135deg, #8b8a94 0%, #a5a4ac 100%)'
+                            : isDisabled
+                            ? 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)'
+                            : 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+                          color: innings === num ? 'white' : isDisabled ? '#9ca3af' : '#1c1b20',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          cursor: isDisabled ? 'not-allowed' : 'pointer',
+                          opacity: isDisabled ? 0.6 : 1,
+                          transition: 'all 0.2s ease',
+                          textAlign: 'center'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (innings !== num && !isDisabled) {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #f9f8fc 0%, #f2f1f5 100%)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (innings !== num && !isDisabled) {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }
+                        }}
+                        title={isDisabled ? 'Cannot change innings once game is in progress' : ''}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -709,85 +1103,175 @@ export function GameSetup({
                 }}>
                   Umpire
                 </label>
-                <select
-                  value={umpireId}
-                  onChange={(e) => setUmpireId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    border: '1px solid #e4e2e8',
-                    background: 'white',
-                    fontSize: '16px',
-                    color: '#1c1b20',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#8b8a94';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e4e2e8';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <option value="">Select umpire...</option>
-                  {players.map(player => (
-                    <option key={player.id} value={player.id}>
-                      {player.name}
-                    </option>
-                  ))}
-                </select>
+                {(() => {
+                  const selectedGame = getSelectedGame();
+                  const isInProgress = selectedGame?.status === 'in_progress';
+                  
+                  if (isInProgress) {
+                    return (
+                      <div style={{
+                        width: '100%',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid #e4e2e8',
+                        background: '#f9f8fc',
+                        fontSize: '14px',
+                        color: '#696775',
+                        fontStyle: 'italic'
+                      }}>
+                        Rejoin as viewer (use "Become Umpire" in game to take over)
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <select
+                      value={umpireId}
+                      onChange={(e) => setUmpireId(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid #e4e2e8',
+                        background: 'white',
+                        fontSize: '16px',
+                        color: '#1c1b20',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = '#8b8a94';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 138, 148, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#e4e2e8';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="">Select umpire...</option>
+                      {players.map(player => (
+                        <option key={player.id} value={player.id}>
+                          {player.name}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
+              </div>
+
+              {/* Scoring Method */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1c1b20',
+                  marginBottom: '8px'
+                }}>
+                  Scoring Method
+                </label>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="radio"
+                      name="scoring_method"
+                      value="live"
+                      checked={scoringMethod === 'live'}
+                      onChange={() => setScoringMethod('live')}
+                    />
+                    Live Scoring (default)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="radio"
+                      name="scoring_method"
+                      value="quick_result"
+                      checked={scoringMethod === 'quick_result'}
+                      onChange={() => setScoringMethod('quick_result')}
+                    />
+                    Quick Result
+                  </label>
+                </div>
               </div>
             </div>
 
-            {/* Game Summary */}
-            {selectedGameId && (
+            {/* Quick Result Inputs */}
+            {scoringMethod === 'quick_result' && selectedGameId && (() => {
+              const effectiveTeams = getEffectiveTeams();
+              return (
               <div style={{
-                padding: '24px',
-                background: 'rgba(34, 197, 94, 0.05)',
-                borderRadius: '12px',
-                border: '1px solid rgba(34, 197, 94, 0.2)',
-                marginTop: '32px'
+                marginTop: '24px',
+                padding: '16px',
+                background: 'rgba(234,179,8,0.08)',
+                border: '1px solid rgba(234,179,8,0.25)',
+                borderRadius: '12px'
               }}>
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  margin: '0 0 16px 0',
-                  color: '#1c1b20'
-                }}>
-                  Ready to Start
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '16px',
-                  fontSize: '14px',
-                  color: '#696775'
-                }}>
+                  color: '#1c1b20',
+                  margin: '0 0 12px 0'
+                }}>Quick Result</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                   <div>
-                    <strong style={{ color: '#1c1b20' }}>Game:</strong><br />
-                    {(() => {
-                      const selectedGame = getSelectedGame();
-                      return `${selectedGame?.home_team?.name || 'Home'} vs ${selectedGame?.away_team?.name || 'Away'}`;
-                    })()}
+                    <label htmlFor="quick-home-score" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Final Home Score ({effectiveTeams.homeName})
+                    </label>
+                    <input
+                      type="number"
+                      id="quick-home-score"
+                      min={0}
+                      value={quickHomeScore}
+                      onChange={(e) => setQuickHomeScore(parseInt(e.target.value || '0', 10))}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8'
+                      }}
+                    />
                   </div>
                   <div>
-                    <strong style={{ color: '#1c1b20' }}>Innings:</strong><br />
-                    {innings}
+                    <label htmlFor="quick-away-score" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Final Away Score ({effectiveTeams.awayName})
+                    </label>
+                    <input
+                      type="number"
+                      id="quick-away-score"
+                      min={0}
+                      value={quickAwayScore}
+                      onChange={(e) => setQuickAwayScore(parseInt(e.target.value || '0', 10))}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8'
+                      }}
+                    />
                   </div>
-                  <div>
-                    <strong style={{ color: '#1c1b20' }}>Umpire:</strong><br />
-                    {getPlayerById(umpireId)?.name || 'Not selected'}
-                  </div>
-                  <div>
-                    <strong style={{ color: '#1c1b20' }}>Players:</strong><br />
-                    {homeTeamPlayers.length + awayTeamPlayers.length} total
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label htmlFor="quick-notes" style={{ display: 'block', fontSize: '12px', color: '#696775', marginBottom: '6px' }}>
+                      Notes (optional)
+                    </label>
+                    <textarea
+                      id="quick-notes"
+                      value={quickNotes}
+                      onChange={(e) => setQuickNotes(e.target.value)}
+                      placeholder="Add any context about using quick result..."
+                      style={{
+                        width: '100%',
+                        minHeight: '80px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e4e2e8',
+                        resize: 'vertical'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* Start Game Button */}
             <div style={{
@@ -800,7 +1284,9 @@ export function GameSetup({
                 disabled={!canStartGame || submitting}
                 style={{
                   background: canStartGame && !submitting
-                    ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                    ? (scoringMethod === 'quick_result'
+                        ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                        : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)')
                     : 'linear-gradient(135deg, #d1cdd7 0%, #e4e2e8 100%)',
                   color: 'white',
                   border: 'none',
@@ -810,20 +1296,26 @@ export function GameSetup({
                   fontWeight: '600',
                   cursor: canStartGame && !submitting ? 'pointer' : 'not-allowed',
                   transition: 'all 0.2s ease',
-                  boxShadow: canStartGame && !submitting ? '0 2px 8px rgba(34, 197, 94, 0.3)' : 'none',
+                  boxShadow: canStartGame && !submitting
+                    ? (scoringMethod === 'quick_result' ? '0 2px 8px rgba(245, 158, 11, 0.35)' : '0 2px 8px rgba(34, 197, 94, 0.3)')
+                    : 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   if (canStartGame && !submitting) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                    e.currentTarget.style.background = scoringMethod === 'quick_result'
+                      ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
+                      : 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (canStartGame && !submitting) {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                    e.currentTarget.style.background = scoringMethod === 'quick_result'
+                      ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                      : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }
                 }}
@@ -838,15 +1330,15 @@ export function GameSetup({
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></div>
-                    Starting Game...
+                    {scoringMethod === 'quick_result' ? 'Submitting Quick Result...' : 'Starting Game...'}
                   </>
                 ) : (
-                  <>⚾ {(() => {
+                  <>{scoringMethod === 'quick_result' ? '🏁 Submit Quick Result' : '⚾ '}{(() => {
                     const selectedGame = getSelectedGame();
                     if (selectedGame?.status === 'in_progress') {
                       return 'Rejoin Game';
                     }
-                    return 'Start Game';
+                    return scoringMethod === 'quick_result' ? '' : 'Start Game';
                   })()}</>
                 )}
               </button>
@@ -886,6 +1378,48 @@ export function GameSetup({
           Cancel Setup
         </button>
       </div>
+
+      {/* Quick Result Confirmation Modal */}
+      {showQuickConfirm && (() => {
+        const effectiveTeams = getEffectiveTeams();
+        return (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1c1b20' }}>Confirm Quick Result</h3>
+            <p style={{ color: '#696775', marginTop: '8px' }}>This will skip live scoring and record the final result immediately.</p>
+            <div style={{ marginTop: '12px', background: '#fafafa', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+              <div style={{ fontSize: '14px', color: '#1c1b20' }}>
+                {effectiveTeams.homeName} (Home) {quickHomeScore} - {quickAwayScore} {effectiveTeams.awayName} (Away)
+              </div>
+              {quickNotes && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#696775' }}>"{quickNotes}"</div>
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={() => setShowQuickConfirm(false)}
+                style={{
+                  background: 'transparent', color: '#1c1b20', border: '1px solid #e4e2e8', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmQuickResult}
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer'
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
 
       {/* Loading Spinner Animation */}
       <style jsx>{`

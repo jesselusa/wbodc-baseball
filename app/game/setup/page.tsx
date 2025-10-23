@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameSetup } from '../../../components/GameSetup';
 import BackButton from '../../../components/BackButton';
-import { GameSetupData, GameStartEventPayload } from '../../../lib/types';
+import { GameSetupData, GameStartEventPayload, GameEndEventPayload } from '../../../lib/types';
 import { createNewGame, submitEvent, fetchTeamPlayers } from '../../../lib/api';
 
 /**
@@ -20,15 +20,28 @@ export default function GameSetupPage() {
       setCreatingGame(true);
       setError(undefined);
       
-      // Fetch team lineups
-      const [homeTeamResponse, awayTeamResponse] = await Promise.all([
-        fetchTeamPlayers(gameData.home_team_id),
-        fetchTeamPlayers(gameData.away_team_id)
-      ]);
+      // Determine lineups - use custom lineups if provided, otherwise fetch team players
+      let homeLineup: string[];
+      let awayLineup: string[];
 
-      if (!homeTeamResponse.success || !awayTeamResponse.success) {
-        setError('Failed to fetch team lineups');
-        return;
+      if (gameData.lineups) {
+        // Use custom lineups from game setup
+        homeLineup = gameData.lineups.home;
+        awayLineup = gameData.lineups.away;
+      } else {
+        // Fallback: fetch team players and use default order
+        const [homeTeamResponse, awayTeamResponse] = await Promise.all([
+          fetchTeamPlayers(gameData.home_team_id),
+          fetchTeamPlayers(gameData.away_team_id)
+        ]);
+
+        if (!homeTeamResponse.success || !awayTeamResponse.success) {
+          setError('Failed to fetch team lineups');
+          return;
+        }
+
+        homeLineup = homeTeamResponse.data.map(player => player.id);
+        awayLineup = awayTeamResponse.data.map(player => player.id);
       }
 
       let gameId: string;
@@ -59,25 +72,51 @@ export default function GameSetupPage() {
         home_team_id: gameData.home_team_id,
         away_team_id: gameData.away_team_id,
         lineups: {
-          home: homeTeamResponse.data.map(player => player.id),
-          away: awayTeamResponse.data.map(player => player.id)
+          home: homeLineup,
+          away: awayLineup
         },
         innings: gameData.innings || 7
       };
 
-      const eventResponse = await submitEvent({
+      const startResponse = await submitEvent({
         game_id: gameId,
         type: 'game_start',
         payload: gameStartPayload,
         umpire_id: gameData.umpire_id
       });
 
-      if (eventResponse.success) {
-        // Navigate to the umpire interface with the new game ID
-        router.push(`/umpire/${gameId}`);
-      } else {
-        setError(eventResponse.error || 'Failed to start game');
+      if (!startResponse.success) {
+        setError(startResponse.error || 'Failed to start game');
+        return;
       }
+
+      // If quick result was requested, immediately submit game_end
+      if (gameData.quick_result) {
+        const endPayload: GameEndEventPayload = {
+          final_score_home: gameData.quick_result.final_score_home,
+          final_score_away: gameData.quick_result.final_score_away,
+          notes: gameData.quick_result.notes,
+          scoring_method: 'quick_result'
+        };
+
+        const endResponse = await submitEvent({
+          game_id: gameId,
+          type: 'game_end',
+          payload: endPayload,
+          umpire_id: gameData.umpire_id
+        });
+
+        if (!endResponse.success) {
+          setError(endResponse.error || 'Failed to submit quick result');
+          return;
+        }
+        // Navigate to the results page or games list
+        router.push(`/results`);
+        return;
+      }
+
+      // Otherwise continue to umpire interface for live scoring
+      router.push(`/umpire/${gameId}`);
     } catch (err) {
       console.error('Error creating/starting game:', err);
       setError('Failed to create and start game');
