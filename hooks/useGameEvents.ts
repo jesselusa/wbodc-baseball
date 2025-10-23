@@ -78,8 +78,14 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     if (update.type === 'event' && update.data) {
       const event = update.data as GameEvent;
       
-      // Add to events list (keep last 50 events in memory)
-      setEvents(prev => [event, ...prev.slice(0, 49)]);
+      // Add to events list with de-duplication and sequence ordering (keep last 50)
+      setEvents(prev => {
+        const seen = new Set(prev.map(e => e.id));
+        const merged = seen.has(event.id) ? prev : [event, ...prev];
+        return merged
+          .sort((a, b) => b.sequence_number - a.sequence_number)
+          .slice(0, 50);
+      });
       
       // Call user-provided handler
       onEvent?.(event);
@@ -101,6 +107,42 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     }
   }, [onError]);
 
+  // Fetch historical events on initial load
+  const fetchHistoricalEvents = useCallback(async () => {
+    try {
+      const { supabase } = await import('../lib/realtime');
+      
+      let query = supabase
+        .from('game_events')
+        .select('*')
+        .eq('game_id', gameId)
+        .order('sequence_number', { ascending: false })
+        .limit(50);
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('[useGameEvents] Error fetching historical events:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        // Filter events based on the filter settings
+        const filteredEvents = filters?.eventTypes
+          ? data.filter(event => filters.eventTypes!.includes(event.type))
+          : data;
+        
+        // Ensure consistent ordering and remove duplicates by id
+        const uniqueById = new Map<string, GameEvent>();
+        for (const e of filteredEvents) uniqueById.set(e.id, e);
+        const ordered = Array.from(uniqueById.values()).sort((a, b) => b.sequence_number - a.sequence_number);
+        setEvents(ordered);
+      }
+    } catch (error) {
+      console.error('[useGameEvents] Error fetching historical events:', error);
+    }
+  }, [gameId, filters]);
+
   // Connect function
   const connect = useCallback(async () => {
     if (isConnectingRef.current) {
@@ -109,6 +151,10 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
 
     try {
       isConnectingRef.current = true;
+      
+      // Fetch historical events first
+      await fetchHistoricalEvents();
+      
       const manager = getManager();
       
       await manager.subscribe({
@@ -123,7 +169,7 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
     } finally {
       isConnectingRef.current = false;
     }
-  }, [gameId, handleEvent, handleSnapshot, handleConnectionStatus, onError, getManager]);
+  }, [gameId, handleEvent, handleSnapshot, handleConnectionStatus, onError, getManager, fetchHistoricalEvents]);
 
   // Disconnect function
   const disconnect = useCallback(() => {

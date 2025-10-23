@@ -51,22 +51,35 @@ export function LiveGameState({
       background: '#ffffff',
       borderRadius: '12px',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }} className={className}>
       {/* Header with Connection Status */}
       <div style={{
-        padding: '1.5rem',
+        padding: '1rem',
         borderBottom: '1px solid #e4e2e8',
         background: '#fafafa',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        minHeight: '72px'
       }}>
-        <h2 style={{
-          fontSize: '1.125rem',
-          fontWeight: '700',
-          color: '#1c1b20'
-        }}>Live Game State</h2>
+        <div>
+          <h2 style={{
+            fontSize: '1.125rem',
+            fontWeight: '700',
+            color: '#1c1b20',
+            marginBottom: '0.25rem'
+          }}>Live Game State</h2>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#6b7280'
+          }}>
+            Current game status
+          </p>
+        </div>
         {connectionStatus && (
           <div style={{
             display: 'flex',
@@ -84,13 +97,13 @@ export function LiveGameState({
         )}
       </div>
 
-      <div style={{ padding: '1.5rem' }}>
+      <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Score */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '1rem',
-          marginBottom: '1.5rem'
+          marginBottom: '1rem'
         }}>
           <ScoreCard 
             label="Away"
@@ -188,7 +201,7 @@ export function LiveGameState({
               fontWeight: '600',
               color: '#1e40af'
             }}>
-              {liveStatus?.batter_name || `Player ${snapshot?.batter_id}`}
+              {liveStatus?.batter_name || 'Loading...'}
             </div>
             {liveStatus?.catcher_name && (
               <div style={{

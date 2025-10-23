@@ -10,6 +10,7 @@ import {
   TakeoverEventPayload,
   GameStartEventPayload,
   GameEndEventPayload,
+  InningEndEventPayload,
   GameSnapshot
 } from '../lib/types';
 import { submitEvent } from '../lib/api';
@@ -33,6 +34,7 @@ export interface UmpireActionsHook {
   submitTakeover: (gameId: string, payload: TakeoverEventPayload, umpireId: string) => Promise<EventSubmissionResponse | null>;
   submitGameStart: (gameId: string, payload: GameStartEventPayload, umpireId: string) => Promise<EventSubmissionResponse | null>;
   submitGameEnd: (gameId: string, payload: GameEndEventPayload, umpireId: string) => Promise<EventSubmissionResponse | null>;
+  submitInningEnd: (gameId: string, payload: InningEndEventPayload, umpireId: string) => Promise<EventSubmissionResponse | null>;
   
   // Utility methods
   clearError: () => void;
@@ -143,9 +145,37 @@ export function useUmpireActions(): UmpireActionsHook {
   );
 
   const submitUndo = useCallback(
-    (gameId: string, payload: UndoEventPayload, umpireId: string) =>
-      submitEventAction('undo', gameId, payload, umpireId),
-    [submitEventAction]
+    async (gameId: string, payload: UndoEventPayload, umpireId: string) => {
+      // Use server API to leverage admin privileges for deletion + rebuild
+      const request: EventSubmissionRequest = {
+        game_id: gameId,
+        type: 'undo',
+        payload,
+        umpire_id: umpireId
+      };
+      try {
+        setState(prev => ({ ...prev, submitting: true, lastError: undefined, lastSuccess: undefined }));
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request)
+        });
+        const json = await res.json();
+        const response: EventSubmissionResponse = json;
+        if (response.success) {
+          setState(prev => ({ ...prev, submitting: false, lastSuccess: true }));
+          return response;
+        } else {
+          setState(prev => ({ ...prev, submitting: false, lastError: response.error || 'Undo failed' }));
+          return null;
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Network error';
+        setState(prev => ({ ...prev, submitting: false, lastError: msg }));
+        return null;
+      }
+    },
+    []
   );
 
   const submitEdit = useCallback(
@@ -169,6 +199,12 @@ export function useUmpireActions(): UmpireActionsHook {
   const submitGameEnd = useCallback(
     (gameId: string, payload: GameEndEventPayload, umpireId: string) =>
       submitEventAction('game_end', gameId, payload, umpireId),
+    [submitEventAction]
+  );
+
+  const submitInningEnd = useCallback(
+    (gameId: string, payload: InningEndEventPayload, umpireId: string) =>
+      submitEventAction('inning_end', gameId, payload, umpireId),
     [submitEventAction]
   );
 
@@ -219,6 +255,7 @@ export function useUmpireActions(): UmpireActionsHook {
     submitTakeover,
     submitGameStart,
     submitGameEnd,
+    submitInningEnd,
     clearError,
     clearSuccess,
     retryFailedEvents,

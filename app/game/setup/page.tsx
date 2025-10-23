@@ -20,15 +20,28 @@ export default function GameSetupPage() {
       setCreatingGame(true);
       setError(undefined);
       
-      // Fetch team lineups
-      const [homeTeamResponse, awayTeamResponse] = await Promise.all([
-        fetchTeamPlayers(gameData.home_team_id),
-        fetchTeamPlayers(gameData.away_team_id)
-      ]);
+      // Determine lineups - use custom lineups if provided, otherwise fetch team players
+      let homeLineup: string[];
+      let awayLineup: string[];
 
-      if (!homeTeamResponse.success || !awayTeamResponse.success) {
-        setError('Failed to fetch team lineups');
-        return;
+      if (gameData.lineups) {
+        // Use custom lineups from game setup
+        homeLineup = gameData.lineups.home;
+        awayLineup = gameData.lineups.away;
+      } else {
+        // Fallback: fetch team players and use default order
+        const [homeTeamResponse, awayTeamResponse] = await Promise.all([
+          fetchTeamPlayers(gameData.home_team_id),
+          fetchTeamPlayers(gameData.away_team_id)
+        ]);
+
+        if (!homeTeamResponse.success || !awayTeamResponse.success) {
+          setError('Failed to fetch team lineups');
+          return;
+        }
+
+        homeLineup = homeTeamResponse.data.map(player => player.id);
+        awayLineup = awayTeamResponse.data.map(player => player.id);
       }
 
       let gameId: string;
@@ -59,8 +72,8 @@ export default function GameSetupPage() {
         home_team_id: gameData.home_team_id,
         away_team_id: gameData.away_team_id,
         lineups: {
-          home: homeTeamResponse.data.map(player => player.id),
-          away: awayTeamResponse.data.map(player => player.id)
+          home: homeLineup,
+          away: awayLineup
         },
         innings: gameData.innings || 7
       };

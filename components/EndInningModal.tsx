@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { GameEndEventPayload, GameSnapshot } from '../lib/types';
+import { InningEndEventPayload, GameSnapshot } from '../lib/types';
 
-export interface EndGameModalProps {
+export interface EndInningModalProps {
   isOpen: boolean;
   gameSnapshot: GameSnapshot;
   homeTeamName?: string;
   awayTeamName?: string;
-  onConfirm: (payload: GameEndEventPayload) => void;
+  onConfirm: (payload: InningEndEventPayload) => void;
   onCancel: () => void;
   className?: string;
 }
 
 /**
- * EndGameModal component for confirming final game scores
- * Allows umpire to input final scores and end the game
+ * EndInningModal component for ending the current inning
+ * Allows umpire to input scores at the end of the inning
  */
-export function EndGameModal({
+export function EndInningModal({
   isOpen,
   gameSnapshot,
   homeTeamName = 'Home Team',
@@ -23,7 +23,7 @@ export function EndGameModal({
   onConfirm,
   onCancel,
   className = ''
-}: EndGameModalProps) {
+}: EndInningModalProps) {
   const [homeScore, setHomeScore] = useState(gameSnapshot.score_home);
   const [awayScore, setAwayScore] = useState(gameSnapshot.score_away);
   const [notes, setNotes] = useState('');
@@ -35,10 +35,12 @@ export function EndGameModal({
   const handleConfirm = async () => {
     setSubmitting(true);
 
-    const payload: GameEndEventPayload = {
-      final_score_home: homeScore,
-      final_score_away: awayScore,
-      notes: notes?.trim() ? notes.trim() : `Game ended by umpire on ${new Date().toLocaleString()}`
+    const payload: InningEndEventPayload = {
+      inning_number: gameSnapshot.current_inning,
+      is_top_of_inning: gameSnapshot.is_top_of_inning,
+      score_home: homeScore,
+      score_away: awayScore,
+      notes: notes?.trim() ? notes.trim() : `Inning ${gameSnapshot.current_inning} ${gameSnapshot.is_top_of_inning ? 'top' : 'bottom'} ended by umpire on ${new Date().toLocaleString()}`
     };
 
     onConfirm(payload);
@@ -87,12 +89,12 @@ export function EndGameModal({
             fontWeight: '700',
             color: '#1c1b20',
             marginBottom: '0.25rem'
-          }}>End Game</h2>
+          }}>End Inning</h2>
           <p style={{
             fontSize: '0.875rem',
             color: '#6b7280'
           }}>
-            Confirm the final scores to end this game
+            Confirm the scores to end {gameSnapshot.is_top_of_inning ? 'the top' : 'the bottom'} of inning {gameSnapshot.current_inning}
           </p>
         </div>
 
@@ -117,13 +119,13 @@ export function EndGameModal({
                   fontWeight: '600',
                   color: '#92400e',
                   marginBottom: '0.25rem'
-                }}>Confirm Game End</h4>
+                }}>Confirm Inning End</h4>
                 <p style={{
                   fontSize: '0.75rem',
                   color: '#b45309',
                   margin: 0
                 }}>
-                  This action cannot be undone. Make sure the final scores are correct.
+                  This will skip to the end of the current half-inning. Make sure the scores are correct.
                 </p>
               </div>
             </div>
@@ -141,7 +143,7 @@ export function EndGameModal({
               fontWeight: '600',
               color: '#374151',
               marginBottom: '0.75rem'
-            }}>Current Game Status</h3>
+            }}>Current Inning Status</h3>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
@@ -172,18 +174,18 @@ export function EndGameModal({
           }}>
             {/* Away Team Score */}
             <div>
-              <label htmlFor="endgame-away-score" style={{
+              <label htmlFor="endinning-away-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
                 marginBottom: '0.5rem',
                 display: 'block'
               }}>
-                {awayTeamName} Final Score
+                {awayTeamName} Score
               </label>
               <input
                 type="number"
-                id="endgame-away-score"
+                id="endinning-away-score"
                 value={awayScore}
                 onChange={(e) => setAwayScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -202,18 +204,18 @@ export function EndGameModal({
 
             {/* Home Team Score */}
             <div>
-              <label htmlFor="endgame-home-score" style={{
+              <label htmlFor="endinning-home-score" style={{
                 fontSize: '0.875rem',
                 fontWeight: '600',
                 color: '#374151',
                 marginBottom: '0.5rem',
                 display: 'block'
               }}>
-                {homeTeamName} Final Score
+                {homeTeamName} Score
               </label>
               <input
                 type="number"
-                id="endgame-home-score"
+                id="endinning-home-score"
                 value={homeScore}
                 onChange={(e) => setHomeScore(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
@@ -231,38 +233,36 @@ export function EndGameModal({
             </div>
           </div>
 
-          {/* Winner Display */}
-          {homeScore !== awayScore && (
-            <div style={{
-              background: homeScore > awayScore ? '#f0fdf4' : '#eff6ff',
-              border: `1px solid ${homeScore > awayScore ? '#bbf7d0' : '#bfdbfe'}`,
-              borderRadius: '8px',
-              padding: '1rem',
-              textAlign: 'center',
-              marginBottom: '1.5rem'
+          {/* Current Score Display */}
+          <div style={{
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '8px',
+            padding: '1rem',
+            textAlign: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <h4 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#1e40af',
+              marginBottom: '0.25rem'
             }}>
-              <h4 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: homeScore > awayScore ? '#166534' : '#1e40af',
-                marginBottom: '0.25rem'
-              }}>
-                Winner: {homeScore > awayScore ? homeTeamName : awayTeamName}
-              </h4>
-              <p style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: homeScore > awayScore ? '#15803d' : '#2563eb',
-                margin: 0
-              }}>
-                {Math.max(homeScore, awayScore)} - {Math.min(homeScore, awayScore)}
-              </p>
-            </div>
-          )}
+              Current Score
+            </h4>
+            <p style={{
+              fontSize: '1.25rem',
+              fontWeight: '700',
+              color: '#2563eb',
+              margin: 0
+            }}>
+              {awayTeamName} {awayScore} - {homeScore} {homeTeamName}
+            </p>
+          </div>
 
           {/* Notes */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <label htmlFor="endgame-notes" style={{
+            <label htmlFor="endinning-notes" style={{
               fontSize: '0.875rem',
               fontWeight: '600',
               color: '#374151',
@@ -272,11 +272,11 @@ export function EndGameModal({
               Notes (optional)
             </label>
             <textarea
-              id="endgame-notes"
+              id="endinning-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="e.g., End of live scoring or quick result due to time"
+              placeholder="e.g., Skipped to end of inning due to time"
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -352,10 +352,11 @@ export function EndGameModal({
               }
             }}
           >
-            {submitting ? 'Ending Game...' : 'End Game'}
+            {submitting ? 'Ending Inning...' : 'End Inning'}
           </button>
         </div>
       </div>
     </div>
   );
 }
+

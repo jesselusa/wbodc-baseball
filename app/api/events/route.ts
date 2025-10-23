@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { submitEvent, validateEvent, getGameSnapshot, getGameEvents } from '../../../lib/api';
+import { BaseballGameStateMachine } from '../../../lib/state-machine';
+import type { GameEvent, GameSnapshot, UndoEventPayload } from '../../../lib/types';
 import { supabaseAdmin } from '../../../lib/supabase-admin';
 import type { EventSubmissionRequest, EventSubmissionResponse } from '../../../lib/types';
 import { updateStandingsOnGameComplete } from '../../../lib/tournament-standings-updater';
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate event type
-    const validEventTypes = ['pitch', 'flip_cup', 'at_bat', 'undo', 'edit', 'takeover', 'game_start', 'game_end'];
+    const validEventTypes = ['pitch', 'flip_cup', 'at_bat', 'undo', 'edit', 'takeover', 'game_start', 'game_end', 'inning_end'];
     if (!validEventTypes.includes(type)) {
       return NextResponse.json(
         { 
@@ -36,6 +38,88 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Special handling: server-side undo deletes target event and rebuilds snapshot
+    if (type === 'undo') {
+      const undoPayload = payload as UndoEventPayload;
+
+      // Delete the target event (UI restricts to latest; server does not re-check)
+      const { error: delErr } = await supabaseAdmin
+        .from('game_events')
+        .delete()
+        .eq('id', undoPayload.target_event_id);
+
+      if (delErr) {
+        return NextResponse.json({ success: false, error: `Failed to delete event: ${delErr.message}` }, { status: 400 });
+      }
+
+      // Rebuild snapshot by replaying remaining events
+      const { data: allEvents, error: allErr } = await supabaseAdmin
+        .from('game_events')
+        .select('*')
+        .eq('game_id', game_id)
+        .order('sequence_number', { ascending: true });
+
+      if (allErr || !allEvents) {
+        return NextResponse.json({ success: false, error: 'Failed to fetch events for rebuild' }, { status: 500 });
+      }
+
+      const events: GameEvent[] = allEvents as any;
+      const gameStart = events.find(e => e.type === 'game_start');
+      if (!gameStart) {
+        return NextResponse.json({ success: false, error: 'Missing game_start event' }, { status: 500 });
+      }
+
+      // Start from minimal pre-start snapshot
+      const preStart: GameSnapshot = {
+        game_id,
+        current_inning: 1,
+        is_top_of_inning: true,
+        outs: 0,
+        balls: 0,
+        strikes: 0,
+        score_home: 0,
+        score_away: 0,
+        home_team_id: '',
+        away_team_id: '',
+        batter_id: null,
+        catcher_id: null,
+        base_runners: { first: null, second: null, third: null },
+        home_lineup: [],
+        away_lineup: [],
+        home_lineup_position: 0,
+        away_lineup_position: 0,
+        last_event_id: null,
+        umpire_id: null,
+        status: 'not_started',
+        last_updated: new Date().toISOString(),
+        scoring_method: 'live',
+        is_quick_result: false
+      } as any;
+
+      let snapshot = BaseballGameStateMachine.transition(preStart, gameStart as any, events).snapshot;
+      const remaining = events.filter(e => e.id !== gameStart.id && e.type !== 'undo' && e.type !== 'edit');
+      for (const e of remaining) {
+        const result = BaseballGameStateMachine.transition(snapshot, e as any, events);
+        if (result.error) {
+          return NextResponse.json({ success: false, error: result.error }, { status: 500 });
+        }
+        snapshot = result.snapshot;
+      }
+
+      // Persist snapshot
+      const { data: saved, error: saveErr } = await supabaseAdmin
+        .from('game_snapshots')
+        .upsert(snapshot as any)
+        .select()
+        .single();
+
+      if (saveErr) {
+        return NextResponse.json({ success: false, error: 'Failed to save rebuilt snapshot' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, data: { event: null, snapshot: saved } }, { status: 200 });
+    }
+
     // Create submission request
     const submissionRequest: EventSubmissionRequest = {
       game_id,

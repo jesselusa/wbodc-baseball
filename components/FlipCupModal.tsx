@@ -27,30 +27,45 @@ export function FlipCupModal({
   const [selectedErrors, setSelectedErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
 
   // Load players for name resolution
   useEffect(() => {
-    if (isOpen && players.length === 0) {
+    if (isOpen) {
       loadPlayers();
     }
-  }, [isOpen, players.length]);
+  }, [isOpen]);
 
   const loadPlayers = async () => {
+    setLoadingPlayers(true);
     try {
-      const response = await fetchPlayers();
+      // Fetch ALL players including inactive ones for name resolution
+      const response = await fetchPlayers(true);
       if (response.success && response.data) {
+        console.log('[FlipCupModal] Loaded players:', response.data.length);
         setPlayers(response.data);
+      } else {
+        console.error('[FlipCupModal] Failed to fetch players:', response.error);
       }
     } catch (error) {
-      console.error('Failed to load players:', error);
+      console.error('[FlipCupModal] Failed to load players:', error);
+    } finally {
+      setLoadingPlayers(false);
     }
   };
 
   // Helper function to get player name by ID
   const getPlayerName = (playerId: string | null): string => {
     if (!playerId) return 'Unknown';
+    if (loadingPlayers || players.length === 0) return 'Loading...';
+    
     const player = players.find(p => p.id === playerId);
-    return player?.name || playerId; // Fallback to ID if name not found
+    if (!player) {
+      console.log('[FlipCupModal] Player not found for ID:', playerId);
+      console.log('[FlipCupModal] Available players:', players.map(p => ({ id: p.id, name: p.name })));
+      return 'Unknown Player';
+    }
+    return player.name;
   };
 
   // Don't render if not open
@@ -98,6 +113,7 @@ export function FlipCupModal({
   const handleCancel = () => {
     setSelectedResult(null);
     setSelectedErrors([]);
+    setPlayers([]); // Clear players cache for next open
     onCancel();
   };
 
@@ -150,30 +166,6 @@ export function FlipCupModal({
         </div>
 
         <div style={{ padding: '1.5rem' }}>
-          {/* Cup Hit Info */}
-          <div style={{
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#1e40af',
-              marginBottom: '0.5rem'
-            }}>Cup Hit Details</h3>
-            <div style={{
-              fontSize: '0.875rem',
-              color: '#1d4ed8'
-            }}>
-              <p><strong>Potential Result:</strong> {cupHitLabels[cupHit]}</p>
-              <p><strong>Batter:</strong> {getPlayerName(gameSnapshot.batter_id)}</p>
-              <p><strong>Catcher:</strong> {getPlayerName(gameSnapshot.catcher_id)}</p>
-            </div>
-          </div>
-
           {/* Result Selection */}
           <div style={{ marginBottom: '1.5rem' }}>
             <h3 style={{
@@ -183,22 +175,23 @@ export function FlipCupModal({
               marginBottom: '0.75rem'
             }}>Flip Cup Winner</h3>
             <div style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
               gap: '0.75rem'
             }}>
               <button
                 onClick={() => setSelectedResult('offense wins')}
                 style={{
-                  width: '100%',
-                  padding: '1rem',
+                  padding: '1.25rem 1rem',
                   borderRadius: '8px',
                   border: selectedResult === 'offense wins' ? '2px solid #22c55e' : '2px solid #d1d5db',
                   backgroundColor: selectedResult === 'offense wins' ? '#f0fdf4' : '#ffffff',
                   color: selectedResult === 'offense wins' ? '#166534' : '#374151',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  fontSize: '1rem',
+                  fontWeight: '600'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedResult !== 'offense wins') {
@@ -211,24 +204,22 @@ export function FlipCupModal({
                   }
                 }}
               >
-                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Offense Wins</div>
-                <div style={{ fontSize: '0.875rem' }}>
-                  Batter gets {cupHitLabels[cupHit].toLowerCase()}
-                </div>
+                {cupHitLabels[cupHit]}
               </button>
 
               <button
                 onClick={() => setSelectedResult('defense wins')}
                 style={{
-                  width: '100%',
-                  padding: '1rem',
+                  padding: '1.25rem 1rem',
                   borderRadius: '8px',
                   border: selectedResult === 'defense wins' ? '2px solid #ef4444' : '2px solid #d1d5db',
                   backgroundColor: selectedResult === 'defense wins' ? '#fef2f2' : '#ffffff',
                   color: selectedResult === 'defense wins' ? '#991b1b' : '#374151',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  fontSize: '1rem',
+                  fontWeight: '600'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedResult !== 'defense wins') {
@@ -241,10 +232,7 @@ export function FlipCupModal({
                   }
                 }}
               >
-                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Defense Wins</div>
-                <div style={{ fontSize: '0.875rem' }}>
-                  Batter is out
-                </div>
+                Out
               </button>
             </div>
           </div>
@@ -312,32 +300,6 @@ export function FlipCupModal({
               </div>
             </div>
           )}
-
-          {/* Game Rules Reminder */}
-          <div style={{
-            background: '#fffbeb',
-            border: '1px solid #fed7aa',
-            borderRadius: '8px',
-            padding: '0.75rem'
-          }}>
-            <h4 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#92400e',
-              marginBottom: '0.25rem'
-            }}>Flip Cup Rules</h4>
-            <div style={{
-              fontSize: '0.75rem',
-              color: '#b45309',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.25rem'
-            }}>
-              <p>• Offense wins = Batter gets the base hit</p>
-              <p>• Defense wins = Batter is out</p>
-              <p>• Errors can be tracked for statistics</p>
-            </div>
-          </div>
         </div>
 
         {/* Action Buttons */}

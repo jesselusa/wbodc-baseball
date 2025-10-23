@@ -12,6 +12,7 @@ export interface UmpireControlsProps {
   onFlipCupNeeded: (cupHit: 1 | 2 | 3 | 4) => void;
   onTriggerAtBatModal: (result: AtBatResult) => void;
   onEndGame: () => void;
+  onEndInning: () => void;
   disabled?: boolean;
   className?: string;
 }
@@ -26,6 +27,7 @@ export function UmpireControls({
   onFlipCupNeeded,
   onTriggerAtBatModal,
   onEndGame,
+  onEndInning,
   disabled = false,
   className = ''
 }: UmpireControlsProps) {
@@ -59,18 +61,10 @@ export function UmpireControls({
     
     // Check if this pitch is a cup hit (requires flip cup modal first)
     if (['first cup hit', 'second cup hit', 'third cup hit', 'fourth cup hit'].includes(result)) {
-      // Cup hits need to submit the pitch event first, then trigger flip cup modal
+      // Cup hits should NOT submit the pitch event yet - wait for flip cup result
       setLastPitchResult(result);
       
-      // Submit the pitch event immediately so flip cup logic can reference it
-      const payload: PitchEventPayload = {
-        result,
-        batter_id: gameSnapshot.batter_id || '',
-        catcher_id: gameSnapshot.catcher_id || ''
-      };
-      onPitchResult(payload);
-      
-      // Then trigger flip cup modal
+      // Just trigger flip cup modal - the flip cup handler will submit both events
       if (cupHit) {
         onFlipCupNeeded(cupHit);
       }
@@ -93,13 +87,20 @@ export function UmpireControls({
       background: '#ffffff',
       borderRadius: '12px',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }} className={className}>
       {/* Header */}
       <div style={{
-        padding: '1.5rem',
+        padding: '1rem',
         borderBottom: '1px solid #e4e2e8',
-        background: '#fafafa'
+        background: '#fafafa',
+        minHeight: '72px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
       }}>
         <h2 style={{
           fontSize: '1.125rem',
@@ -115,13 +116,13 @@ export function UmpireControls({
         </p>
       </div>
 
-      <div style={{ padding: '1.5rem' }}>
+      <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Current Count Display */}
         <div style={{
           background: '#f9fafb',
           borderRadius: '8px',
-          padding: '1rem',
-          marginBottom: '1.5rem'
+          padding: '0.75rem',
+          marginBottom: '1rem'
         }}>
           <div style={{
             display: 'flex',
@@ -320,9 +321,9 @@ export function UmpireControls({
         </div>
 
 
-        {/* End Game */}
+        {/* Game Control */}
         <div style={{ 
-          marginTop: '2rem',
+          marginTop: 'auto',
           paddingTop: '1.5rem',
           borderTop: '1px solid #e4e2e8'
         }}>
@@ -333,6 +334,39 @@ export function UmpireControls({
             marginBottom: '0.75rem'
           }}>Game Control</h3>
           
+          {/* End Inning Button */}
+          <button
+            onClick={onEndInning}
+            disabled={disabled}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: disabled ? '#f3f4f6' : '#dc2626',
+              color: disabled ? '#9ca3af' : '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.5 : 1,
+              transition: 'all 0.2s',
+              fontSize: '0.875rem',
+              marginBottom: '0.75rem'
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = '#b91c1c';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = '#dc2626';
+              }
+            }}
+          >
+            End Inning
+          </button>
+
+          {/* End Game Button */}
           <button
             onClick={onEndGame}
             disabled={disabled}

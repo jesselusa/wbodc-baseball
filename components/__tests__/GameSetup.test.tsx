@@ -62,6 +62,83 @@ describe('GameSetup', () => {
       }));
     });
   });
+
+  it('allows swapping home and away teams before starting game', async () => {
+    const onGameStarted = jest.fn();
+    render(<GameSetup gameId={null} onGameStarted={onGameStarted} />);
+
+    // Wait for data load
+    await screen.findByText('Select Game');
+
+    // Select the game
+    fireEvent.change(screen.getByDisplayValue('Select a game to start or rejoin...'), { target: { value: 'g1' } });
+
+    // Wait for game preview to appear
+    await screen.findByText('Selected Game');
+
+    // Verify original team assignment
+    expect(screen.getByText('Home - Home (1 players)')).toBeInTheDocument();
+    expect(screen.getByText('Away - Away (1 players)')).toBeInTheDocument();
+
+    // Click swap button
+    const swapButton = screen.getByText('🔄 Swap Home/Away');
+    fireEvent.click(swapButton);
+
+    // Verify teams are swapped in the UI
+    await waitFor(() => {
+      expect(screen.getByText('Away - Home (1 players)')).toBeInTheDocument();
+      expect(screen.getByText('Home - Away (1 players)')).toBeInTheDocument();
+    });
+
+    // Start the game with live scoring
+    fireEvent.click(screen.getByText(/Start Game/));
+
+    // Verify the callback receives swapped team IDs
+    await waitFor(() => {
+      expect(onGameStarted).toHaveBeenCalledWith(expect.objectContaining({
+        home_team_id: 'a1', // Originally away team
+        away_team_id: 'h1', // Originally home team
+        game_id: 'g1'
+      }));
+    });
+  });
+
+  it('swaps teams back when swap button is clicked twice', async () => {
+    const onGameStarted = jest.fn();
+    render(<GameSetup gameId={null} onGameStarted={onGameStarted} />);
+
+    // Wait for data load
+    await screen.findByText('Select Game');
+
+    // Select the game
+    fireEvent.change(screen.getByDisplayValue('Select a game to start or rejoin...'), { target: { value: 'g1' } });
+
+    // Wait for game preview
+    await screen.findByText('Selected Game');
+
+    // Click swap button twice
+    const swapButton = screen.getByText('🔄 Swap Home/Away');
+    fireEvent.click(swapButton);
+    fireEvent.click(swapButton);
+
+    // Verify teams are back to original assignment
+    await waitFor(() => {
+      expect(screen.getByText('Home - Home (1 players)')).toBeInTheDocument();
+      expect(screen.getByText('Away - Away (1 players)')).toBeInTheDocument();
+    });
+
+    // Start the game
+    fireEvent.click(screen.getByText(/Start Game/));
+
+    // Verify the callback receives original team IDs
+    await waitFor(() => {
+      expect(onGameStarted).toHaveBeenCalledWith(expect.objectContaining({
+        home_team_id: 'h1', // Original home team
+        away_team_id: 'a1', // Original away team
+        game_id: 'g1'
+      }));
+    });
+  });
 });
 
 

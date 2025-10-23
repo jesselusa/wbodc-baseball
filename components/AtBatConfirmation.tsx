@@ -286,69 +286,6 @@ export function AtBatConfirmation({
             }}>Runners on Base</h3>
             <BaseRunnersSummary runners={gameSnapshot.base_runners} getPlayerName={getPlayerName} />
           </div>
-
-          {/* Expected Outcome */}
-          <div style={{
-            borderRadius: '8px',
-            padding: '1rem',
-            border: '1px solid',
-            borderColor: isPositiveResult ? '#bbf7d0' : '#fecaca',
-            backgroundColor: isPositiveResult ? '#f0fdf4' : '#fef2f2',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: isPositiveResult ? '#166534' : '#991b1b',
-              marginBottom: '0.75rem'
-            }}>
-              Expected Outcome
-            </h3>
-            <ul style={{
-              fontSize: '0.875rem',
-              color: isPositiveResult ? '#15803d' : '#b91c1c',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.25rem'
-            }}>
-              {expectedOutcomes.map((outcome, index) => (
-                <li key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span>•</span>
-                  {outcome}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Player Info */}
-          <div style={{
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#1e40af',
-              marginBottom: '0.5rem'
-            }}>At-Bat Details</h3>
-            <div style={{
-              fontSize: '0.875rem',
-              color: '#1d4ed8',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.25rem'
-            }}>
-              <p><strong>Batter:</strong> {getPlayerName(gameSnapshot.batter_id)}</p>
-              <p><strong>Catcher:</strong> {getPlayerName(gameSnapshot.catcher_id)}</p>
-            </div>
-          </div>
         </div>
 
         {/* Action Buttons */}

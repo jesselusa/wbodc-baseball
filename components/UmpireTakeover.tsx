@@ -123,9 +123,13 @@ export function UmpireTakeover({
     }} className={className}>
       {/* Header */}
       <div style={{
-        padding: '1.5rem',
+        padding: '1rem',
         borderBottom: '1px solid #e4e2e8',
-        background: '#fafafa'
+        background: '#fafafa',
+        minHeight: '72px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
       }}>
         <h2 style={{
           fontSize: '1.125rem',
@@ -137,7 +141,7 @@ export function UmpireTakeover({
           fontSize: '0.875rem',
           color: '#6b7280'
         }}>
-          Manage umpire assignments and takeovers
+          Current umpire on duty
         </p>
       </div>
 
