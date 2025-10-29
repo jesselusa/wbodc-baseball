@@ -10,6 +10,7 @@ interface TeamWithStandings extends TournamentTeamWithPlayers {
   losses: number;
   gamesPlayed: number;
   winPercentage: number;
+  runDifferential: number;
 }
 
 export default function TeamsPage() {
@@ -88,7 +89,7 @@ export default function TeamsPage() {
       }
 
       const teams = teamsData.data;
-      const standings = (standingsData?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number; gamesPlayed?: number }>;
+      const standings = (standingsData?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number; gamesPlayed?: number; runDifferential?: number }>;
       const standingsMap = new Map(standings.map(s => [s.teamId, s]));
 
       // Merge teams with real standings (fallback to zeros when missing)
@@ -98,12 +99,14 @@ export default function TeamsPage() {
         const losses = s?.losses || 0;
         const gamesPlayed = s?.gamesPlayed != null ? s.gamesPlayed : wins + losses;
         const winPercentage = gamesPlayed > 0 ? wins / gamesPlayed : 0;
+        const runDifferential = s?.runDifferential != null ? s.runDifferential : 0;
         return {
           ...team,
           wins,
           losses,
           gamesPlayed,
-          winPercentage
+          winPercentage,
+          runDifferential
         };
       });
 
@@ -368,7 +371,7 @@ export default function TeamsPage() {
         {!isMobile && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '60px 1fr 120px 120px 120px 120px',
+            gridTemplateColumns: '60px 1fr 120px 120px 120px 120px 120px',
             gap: '16px',
             padding: '20px 24px',
             background: '#f8fafc',
@@ -385,6 +388,7 @@ export default function TeamsPage() {
             <div>Win %</div>
             <div>Wins</div>
             <div>Losses</div>
+            <div>Run Diff</div>
           </div>
         )}
 
@@ -398,7 +402,7 @@ export default function TeamsPage() {
               backgroundColor: index % 2 === 0 ? '#ffffff' : '#fafbfc',
               ...(isMobile ? {} : {
                 display: 'grid',
-                gridTemplateColumns: '60px 1fr 120px 120px 120px 120px',
+                gridTemplateColumns: '60px 1fr 120px 120px 120px 120px 120px',
                 gap: '16px',
                 alignItems: 'center'
               })
@@ -603,6 +607,15 @@ export default function TeamsPage() {
                     fontWeight: '600'
                   }}>
                     {team.losses}
+                  </div>
+
+                  {/* Run Differential */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: team.runDifferential >= 0 ? '#16a34a' : '#dc2626',
+                    fontWeight: '600'
+                  }}>
+                    {team.runDifferential}
                   </div>
                 </>
               )}

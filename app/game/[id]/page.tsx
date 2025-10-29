@@ -142,7 +142,7 @@ export default function GamePage({ params }: GamePageProps) {
       if (!tid) return;
       const res = await fetch(`/api/tournaments/${tid}/standings`);
       const data = await res.json();
-      const standings = (data?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number }>;
+      const standings = (data?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number }>; 
       const map = new Map<string, { wins: number; losses: number }>();
       standings.forEach((s) => {
         map.set(s.teamId, { wins: s.wins || 0, losses: s.losses || 0 });
@@ -684,7 +684,7 @@ export default function GamePage({ params }: GamePageProps) {
                   color: '#1f2937',
                   margin: '0'
                 }}>
-                  {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)} Roster
+                  {initialGame.away_team.name} Roster
                 </h3>
               </div>
               <div style={{ padding: '20px' }}>
@@ -792,7 +792,7 @@ export default function GamePage({ params }: GamePageProps) {
                   color: '#1f2937',
                   margin: '0'
                 }}>
-                  {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)} Roster
+                  {initialGame.home_team.name} Roster
                 </h3>
               </div>
               <div style={{ padding: '20px' }}>

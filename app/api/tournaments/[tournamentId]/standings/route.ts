@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { calculateTeamStandings } from '../../../../../lib/utils/bracket-generation';
+import { calculateTeamStandings, generateTournamentBracket, validateBracketStructure } from '../../../../../lib/utils/bracket-generation';
 
 // Helper function to create Supabase client
 function createSupabaseClient() {
@@ -17,13 +17,15 @@ export async function GET(
     const { tournamentId } = await params;
     const supabase = createSupabaseClient();
     
-    // Get teams assigned to this tournament
+    // Get distinct teams participating in this tournament via player assignments
     const { data: teamAssignments, error: teamsError } = await supabase
-      .from('tournament_teams')
+      .from('tournament_player_assignments')
       .select(`
-        id,
-        team_name,
-        tournament_id
+        team_id,
+        teams!inner (
+          id,
+          name
+        )
       `)
       .eq('tournament_id', tournamentId);
 
@@ -54,12 +56,12 @@ export async function GET(
         home_score,
         away_score,
         status,
-        actual_start,
-        actual_end
+        started_at,
+        completed_at
       `)
       .eq('tournament_id', tournamentId)
       .eq('game_type', 'round_robin')
-      .order('actual_start', { ascending: true });
+      .order('started_at', { ascending: true });
 
     if (gamesError) {
       return NextResponse.json(
@@ -68,11 +70,14 @@ export async function GET(
       );
     }
 
-    // Convert teams to the format expected by standings calculation
-    const teams = teamAssignments.map(assignment => ({
-      id: assignment.id,
-      name: assignment.team_name
-    }));
+    // Convert teams to the format expected by standings calculation (use teams.id)
+    const teamsMap = new Map<string, string>();
+    teamAssignments.forEach((assignment: any) => {
+      if (assignment.teams?.id && assignment.teams?.name) {
+        teamsMap.set(assignment.teams.id, assignment.teams.name);
+      }
+    });
+    const teams = Array.from(teamsMap.entries()).map(([id, name]) => ({ id, name }));
 
     // Transform round robin games to the expected format
     const transformedGames = (roundRobinGames || []).map((game: any) => ({
@@ -114,6 +119,74 @@ export async function GET(
         games_played: teamGames.length
       };
     });
+
+    // Auto-create bracket when round robin complete and no bracket games exist
+    if (roundRobinComplete) {
+      // Check for existing non-round-robin games (i.e., bracket/finals)
+      const { data: existingNextPhaseGames, error: existingErr } = await supabase
+        .from('games')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .neq('game_type', 'round_robin');
+
+      if (!existingErr && (!existingNextPhaseGames || existingNextPhaseGames.length === 0)) {
+        try {
+          // Generate single elimination bracket from current standings
+          const bracket = generateTournamentBracket(tournamentId, standings, 'single_elimination');
+          const validation = validateBracketStructure(bracket, standings);
+          if (validation.isValid) {
+            // Create bracket matches for visualization and progression
+            const bracketMatchesToCreate = bracket.matches.map(match => ({
+              tournament_id: tournamentId,
+              round_id: null,
+              bracket_type: 'single_elimination',
+              round_number: match.round,
+              game_number: match.gameNumber,
+              home_team_id: match.homeTeamId || null,
+              away_team_id: match.awayTeamId || null,
+              home_team_seed: match.homeTeamSeed || null,
+              away_team_seed: match.awayTeamSeed || null,
+              winner_team_id: match.winnerTeamId || null,
+              is_bye: match.isBye,
+              next_game_number: match.nextGameNumber || null
+            }));
+            const { error: bracketMatchesError } = await supabase
+              .from('tournament_brackets')
+              .insert(bracketMatchesToCreate);
+
+            if (!bracketMatchesError) {
+              // Get tournament innings setting for bracket games
+              const { data: tournament } = await supabase
+                .from('tournaments')
+                .select('bracket_innings')
+                .eq('id', tournamentId)
+                .single();
+
+              // Create actual games for non-bye matches with both teams assigned
+              const bracketGamesToCreate = bracket.matches
+                .filter(m => !m.isBye && m.homeTeamId && m.awayTeamId)
+                .map(m => ({
+                  tournament_id: tournamentId,
+                  home_team_id: m.homeTeamId!,
+                  away_team_id: m.awayTeamId!,
+                  status: 'scheduled',
+                  game_type: 'bracket',
+                  total_innings: (tournament?.bracket_innings as number | null) || 5,
+                  home_score: 0,
+                  away_score: 0
+                }));
+
+              if (bracketGamesToCreate.length > 0) {
+                await supabase.from('games').insert(bracketGamesToCreate);
+              }
+            }
+          }
+        } catch (e) {
+          // Non-fatal; standings should still return
+          console.error('Auto-bracket creation failed:', e);
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
