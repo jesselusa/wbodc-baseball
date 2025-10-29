@@ -73,6 +73,27 @@ export default function GameResultsList({
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // Compute team records across provided games (completed only)
+  const recordsByTeamId = React.useMemo(() => {
+    const records = new Map<string, { wins: number; losses: number }>();
+    games.forEach((g) => {
+      if (g.status !== 'completed') return;
+      if (!g.home_team?.id || !g.away_team?.id) return;
+      const home = records.get(g.home_team.id) || { wins: 0, losses: 0 };
+      const away = records.get(g.away_team.id) || { wins: 0, losses: 0 };
+      if ((g.home_score ?? 0) > (g.away_score ?? 0)) {
+        home.wins += 1;
+        away.losses += 1;
+      } else if ((g.away_score ?? 0) > (g.home_score ?? 0)) {
+        away.wins += 1;
+        home.losses += 1;
+      }
+      records.set(g.home_team.id, home);
+      records.set(g.away_team.id, away);
+    });
+    return records;
+  }, [games]);
+
   const handleGameClick = (gameId: string) => {
     if (onGameClick) {
       onGameClick(gameId);
@@ -99,7 +120,7 @@ export default function GameResultsList({
 
   const formatGamePhase = (game: HistoricalGame) => {
     // Use tournament system data for better phase detection
-    if (game.is_round_robin) {
+    if (game.is_round_robin || (game as any).game_type === 'round_robin') {
       return `Round ${game.round_number || 1}`;
     }
     
@@ -173,7 +194,7 @@ export default function GameResultsList({
           Object.assign(gamesBySection, poolPlayRounds);
         } else {
           // Check if games are explicitly marked as round-robin with round numbers
-          const hasRoundRobin = poolPlayGames.some(g => g.is_round_robin === true);
+      const hasRoundRobin = poolPlayGames.some(g => g.is_round_robin === true || (g as any).game_type === 'round_robin');
           if (hasRoundRobin && poolPlayGames.some(g => g.round_number)) {
             // Use explicit round numbers if available
             const rounds: { [key: string]: HistoricalGame[] } = {};
@@ -256,7 +277,7 @@ export default function GameResultsList({
     games.forEach(game => {
       let groupKey: string;
       
-      if (game.is_round_robin) {
+      if (game.is_round_robin || (game as any).game_type === 'round_robin') {
         groupKey = 'Round Robin';
       } else if (game.bracket_position) {
         // Extract round from bracket position (e.g., "Quarterfinals", "Semifinals", "Championship")
@@ -432,10 +453,18 @@ export default function GameResultsList({
     const isBracketGame = game.game_type === 'bracket';
     
     // Determine team display names
-    const homeTeamName = game.home_team?.name === 'Unknown Team' ? 'TBD' : (game.home_team?.name || 'TBD');
-    const awayTeamName = game.away_team?.name === 'Unknown Team' ? 'TBD' : (game.away_team?.name || 'TBD');
+    const baseHomeName = game.home_team?.name === 'Unknown Team' ? 'TBD' : (game.home_team?.name || 'TBD');
+    const baseAwayName = game.away_team?.name === 'Unknown Team' ? 'TBD' : (game.away_team?.name || 'TBD');
+    const homeRec = game.home_team?.id ? recordsByTeamId.get(game.home_team.id) : undefined;
+    const awayRec = game.away_team?.id ? recordsByTeamId.get(game.away_team.id) : undefined;
+    const homeTeamName = `${baseHomeName} (${homeRec?.wins ?? 0}-${homeRec?.losses ?? 0})`;
+    const awayTeamName = `${baseAwayName} (${awayRec?.wins ?? 0}-${awayRec?.losses ?? 0})`;
     
     const scoreboardData = createScoreboardData(game, homeTeamName, awayTeamName);
+
+    // Disable clicks for bracket games without assigned teams yet
+    const hasTeamsAssigned = !!(game.home_team?.id && game.away_team?.id) && homeTeamName !== 'TBD' && awayTeamName !== 'TBD';
+    const canClick = !isBracketGame || hasTeamsAssigned;
     
     // Round colors
     const roundColors = {
@@ -451,7 +480,7 @@ export default function GameResultsList({
         return (
           <div
             key={game.id}
-            onClick={() => handleGameClick(game.id)}
+            onClick={() => { if (canClick) handleGameClick(game.id); }}
             style={{
               background: 'white',
               borderRadius: '12px',
@@ -460,11 +489,14 @@ export default function GameResultsList({
               overflow: 'hidden',
               transition: 'all 0.2s ease',
               fontFamily: 'system-ui, -apple-system, sans-serif',
-              cursor: 'pointer'
+              cursor: canClick ? 'pointer' : 'default',
+              opacity: canClick ? 1 : 0.7
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
+              if (canClick) {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';

@@ -150,7 +150,7 @@ export default function PlayersTable({
               style={{
                 width: '48px',
                 height: '48px',
-                borderRadius: '12px',
+                borderRadius: '50%',
                 objectFit: 'cover',
                 border: '2px solid #e4e2e8',
                 transition: 'all 0.2s ease'
@@ -167,7 +167,7 @@ export default function PlayersTable({
             display: player.avatar_url ? 'none' : 'flex',
             width: '48px',
             height: '48px',
-            borderRadius: '12px',
+            borderRadius: '50%',
             background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
             alignItems: 'center',
             justifyContent: 'center',
@@ -255,25 +255,9 @@ export default function PlayersTable({
             Team
           </div>
           {playerTeamAssignments?.get(player.id) ? (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              color: 'white',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
+            <span style={{ color: '#1c1b20' }}>
               {playerTeamAssignments.get(player.id)}
-            </div>
+            </span>
           ) : (
             <span style={{ color: '#8b8a94', fontSize: '12px', fontStyle: 'italic' }}>
               Unassigned
@@ -755,7 +739,7 @@ export default function PlayersTable({
                                   style={{
                                     width: '48px',
                                     height: '48px',
-                                    borderRadius: '12px',
+                                    borderRadius: '50%',
                                     objectFit: 'cover',
                                     border: '2px solid #e4e2e8',
                                     transition: 'all 0.2s ease'
@@ -772,7 +756,7 @@ export default function PlayersTable({
                                 display: player.avatar_url ? 'none' : 'flex',
                                 width: '48px',
                                 height: '48px',
-                                borderRadius: '12px',
+                                borderRadius: '50%',
                                 background: 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -830,25 +814,9 @@ export default function PlayersTable({
                             color: '#1c1b20'
                           }}>
                             {playerTeamAssignments?.get(player.id) ? (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '4px 12px',
-                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                color: 'white',
-                                borderRadius: '6px',
-                                fontSize: '12px',
-                                fontWeight: '600'
-                              }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                  <circle cx="9" cy="7" r="4"/>
-                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
+                              <span style={{ color: '#1c1b20' }}>
                                 {playerTeamAssignments.get(player.id)}
-                              </div>
+                              </span>
                             ) : (
                               <span style={{ color: '#8b8a94', fontSize: '12px', fontStyle: 'italic' }}>
                                 Unassigned

@@ -199,7 +199,7 @@ function EventCard({
       case 'flip_cup':
         return formatFlipCupTitle(event, allEvents);
       case 'at_bat':
-        return `At-Bat: ${formatAtBatResult((event.payload as any).result)}`;
+        return formatAtBatTitle(event, allEvents);
       case 'game_start':
         return 'Game Started';
       case 'game_end':
@@ -230,6 +230,16 @@ function EventCard({
     return hitLabel;
   };
 
+  const formatAtBatTitle = (abEvent: GameEvent, events: GameEvent[]) => {
+    const result = (abEvent.payload as any)?.result as AtBatResult;
+    const label = formatAtBatResult(result);
+    const runs = useMemo(() => computeRunsForAtBat(events, abEvent), [events, abEvent.id]);
+    if (runs && runs > 0) {
+      return `${label}: ${runs} run${runs === 1 ? '' : 's'} scored`;
+    }
+    return label;
+  };
+
   const deriveHitFromPreviousPitch = (events: GameEvent[], flipEvent: GameEvent) => {
     // Look back for the latest pitch event with a cup hit prior to this flip cup's sequence_number
     const priorCupPitch = [...events]
@@ -251,63 +261,144 @@ function EventCard({
 
   const computeRunsForFlipCup = (events: GameEvent[], flipEvent: GameEvent): number | null => {
     try {
-      // Find game_start event
-      const gameStart = events.find(e => e.type === 'game_start');
-      if (!gameStart) return null;
-      const gameId = flipEvent.game_id;
+      const payloadAny = flipEvent.payload as any;
+      if (payloadAny?.result !== 'offense wins') return 0;
 
-      // Build a minimal pre-start snapshot
-      const preStart: any = {
-        game_id: gameId,
-        current_inning: 1,
-        is_top_of_inning: true,
-        outs: 0,
-        balls: 0,
-        strikes: 0,
-        score_home: 0,
-        score_away: 0,
-        home_team_id: '',
-        away_team_id: '',
-        batter_id: null,
-        catcher_id: null,
-        base_runners: { first: null, second: null, third: null },
-        home_lineup: [],
-        away_lineup: [],
-        home_lineup_position: 0,
-        away_lineup_position: 0,
-        last_event_id: null,
-        umpire_id: null,
-        status: 'not_started',
-        last_updated: new Date().toISOString(),
-        scoring_method: 'live',
-        is_quick_result: false
-      };
+      // Determine half-inning boundary
+      const boundary = [...events]
+        .filter(e => e.type === 'inning_end' && e.sequence_number < flipEvent.sequence_number)
+        .sort((a, b) => b.sequence_number - a.sequence_number)[0];
 
-      // Apply game_start
-      let before = BaseballGameStateMachine.transition(preStart, gameStart as any, events).snapshot;
+      // Start from empty bases
+      let runners: { first: string | null; second: string | null; third: string | null } = { first: null, second: null, third: null };
 
-      // Replay events strictly before the flip cup (skip undo/edit and duplicate game_start)
-      const priorEvents = events
-        .filter(e => e.sequence_number < flipEvent.sequence_number)
-        .filter(e => e.type !== 'undo' && e.type !== 'edit' && e.type !== 'game_start')
+      // Replay events since boundary up to the flip event to determine current bases
+      const sinceBoundary = events
+        .filter(e => e.sequence_number < flipEvent.sequence_number && (!boundary || e.sequence_number > boundary.sequence_number))
+        .filter(e => e.type !== 'undo' && e.type !== 'edit')
         .sort((a, b) => a.sequence_number - b.sequence_number);
 
-      for (const e of priorEvents) {
-        before = BaseballGameStateMachine.transition(before, e as any, events).snapshot;
+      for (const e of sinceBoundary) {
+        if (e.type === 'at_bat') {
+          const res = (e.payload as any).result as AtBatResult;
+          if (res === 'walk')      runners = advanceRunnersSimple(runners, 1, true).runners;
+          else if (res === 'single') runners = advanceRunnersSimple(runners, 1).runners;
+          else if (res === 'double') runners = advanceRunnersSimple(runners, 2).runners;
+          else if (res === 'triple') runners = advanceRunnersSimple(runners, 3).runners;
+          else if (res === 'homerun') runners = advanceRunnersSimple(runners, 4).runners;
+        } else if (e.type === 'flip_cup') {
+          const p = e.payload as any;
+          if (p?.result === 'offense wins') {
+            const ht = (p.hit_type as ('single'|'double'|'triple'|'homerun'|undefined));
+            const bases = ht === 'single' ? 1 : ht === 'double' ? 2 : ht === 'triple' ? 3 : ht === 'homerun' ? 4 : 1;
+            runners = advanceRunnersSimple(runners, bases).runners;
+          }
+        }
       }
 
-      const battingAway = before.is_top_of_inning;
-      const beforeHome = before.score_home;
-      const beforeAway = before.score_away;
-
-      // Apply the flip cup event
-      const after = BaseballGameStateMachine.transition(before, flipEvent as any, events).snapshot;
-      const delta = battingAway ? after.score_away - beforeAway : after.score_home - beforeHome;
-      return Math.max(0, delta);
+      const ht = (payloadAny.hit_type as ('single'|'double'|'triple'|'homerun'|undefined));
+      const bases = ht === 'single' ? 1 : ht === 'double' ? 2 : ht === 'triple' ? 3 : ht === 'homerun' ? 4 : 1;
+      const { runsScored } = advanceRunnersSimple(runners, bases);
+      return runsScored;
     } catch (_) {
       return null;
     }
   };
+
+  const computeRunsForAtBat = (events: GameEvent[], abEvent: GameEvent): number | null => {
+    try {
+      // Determine half-inning boundary: latest inning_end prior to this event
+      const boundary = [...events]
+        .filter(e => e.type === 'inning_end' && e.sequence_number < abEvent.sequence_number)
+        .sort((a, b) => b.sequence_number - a.sequence_number)[0];
+
+      // Build state starting with empty bases for a fresh half-inning
+      let runners: { first: string | null; second: string | null; third: string | null } = { first: null, second: null, third: null };
+
+      // Replay events since boundary to set bases before this at-bat
+      const sinceBoundary = events
+        .filter(e => e.sequence_number < abEvent.sequence_number && (!boundary || e.sequence_number > boundary.sequence_number))
+        .filter(e => e.type !== 'undo' && e.type !== 'edit')
+        .sort((a, b) => a.sequence_number - b.sequence_number);
+
+      for (const e of sinceBoundary) {
+        if (e.type === 'at_bat') {
+          const res = (e.payload as any).result as AtBatResult;
+          if (res === 'walk') {
+            runners = advanceRunnersSimple(runners, 1, true).runners;
+          } else if (res === 'single') {
+            runners = advanceRunnersSimple(runners, 1).runners;
+          } else if (res === 'double') {
+            runners = advanceRunnersSimple(runners, 2).runners;
+          } else if (res === 'triple') {
+            runners = advanceRunnersSimple(runners, 3).runners;
+          } else if (res === 'homerun') {
+            runners = advanceRunnersSimple(runners, 4).runners;
+          }
+        } else if (e.type === 'flip_cup') {
+          // Treat offense wins as a hit; use payload.hit_type if available
+          const payloadAny = e.payload as any;
+          if (payloadAny?.result === 'offense wins') {
+            const ht = (payloadAny.hit_type as ('single'|'double'|'triple'|'homerun'|undefined));
+            const bases = ht === 'single' ? 1 : ht === 'double' ? 2 : ht === 'triple' ? 3 : ht === 'homerun' ? 4 : 1;
+            runners = advanceRunnersSimple(runners, bases).runners;
+          } else {
+            // defense wins increments outs; not needed for base-only simulation here
+          }
+        }
+      }
+
+      // Apply the target at-bat to compute runs scored now
+      const res = (abEvent.payload as any).result as AtBatResult;
+      const bases = res === 'single' ? 1 : res === 'double' ? 2 : res === 'triple' ? 3 : res === 'homerun' ? 4 : res === 'walk' ? 1 : 0;
+      const forced = res === 'walk';
+      const { runsScored } = advanceRunnersSimple(runners, bases, forced);
+      return runsScored;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  function advanceRunnersSimple(
+    runners: { first: string | null; second: string | null; third: string | null },
+    bases: number,
+    forceAdvance: boolean = false
+  ): { runners: { first: string | null; second: string | null; third: string | null }, runsScored: number } {
+    let runs = 0;
+    const out: { first: string | null; second: string | null; third: string | null } = { first: null, second: null, third: null };
+
+    // Third
+    if (runners.third) {
+      const dest = 3 + bases;
+      if (dest >= 4) runs++; else out.third = runners.third;
+    }
+    // Second
+    if (runners.second) {
+      const dest = 2 + bases;
+      if (dest >= 4) runs++; else if (dest === 3) out.third = runners.second; else if (dest === 2) out.second = runners.second; else if (dest === 1) out.first = runners.second;
+    }
+    // First
+    if (runners.first) {
+      const dest = 1 + bases;
+      if (dest >= 4) runs++; else if (dest === 3 && !out.third) out.third = runners.first; else if (dest === 2 && !out.second) out.second = runners.first; else if (dest === 1 && !out.first) out.first = runners.first; else if (forceAdvance) {
+        if (!out.first) out.first = runners.first; else if (!out.second) out.second = runners.first; else if (!out.third) out.third = runners.first;
+      }
+    }
+
+    // Batter placement
+    if (bases < 4) {
+      if (bases === 3 && !out.third) out.third = 'b';
+      else if (bases === 2 && !out.second) out.second = 'b';
+      else if (bases === 1 && !out.first) out.first = 'b';
+      else if (forceAdvance) {
+        if (!out.first) out.first = 'b'; else if (!out.second) out.second = 'b'; else if (!out.third) out.third = 'b';
+      }
+    } else {
+      runs++; // batter scores on HR
+    }
+
+    return { runners: out, runsScored: runs };
+  }
 
   const formatPitchResult = (result: PitchResult) => {
     const labels: Record<PitchResult, string> = {

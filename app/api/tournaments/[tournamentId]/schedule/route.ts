@@ -108,7 +108,7 @@ export async function POST(
       actual_end: null,
       home_score: 0,
       away_score: 0,
-      is_round_robin: true,
+      game_type: 'round_robin',
       round_robin_round: match.round
     }));
 
@@ -205,7 +205,7 @@ export async function GET(
         )
       `)
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', true)
+      .eq('game_type', 'round_robin')
       .order('round_robin_round', { ascending: true })
       .order('scheduled_start', { ascending: true });
 

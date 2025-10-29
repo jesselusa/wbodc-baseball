@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
         // Fetch minimal game info to decide which updaters to run
         const { data: gameRow } = await supabaseAdmin
           .from('games')
-          .select('id, tournament_id, is_round_robin')
+          .select('id, tournament_id, game_type')
           .eq('id', result.snapshot.game_id)
           .single();
 
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
           // Run updates in parallel; each is internally safe/no-op when not applicable
           await Promise.all([
             // Standings: only for round robin
-            gameRow.is_round_robin
+            (gameRow.game_type === 'round_robin' || gameRow.game_type === 'pool_play')
               ? updateStandingsOnGameComplete(gameRow.tournament_id, gameRow.id)
               : Promise.resolve(null),
             // Bracket: try to advance winner if this game maps to a bracket match

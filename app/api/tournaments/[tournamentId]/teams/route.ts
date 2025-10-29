@@ -86,3 +86,89 @@ export async function GET(
     );
   }
 }
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ tournamentId: string }> }
+) {
+  try {
+    const { tournamentId } = await params;
+    const { teams } = await request.json();
+
+    if (!tournamentId) {
+      return NextResponse.json(
+        { error: 'Tournament ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Clear existing assignments for this tournament
+    const { error: clearErr } = await supabaseAdmin
+      .from('tournament_player_assignments')
+      .delete()
+      .eq('tournament_id', tournamentId);
+
+    if (clearErr) {
+      return NextResponse.json({ error: clearErr.message }, { status: 500 });
+    }
+
+    // If no teams provided, we've effectively cleared assignments
+    if (!teams || teams.length === 0) {
+      return NextResponse.json({ success: true, message: 'Teams cleared' });
+    }
+
+    const playerAssignments: any[] = [];
+
+    // Ensure team rows exist and build assignments
+    for (const team of teams) {
+      // Ensure team exists by name
+      let teamId: string | null = null;
+      const { data: existingTeam } = await supabaseAdmin
+        .from('teams')
+        .select('id')
+        .eq('name', team.name)
+        .single();
+
+      if (existingTeam) {
+        teamId = existingTeam.id;
+      } else {
+        const { data: newTeam, error: teamErr } = await supabaseAdmin
+          .from('teams')
+          .insert({ name: team.name, color: team.color || null })
+          .select('id')
+          .single();
+        if (teamErr || !newTeam) {
+          return NextResponse.json({ error: teamErr?.message || 'Failed to create team' }, { status: 500 });
+        }
+        teamId = newTeam.id;
+      }
+
+      // Build assignments
+      for (const player of team.players || []) {
+        playerAssignments.push({
+          tournament_id: tournamentId,
+          player_id: player.id,
+          team_id: teamId
+        });
+      }
+    }
+
+    if (playerAssignments.length > 0) {
+      const { error: assignErr } = await supabaseAdmin
+        .from('tournament_player_assignments')
+        .insert(playerAssignments);
+      if (assignErr) {
+        return NextResponse.json({ error: assignErr.message }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ success: true, message: 'Teams saved' });
+
+  } catch (error) {
+    console.error('Error in POST /api/tournaments/[tournamentId]/teams:', error);
+    return NextResponse.json(
+      { error: 'Failed to save teams' },
+      { status: 500 }
+    );
+  }
+}

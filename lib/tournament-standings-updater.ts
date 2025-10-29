@@ -57,7 +57,7 @@ export async function updateStandingsOnGameComplete(
     }
 
     // Only process completed round robin games
-    if (game.status !== 'completed' || !game.is_round_robin) {
+    if (game.status !== 'completed' || (game as any).game_type !== 'round_robin') {
       return {
         success: false,
         roundRobinComplete: false,

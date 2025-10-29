@@ -274,8 +274,7 @@ async function createBracketGame(
         actual_start: null,
         actual_end: null,
         home_score: 0,
-        away_score: 0,
-        is_round_robin: false
+        away_score: 0
       })
       .select()
       .single();
@@ -319,7 +318,7 @@ export async function processPendingBracketUpdates(tournamentId: string): Promis
       .select('id')
       .eq('tournament_id', tournamentId)
       .eq('status', 'completed')
-      .eq('is_round_robin', false);
+      .neq('game_type', 'round_robin');
 
     if (gamesError) {
       console.error('[BracketUpdater] Failed to fetch completed games:', gamesError);

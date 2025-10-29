@@ -1115,7 +1115,7 @@ export class TournamentRealtimeManager {
         .from('games')
         .select('*')
         .eq('tournament_id', this.tournamentId)
-        .eq('is_round_robin', false)
+        .neq('game_type', 'round_robin')
         .order('bracket_game_number', { ascending: true });
 
       if (gamesError) {
@@ -1190,7 +1190,7 @@ export class TournamentRealtimeManager {
           home_score: game.home_score,
           away_score: game.away_score,
           winner_team_id: game.home_score > game.away_score ? game.home_team_id : game.away_team_id,
-          is_round_robin: game.is_round_robin,
+          is_round_robin: (game as any).game_type === 'round_robin',
           bracket_game_number: game.bracket_game_number
         },
         timestamp: new Date().toISOString()

@@ -300,7 +300,7 @@ export default function AdminPage() {
 
       // Save all data
       const tournamentConfig: TournamentConfig = {
-        tournament_id: 'default-tournament',
+        tournament_id: currentTournamentId,
         pool_play_games: tournamentSettings.pool_play_games,
         pool_play_innings: tournamentSettings.pool_play_innings,
         bracket_type: tournamentSettings.bracket_type,

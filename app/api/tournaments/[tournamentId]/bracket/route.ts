@@ -73,7 +73,7 @@ export async function POST(
         status
       `)
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', true);
+      .eq('game_type', 'round_robin');
 
     if (gamesError) {
       return NextResponse.json(
@@ -181,8 +181,7 @@ export async function POST(
         actual_start: null,
         actual_end: null,
         home_score: 0,
-        away_score: 0,
-        is_round_robin: false
+        away_score: 0
       }));
 
     let createdGames = [];
@@ -309,7 +308,7 @@ export async function GET(
         )
       `)
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', false)
+      .neq('game_type', 'round_robin')
       .order('bracket_game_number', { ascending: true });
 
     if (gamesError) {

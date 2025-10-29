@@ -100,8 +100,8 @@ const SortablePlayer: React.FC<{
         <div style={{
           width: '40px',
           height: '40px',
-          borderRadius: '8px',
-          background: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+          borderRadius: '50%',
+          backgroundImage: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           display: 'flex',

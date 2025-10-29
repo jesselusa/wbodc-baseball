@@ -73,6 +73,26 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
     return hasValidHomeTeam && hasValidAwayTeam;
   });
 
+  // Compute team records (wins-losses) from completed games
+  const recordsByTeamId = React.useMemo(() => {
+    const records = new Map<string, { wins: number; losses: number }>();
+    gamesWithLiveData.forEach((g: any) => {
+      if (g.status !== 'completed') return;
+      const home = records.get(g.home_team.id) || { wins: 0, losses: 0 };
+      const away = records.get(g.away_team.id) || { wins: 0, losses: 0 };
+      if ((g.home_score ?? 0) > (g.away_score ?? 0)) {
+        home.wins += 1;
+        away.losses += 1;
+      } else if ((g.away_score ?? 0) > (g.home_score ?? 0)) {
+        away.wins += 1;
+        home.losses += 1;
+      }
+      records.set(g.home_team.id, home);
+      records.set(g.away_team.id, away);
+    });
+    return records;
+  }, [gamesWithLiveData]);
+
   // Split games into live, completed, and upcoming
   // Filter for live games (in progress)
   const liveGames = gamesWithLiveData.filter(game => 
@@ -315,11 +335,11 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
             border: '1px solid rgba(34, 197, 94, 0.2)',
             overflow: 'hidden',
           }}>
-            {liveGames.map((game, index) => (
+                {liveGames.map((game, index) => (
               <div key={game.id} style={{
                 borderBottom: index < liveGames.length - 1 ? '1px solid rgba(34, 197, 94, 0.1)' : 'none',
               }}>
-                <LiveGameCard game={game} isLive={true} />
+                <LiveGameCard game={game} isLive={true} teamRecords={recordsByTeamId} />
               </div>
             ))}
           </div>
@@ -385,7 +405,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
               <div key={game.id} style={{
                 borderBottom: index < completedGames.length - 1 ? '1px solid #e9e8eb' : 'none',
               }}>
-                <LiveGameCard game={game} isLive={false} />
+                <LiveGameCard game={game} isLive={false} teamRecords={recordsByTeamId} />
               </div>
             ))}
           </div>
@@ -451,7 +471,7 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
               <div key={game.id} style={{
                 borderBottom: index < upcomingGames.length - 1 ? '1px solid #e9e8eb' : 'none',
               }}>
-                <LiveGameCard game={game} isLive={false} />
+                <LiveGameCard game={game} isLive={false} teamRecords={recordsByTeamId} />
               </div>
             ))}
           </div>
@@ -522,9 +542,10 @@ export default function LiveGameList({ limit = 10, showViewAllButton = true }: L
 interface LiveGameCardProps {
   game: GameDisplayData;
   isLive: boolean;
+  teamRecords?: Map<string, { wins: number; losses: number }>;
 }
 
-function LiveGameCard({ game, isLive }: LiveGameCardProps) {
+function LiveGameCard({ game, isLive, teamRecords }: LiveGameCardProps) {
   const handleGameClick = () => {
     window.location.href = `/game/${game.id}`;
   };
@@ -567,8 +588,11 @@ function LiveGameCard({ game, isLive }: LiveGameCardProps) {
                textOverflow: 'ellipsis',
                whiteSpace: 'nowrap',
                maxWidth: '65%',
-             }}>
-               {game.away_team.name}
+            }}>
+              {(() => {
+                const rec = teamRecords?.get(game.away_team.id) || { wins: 0, losses: 0 };
+                return `${game.away_team.name} (${rec.wins}-${rec.losses})`;
+              })()}
              </span>
              <span style={{
                fontSize: '16px',
@@ -593,8 +617,11 @@ function LiveGameCard({ game, isLive }: LiveGameCardProps) {
                textOverflow: 'ellipsis',
                whiteSpace: 'nowrap',
                maxWidth: '65%',
-             }}>
-               {game.home_team.name}
+            }}>
+              {(() => {
+                const rec = teamRecords?.get(game.home_team.id) || { wins: 0, losses: 0 };
+                return `${game.home_team.name} (${rec.wins}-${rec.losses})`;
+              })()}
              </span>
              <span style={{
                fontSize: '16px',

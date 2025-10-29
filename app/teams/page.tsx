@@ -74,9 +74,13 @@ export default function TeamsPage() {
         return;
       }
 
-      // Fetch teams using the new API route
-      const response = await fetch(`/api/tournaments/${currentTournamentResponse.data.id}/teams`);
-      const teamsData = await response.json();
+      // Fetch teams and standings
+      const [teamsRes, standingsRes] = await Promise.all([
+        fetch(`/api/tournaments/${currentTournamentResponse.data.id}/teams`),
+        fetch(`/api/tournaments/${currentTournamentResponse.data.id}/standings`)
+      ]);
+      const teamsData = await teamsRes.json();
+      const standingsData = await standingsRes.json();
       
       if (!teamsData.success || !teamsData.data) {
         console.error('Failed to load tournament teams:', teamsData.error);
@@ -84,28 +88,20 @@ export default function TeamsPage() {
       }
 
       const teams = teamsData.data;
-      
-      // Mock data for team standings - in real implementation, this would come from game results
-      const teamsWithData: TeamWithStandings[] = teams.map((team, index) => {
-        // Generate deterministic wins/losses based on team index to avoid hydration mismatches
-        const wins = (index + 1) % 5; // 1, 2, 3, 4, 0, 1, 2, ... 
-        const losses = index % 3; // 0, 1, 2, 0, 1, 2, ...
-        
-        // Ensure at least 1 game has been played
-        const adjustedWins = wins;
-        const adjustedLosses = wins + losses === 0 ? 1 : losses;
-        
-        const gamesPlayed = adjustedWins + adjustedLosses;
-        
-        // Calculate win percentage: wins divided by total games played
-        const winPercentage = adjustedWins / gamesPlayed;
-        
-        console.log(`Team ${team.team_name}: ${adjustedWins}-${adjustedLosses} (${adjustedWins}/${gamesPlayed} = ${winPercentage.toFixed(3)} = ${(winPercentage * 100).toFixed(1)}%)`);
-        
+      const standings = (standingsData?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number; gamesPlayed?: number }>;
+      const standingsMap = new Map(standings.map(s => [s.teamId, s]));
+
+      // Merge teams with real standings (fallback to zeros when missing)
+      const teamsWithData: TeamWithStandings[] = teams.map((team) => {
+        const s = standingsMap.get(team.id);
+        const wins = s?.wins || 0;
+        const losses = s?.losses || 0;
+        const gamesPlayed = s?.gamesPlayed != null ? s.gamesPlayed : wins + losses;
+        const winPercentage = gamesPlayed > 0 ? wins / gamesPlayed : 0;
         return {
           ...team,
-          wins: adjustedWins,
-          losses: adjustedLosses,
+          wins,
+          losses,
           gamesPlayed,
           winPercentage
         };
@@ -665,8 +661,8 @@ export default function TeamsPage() {
                       <div style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '4px',
-                        background: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+                        borderRadius: '50%',
+                        backgroundImage: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         display: 'flex',

@@ -26,6 +26,7 @@ export default function GamePage({ params }: GamePageProps) {
   const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [inningScores, setInningScores] = useState<any[]>([]);
+  const [teamRecords, setTeamRecords] = useState<Map<string, { wins: number; losses: number }>>(new Map());
 
   const router = useRouter();
 
@@ -134,6 +135,24 @@ export default function GamePage({ params }: GamePageProps) {
     }
   };
 
+  // Fetch team records (standings) for this game's tournament
+  const fetchTeamRecords = async () => {
+    try {
+      const tid = initialGame?.tournament?.id;
+      if (!tid) return;
+      const res = await fetch(`/api/tournaments/${tid}/standings`);
+      const data = await res.json();
+      const standings = (data?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number }>;
+      const map = new Map<string, { wins: number; losses: number }>();
+      standings.forEach((s) => {
+        map.set(s.teamId, { wins: s.wins || 0, losses: s.losses || 0 });
+      });
+      setTeamRecords(map);
+    } catch (err) {
+      console.error('Error fetching team records:', err);
+    }
+  };
+
   // Extract gameId from params Promise
   useEffect(() => {
     const resolveParams = async () => {
@@ -184,6 +203,7 @@ export default function GamePage({ params }: GamePageProps) {
     if (initialGame) {
       fetchPlayersForGame();
       fetchInningScores();
+      fetchTeamRecords();
     }
   }, [initialGame]);
 
@@ -244,6 +264,11 @@ export default function GamePage({ params }: GamePageProps) {
   };
 
   const currentState = getCurrentGameState();
+
+  const formatNameWithRecord = (teamId: string, name: string) => {
+    const rec = teamRecords.get(teamId) || { wins: 0, losses: 0 };
+    return `${name} (${rec.wins}-${rec.losses})`;
+  };
 
   if (loading) {
     return (
@@ -475,7 +500,7 @@ export default function GamePage({ params }: GamePageProps) {
                         color: (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) ? '#1c1b20' : '#374151'
                       }}
                     >
-                      {initialGame.away_team.name}
+                      {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)}
                       {(currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) && (
                         <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                       )}
@@ -505,7 +530,7 @@ export default function GamePage({ params }: GamePageProps) {
                         color: (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) ? '#1c1b20' : '#374151'
                       }}
                     >
-                      {initialGame.home_team.name}
+                      {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)}
                       {(currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) && (
                         <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                       )}
@@ -611,15 +636,16 @@ export default function GamePage({ params }: GamePageProps) {
                 <ScoreBoard 
                   data={{
                     home_team: {
-                      name: initialGame.home_team.name,
+                      name: formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name),
                       total_runs: currentState?.score_home ?? initialGame.home_score
                     },
                     away_team: {
-                      name: initialGame.away_team.name,
+                      name: formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name),
                       total_runs: currentState?.score_away ?? initialGame.away_score
                     },
                     innings: inningScores,
-                    total_innings: initialGame.total_innings || initialGame.innings || 5
+                    // Use computed innings count derived from tournament settings via calculateInningScores
+                    total_innings: Math.max(3, inningScores?.length || 5)
                   }}
                 />
               </div>
@@ -658,7 +684,7 @@ export default function GamePage({ params }: GamePageProps) {
                   color: '#1f2937',
                   margin: '0'
                 }}>
-                  {initialGame?.away_team.name} Roster
+                  {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)} Roster
                 </h3>
               </div>
               <div style={{ padding: '20px' }}>
@@ -677,18 +703,47 @@ export default function GamePage({ params }: GamePageProps) {
                         borderBottom: '1px solid #f3f4f6'
                       }}>
                         <div style={{
+                          position: 'relative',
                           width: '32px',
                           height: '32px',
                           borderRadius: '50%',
-                          background: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: '#374151'
+                          overflow: 'hidden',
+                          flexShrink: 0
                         }}>
-                          {player.name.charAt(0)}
+                          {player.avatar_url ? (
+                            <img
+                              src={player.avatar_url}
+                              alt={player.name}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '1px solid #e4e2e8'
+                              }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div style={{
+                            display: player.avatar_url ? 'none' : 'flex',
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: '#f3f4f6',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#374151',
+                            border: '1px solid #e4e2e8'
+                          }}>
+                            {player.name.charAt(0)}
+                          </div>
                         </div>
                         <div>
                           <div style={{
@@ -737,7 +792,7 @@ export default function GamePage({ params }: GamePageProps) {
                   color: '#1f2937',
                   margin: '0'
                 }}>
-                  {initialGame?.home_team.name} Roster
+                  {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)} Roster
                 </h3>
               </div>
               <div style={{ padding: '20px' }}>
@@ -756,18 +811,47 @@ export default function GamePage({ params }: GamePageProps) {
                         borderBottom: '1px solid #f3f4f6'
                       }}>
                         <div style={{
+                          position: 'relative',
                           width: '32px',
                           height: '32px',
                           borderRadius: '50%',
-                          background: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: '#374151'
+                          overflow: 'hidden',
+                          flexShrink: 0
                         }}>
-                          {player.name.charAt(0)}
+                          {player.avatar_url ? (
+                            <img
+                              src={player.avatar_url}
+                              alt={player.name}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '1px solid #e4e2e8'
+                              }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div style={{
+                            display: player.avatar_url ? 'none' : 'flex',
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: '#f3f4f6',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#374151',
+                            border: '1px solid #e4e2e8'
+                          }}>
+                            {player.name.charAt(0)}
+                          </div>
                         </div>
                         <div>
                           <div style={{

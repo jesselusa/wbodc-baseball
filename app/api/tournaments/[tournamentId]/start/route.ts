@@ -94,6 +94,14 @@ export async function POST(
       }
     }
 
+    // Fetch tournament settings for innings configuration
+    const { data: tConfig } = await supabaseAdmin
+      .from('tournaments')
+      .select('pool_play_innings')
+      .eq('id', tournamentId)
+      .single();
+    const poolInnings = tConfig?.pool_play_innings || 3;
+
     // Generate pool play games (round robin)
     if (teamRecords.length >= 2) {
       const poolPlayGames = [];
@@ -107,6 +115,7 @@ export async function POST(
             away_team_id: teamRecords[j].id,
             status: 'scheduled',
             game_type: 'round_robin',
+            total_innings: poolInnings,
             home_score: 0,
             away_score: 0
           });

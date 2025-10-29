@@ -70,7 +70,7 @@ export async function trackWinnerAdvancement(
     }
 
     // Only process completed bracket games
-    if (game.status !== 'completed' || game.is_round_robin) {
+    if (game.status !== 'completed' || (game as any).game_type === 'round_robin') {
       return null;
     }
 

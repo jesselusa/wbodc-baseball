@@ -58,7 +58,7 @@ export async function GET(
         actual_end
       `)
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', true)
+      .eq('game_type', 'round_robin')
       .order('actual_start', { ascending: true });
 
     if (gamesError) {
@@ -164,7 +164,7 @@ export async function POST(
         actual_start
       `)
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', true)
+      .eq('game_type', 'round_robin')
       .eq('status', 'completed')
       .order('actual_start', { ascending: false })
       .limit(10); // Get last 10 completed games

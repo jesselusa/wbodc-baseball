@@ -133,7 +133,7 @@ export async function createBracketTemplate(
       .from('games')
       .select('id')
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', false);
+      .neq('game_type', 'round_robin');
 
     if (existingGames && existingGames.length > 0) {
       return { success: false, error: 'Bracket games already exist' };
@@ -242,7 +242,7 @@ export async function seedBracketGames(
       .from('games')
       .select('*')
       .eq('tournament_id', tournamentId)
-      .eq('is_round_robin', false)
+      .neq('game_type', 'round_robin')
       .is('home_team_id', null)
       .is('away_team_id', null);
 

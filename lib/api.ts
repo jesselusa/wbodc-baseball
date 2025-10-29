@@ -952,13 +952,50 @@ export async function calculateInningScores(gameId: string): Promise<InningScore
       .eq('game_id', gameId)
       .single();
 
-    const { data: gameData } = await supabase
-      .from('games')
-      .select('total_innings, game_type, tournament_id')
+  const { data: gameData } = await supabase
+    .from('games')
+    .select('total_innings, game_type, tournament_id')
       .eq('id', gameId)
       .single();
 
-    if (!currentSnapshot) return [];
+    if (!currentSnapshot) {
+      // No snapshot yet; derive inning placeholders from game/tournament settings
+      let totalInnings = gameData?.total_innings;
+      if (!totalInnings && gameData?.tournament_id) {
+        const { data: tournamentData } = await supabase
+          .from('tournaments')
+          .select('pool_play_innings, bracket_innings, final_innings')
+          .eq('id', gameData.tournament_id)
+          .single();
+        if (tournamentData) {
+          switch (gameData.game_type) {
+            case 'pool_play':
+            case 'round_robin':
+              totalInnings = tournamentData.pool_play_innings || 3;
+              break;
+            case 'bracket':
+            case 'elimination':
+              totalInnings = tournamentData.bracket_innings || 5;
+              break;
+            case 'championship':
+            case 'final':
+              totalInnings = tournamentData.final_innings || 7;
+              break;
+            default:
+              totalInnings = tournamentData.pool_play_innings || 3;
+          }
+        } else {
+          totalInnings = 3;
+        }
+      }
+      if (!totalInnings) totalInnings = 3;
+
+      const inningScores: InningScore[] = [];
+      for (let i = 1; i <= totalInnings; i++) {
+        inningScores.push({ inning: i, home_runs: -1, away_runs: -1 });
+      }
+      return inningScores;
+    }
 
     let totalInnings = gameData?.total_innings;
     
@@ -971,11 +1008,11 @@ export async function calculateInningScores(gameId: string): Promise<InningScore
         .single();
       
       if (tournamentData) {
-        // Use appropriate inning setting based on game type
+        // Determine innings strictly from game_type and tournament settings
         switch (gameData.game_type) {
           case 'pool_play':
           case 'round_robin':
-            totalInnings = tournamentData.pool_play_innings || 5;
+            totalInnings = tournamentData.pool_play_innings || 3;
             break;
           case 'bracket':
           case 'elimination':
@@ -986,10 +1023,10 @@ export async function calculateInningScores(gameId: string): Promise<InningScore
             totalInnings = tournamentData.final_innings || 7;
             break;
           default:
-            totalInnings = tournamentData.pool_play_innings || 5;
+            totalInnings = tournamentData.pool_play_innings || 3;
         }
       } else {
-        totalInnings = 5; // Fallback if no tournament data
+        totalInnings = 3; // Conservative fallback if no tournament data
       }
     } else if (!totalInnings) {
       totalInnings = 5; // Final fallback

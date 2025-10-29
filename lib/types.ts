@@ -549,7 +549,7 @@ export interface TournamentGameComplete {
   home_score: number;
   away_score: number;
   winner_team_id: string;
-  is_round_robin: boolean;
+  is_round_robin?: boolean;
   bracket_game_number?: number;
 }
 
