@@ -327,7 +327,8 @@ export default function GameResultsList({
 
   const formatGameTime = (startTime?: string) => {
     if (!startTime) return 'Time TBD';
-    return new Date(startTime).toLocaleDateString('en-US', {
+    const date = new Date(startTime);
+    return date.toLocaleString(undefined, {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',

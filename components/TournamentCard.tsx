@@ -182,19 +182,17 @@ export default function TournamentCard({ tournament, onTournamentClick, isHero =
             >
               {tournament.start_date ? (
                 <>
-                  {new Date(tournament.start_date + 'T00:00:00').toLocaleDateString('en-US', {
+                  {new Date(tournament.start_date + 'T00:00:00').toLocaleString(undefined, {
                     month: 'short',
                     day: 'numeric',
-                    year: '2-digit',
-                    timeZone: 'UTC'
+                    year: '2-digit'
                   })}
                   {tournament.end_date && tournament.end_date !== tournament.start_date && (
                     <>
                       {' - '}
-                      {new Date(tournament.end_date + 'T00:00:00').toLocaleDateString('en-US', {
+                      {new Date(tournament.end_date + 'T00:00:00').toLocaleString(undefined, {
                         month: 'short',
-                        day: 'numeric',
-                        timeZone: 'UTC'
+                        day: 'numeric'
                       })}
                     </>
                   )}

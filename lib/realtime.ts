@@ -378,19 +378,15 @@ export class GameRealtimeManager {
         .select('*')
         .eq('game_id', this.gameId);
 
-      let result;
-      if (game.status === 'in_progress') {
-        // Active games MUST have snapshots - error if missing
-        result = await query.single();
-      } else {
-        // Scheduled/other games MAY have snapshots - null if missing
-        result = await query.maybeSingle();
-      }
+      // Be tolerant: in some flows an in_progress game may temporarily lack
+      // a snapshot (e.g., quick-result from setup before first event).
+      // Use maybeSingle() for all statuses and simply no-op if missing.
+      const result = await query.maybeSingle();
 
       const { data: snapshot, error } = result;
 
       if (error) {
-        console.error('Error fetching latest snapshot:', error);
+        console.warn('Error fetching latest snapshot:', error);
         return;
       }
 

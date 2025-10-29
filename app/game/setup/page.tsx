@@ -110,8 +110,8 @@ export default function GameSetupPage() {
           setError(endResponse.error || 'Failed to submit quick result');
           return;
         }
-        // Navigate to the results page or games list
-        router.push(`/results`);
+        // Navigate to the game page after quick result
+        router.push(`/game/${gameId}`);
         return;
       }
 

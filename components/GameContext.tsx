@@ -35,7 +35,7 @@ export default function GameContext({
     try {
       if (date) {
         const dateObj = new Date(date);
-        const dateStr = dateObj.toLocaleDateString('en-US', {
+        const dateStr = dateObj.toLocaleDateString(undefined, {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
@@ -43,7 +43,7 @@ export default function GameContext({
         });
         
         if (time) {
-          const timeStr = dateObj.toLocaleTimeString('en-US', {
+          const timeStr = dateObj.toLocaleTimeString(undefined, {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true

@@ -166,7 +166,7 @@ export default function YearSelector({
               color: '#696775'
             }}>
               <span>
-                {new Date(tournament.start_date).toLocaleDateString('en-US', {
+                {new Date(tournament.start_date).toLocaleString(undefined, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -176,7 +176,7 @@ export default function YearSelector({
                 <>
                   <span style={{ margin: '0 8px' }}>→</span>
                   <span>
-                    {new Date(tournament.end_date).toLocaleDateString('en-US', {
+                    {new Date(tournament.end_date).toLocaleString(undefined, {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'

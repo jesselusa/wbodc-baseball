@@ -479,12 +479,14 @@ export default function GamePage({ params }: GamePageProps) {
                         color: '#696775'
                       }}
                     >
-                      {(initialGame.actual_start || initialGame.scheduled_start) ? new Date(initialGame.actual_start || initialGame.scheduled_start!).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      }) : 'Time TBD'}
+                      {(initialGame.actual_start || initialGame.scheduled_start)
+                        ? new Date(initialGame.actual_start || initialGame.scheduled_start!).toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })
+                        : 'Time TBD'}
                     </span>
                   </div>
                 </div>

@@ -234,8 +234,8 @@ export default function UmpirePage() {
           return;
         }
 
-        // After quick result, go to results page
-        router.push(`/results`);
+        // After quick result, go to the game page
+        router.push(`/game/${targetGameId}`);
         return;
       }
 

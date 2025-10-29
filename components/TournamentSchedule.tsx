@@ -125,7 +125,7 @@ export default function TournamentSchedule({
     
     try {
       const date = new Date(scheduledStart);
-      return date.toLocaleTimeString('en-US', {
+      return date.toLocaleTimeString(undefined, {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
@@ -140,7 +140,7 @@ export default function TournamentSchedule({
     
     try {
       const date = new Date(scheduledStart);
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
         day: 'numeric'
