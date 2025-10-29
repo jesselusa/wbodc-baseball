@@ -260,8 +260,14 @@ export default function GameResultsList({
             bracketRounds[roundName].push(game);
           });
 
-          // Add bracket rounds to the main games object
-          Object.assign(gamesBySection, bracketRounds);
+          // Add bracket rounds with explicit ordering: Semifinals before Finals
+          const orderedKeys = Object.keys(bracketRounds).sort((a, b) => {
+            const rank = (s: string) => s.toLowerCase().includes('semi') ? 1 : s.toLowerCase().includes('final') ? 2 : 0;
+            const ra = rank(a), rb = rank(b);
+            if (ra !== rb) return ra - rb;
+            return a.localeCompare(b);
+          });
+          orderedKeys.forEach(key => { gamesBySection[key] = bracketRounds[key]; });
         }
 
       // Return the combined sections or fallback

@@ -207,7 +207,9 @@ export async function transitionToBracketPhase(
         away_team_id: match.awayTeamId,
         status: 'scheduled',
         game_type: 'tournament',
-        innings: tournament.bracket_innings || 3,
+        total_innings: (match.round === bracket.totalRounds)
+          ? (tournament.final_innings || tournament.bracket_innings || 5)
+          : (tournament.bracket_innings || 5),
         scheduled_start: null,
         actual_start: null,
         actual_end: null,

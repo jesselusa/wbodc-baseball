@@ -147,12 +147,14 @@ export async function createBracketTemplate(
     
     for (const round of bracketTemplate.rounds) {
       for (const game of round.games) {
+        const isFinal = round.roundName?.toLowerCase().includes('final');
         bracketGames.push({
           tournament_id: tournamentId,
           home_team_id: null, // Will be set when seeding is determined
           away_team_id: null, // Will be set when seeding is determined
           status: 'scheduled',
           game_type: 'bracket',
+          total_innings: isFinal ? (tournament.final_innings || tournament.bracket_innings || 5) : (tournament.bracket_innings || 5),
           home_score: 0,
           away_score: 0
         });
@@ -240,7 +242,7 @@ export async function seedBracketGames(
     // Get unseeded bracket games
     const { data: bracketGames, error: gamesError } = await supabaseAdmin
       .from('games')
-      .select('*')
+      .select('id, home_team_id, away_team_id')
       .eq('tournament_id', tournamentId)
       .neq('game_type', 'round_robin')
       .is('home_team_id', null)
@@ -255,20 +257,37 @@ export async function seedBracketGames(
     }
 
     // Create seed to team mapping
-    const seedToTeam = new Map();
+    const seedToTeam = new Map<number, string>();
     standings.forEach(standing => {
       seedToTeam.set(standing.seed, standing.teamId);
+    });
+
+    // Load bracket seed definitions from brackets table (authoritative)
+    const { data: bracketEntries, error: bracketErr } = await supabaseAdmin
+      .from('brackets')
+      .select('game_id, home_seed, away_seed')
+      .eq('tournament_id', tournamentId);
+
+    if (bracketErr) {
+      return { success: false, error: 'Failed to fetch bracket entries' };
+    }
+
+    const gameIdToSeeds = new Map<string, { home_seed: number; away_seed: number }>();
+    (bracketEntries || []).forEach(entry => {
+      gameIdToSeeds.set(entry.game_id, { home_seed: entry.home_seed, away_seed: entry.away_seed });
     });
 
     // Update bracket games with actual teams
     const updates = [];
     
     for (const game of bracketGames) {
-      const homeTeamId = seedToTeam.get(game.bracket_home_seed);
-      const awayTeamId = seedToTeam.get(game.bracket_away_seed);
+      const seeds = gameIdToSeeds.get(game.id);
+      if (!seeds) continue;
+      const homeTeamId = seedToTeam.get(seeds.home_seed);
+      const awayTeamId = seedToTeam.get(seeds.away_seed);
       
       // Only update if both seeds are valid (not 0 for TBD games)
-      if (game.bracket_home_seed > 0 && game.bracket_away_seed > 0 && homeTeamId && awayTeamId) {
+      if ((seeds.home_seed || 0) > 0 && (seeds.away_seed || 0) > 0 && homeTeamId && awayTeamId) {
         updates.push({
           id: game.id,
           home_team_id: homeTeamId,
@@ -301,4 +320,66 @@ export async function seedBracketGames(
   }
 }
  
+/**
+ * Advance a winner from a completed bracket game into the next game
+ * using the legacy `brackets` + `games` schema. The earliest game_number
+ * feeding a next_game_id is treated as the home slot; the other is away.
+ */
+export async function advanceWinnerToNextGame(
+  tournamentId: string,
+  completedGameId: string,
+  winnerTeamId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Find the current bracket entry and its next game
+    const { data: currentEntry, error: curErr } = await supabaseAdmin
+      .from('brackets')
+      .select('game_id, game_number, next_game_id')
+      .eq('tournament_id', tournamentId)
+      .eq('game_id', completedGameId)
+      .single();
+
+    if (curErr || !currentEntry) {
+      return { success: false, error: 'Bracket entry not found for completed game' };
+    }
+
+    if (!currentEntry.next_game_id) {
+      // Championship; no next game
+      return { success: true };
+    }
+
+    // Get both parents of the next game, ordered by game_number
+    const { data: parents, error: parErr } = await supabaseAdmin
+      .from('brackets')
+      .select('game_id, game_number')
+      .eq('tournament_id', tournamentId)
+      .eq('next_game_id', currentEntry.next_game_id)
+      .order('game_number', { ascending: true });
+
+    if (parErr || !parents || parents.length === 0) {
+      return { success: false, error: 'No parent games found for next round' };
+    }
+
+    const isHomeSlot = parents[0]?.game_number === currentEntry.game_number;
+
+    // Update the next game record with winner into the appropriate slot
+    const updateData = isHomeSlot
+      ? { home_team_id: winnerTeamId }
+      : { away_team_id: winnerTeamId };
+
+    const { error: updErr } = await supabaseAdmin
+      .from('games')
+      .update(updateData)
+      .eq('id', currentEntry.next_game_id);
+
+    if (updErr) {
+      return { success: false, error: 'Failed to update next game with winner' };
+    }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: 'Unexpected error advancing winner' };
+  }
+}
+
  

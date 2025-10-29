@@ -197,9 +197,38 @@ export function useUmpireActions(): UmpireActionsHook {
   );
 
   const submitGameEnd = useCallback(
-    (gameId: string, payload: GameEndEventPayload, umpireId: string) =>
-      submitEventAction('game_end', gameId, payload, umpireId),
-    [submitEventAction]
+    async (gameId: string, payload: GameEndEventPayload, umpireId: string) => {
+      // Use server API route so tournament updates (standings/bracket) run with service role
+      const request: EventSubmissionRequest = {
+        game_id: gameId,
+        type: 'game_end',
+        payload,
+        umpire_id: umpireId
+      };
+
+      try {
+        setState(prev => ({ ...prev, submitting: true, lastError: undefined, lastSuccess: undefined }));
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request)
+        });
+        const json = await res.json();
+        const response: EventSubmissionResponse = json;
+        if (response.success) {
+          setState(prev => ({ ...prev, submitting: false, lastSuccess: true }));
+          return response;
+        } else {
+          setState(prev => ({ ...prev, submitting: false, lastError: response.error || 'Game end failed' }));
+          return null;
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Network error';
+        setState(prev => ({ ...prev, submitting: false, lastError: msg }));
+        return null;
+      }
+    },
+    []
   );
 
   const submitInningEnd = useCallback(

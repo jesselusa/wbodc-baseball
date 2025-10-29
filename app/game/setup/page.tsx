@@ -99,15 +99,20 @@ export default function GameSetupPage() {
           scoring_method: 'quick_result'
         };
 
-        const endResponse = await submitEvent({
-          game_id: gameId,
-          type: 'game_end',
-          payload: endPayload,
-          umpire_id: gameData.umpire_id
+        // Use server API so tournament updates run
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            game_id: gameId,
+            type: 'game_end',
+            payload: endPayload,
+            umpire_id: gameData.umpire_id
+          })
         });
-
-        if (!endResponse.success) {
-          setError(endResponse.error || 'Failed to submit quick result');
+        const json = await res.json();
+        if (!json?.success) {
+          setError(json?.error || 'Failed to submit quick result');
           return;
         }
         // Navigate to the game page after quick result

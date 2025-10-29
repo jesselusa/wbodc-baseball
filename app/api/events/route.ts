@@ -6,6 +6,9 @@ import { supabaseAdmin } from '../../../lib/supabase-admin';
 import type { EventSubmissionRequest, EventSubmissionResponse } from '../../../lib/types';
 import { updateStandingsOnGameComplete } from '../../../lib/tournament-standings-updater';
 import { updateBracketOnGameComplete } from '../../../lib/tournament-bracket-updater';
+import { transitionToBracketPhase } from '../../../lib/tournament-phase-transition';
+import { createBracketTemplate, seedBracketGames, advanceWinnerToNextGame } from '../../../lib/bracket-template';
+import { calculateTeamStandings } from '../../../lib/utils/bracket-generation';
 
 // POST /api/events - Submit a new game event
 export async function POST(request: NextRequest) {
@@ -207,15 +210,56 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (gameRow && gameRow.tournament_id) {
-          // Run updates in parallel; each is internally safe/no-op when not applicable
-          await Promise.all([
-            // Standings: only for round robin
-            (gameRow.game_type === 'round_robin' || gameRow.game_type === 'pool_play')
-              ? updateStandingsOnGameComplete(gameRow.tournament_id, gameRow.id)
-              : Promise.resolve(null),
-            // Bracket: try to advance winner if this game maps to a bracket match
-            updateBracketOnGameComplete(gameRow.tournament_id, gameRow.id)
-          ]);
+          let standingsResult = null as any;
+          if (gameRow.game_type === 'round_robin' || gameRow.game_type === 'pool_play') {
+            standingsResult = await updateStandingsOnGameComplete(gameRow.tournament_id, gameRow.id);
+            if (standingsResult?.roundRobinComplete) {
+              // Generate bracket games for current schema (games + brackets tables)
+              // 1) Determine number of teams from tournament_teams
+              const { data: teams } = await supabaseAdmin
+                .from('tournament_teams')
+                .select('id, team_name')
+                .eq('tournament_id', gameRow.tournament_id);
+
+              const numTeams = teams?.length || 0;
+              if (numTeams >= 2) {
+                // Create bracket template (no-op if already exists)
+                await createBracketTemplate(gameRow.tournament_id, numTeams);
+
+                // Build standings from completed round robin games
+                const { data: rrGames } = await supabaseAdmin
+                  .from('games')
+                  .select('home_team_id, away_team_id, home_score, away_score, status')
+                  .eq('tournament_id', gameRow.tournament_id)
+                  .eq('game_type', 'round_robin');
+
+                const teamList = (teams || []).map(t => ({ id: t.id, name: t.team_name }));
+                const transformed = (rrGames || []).map(g => ({
+                  homeTeamId: g.home_team_id,
+                  awayTeamId: g.away_team_id,
+                  homeScore: g.home_score,
+                  awayScore: g.away_score,
+                  status: g.status
+                }));
+                const standings = calculateTeamStandings(transformed, teamList);
+
+                // Seed bracket games using bracket entries
+                await seedBracketGames(
+                  gameRow.tournament_id,
+                  standings.map(s => ({ teamId: s.teamId, seed: s.seed! }))
+                );
+              }
+            }
+          } else {
+            // Bracket winner advancement using legacy brackets table
+            const completedGameId = result.snapshot.game_id;
+            const winnerTeamId = (result.snapshot.score_home || 0) > (result.snapshot.score_away || 0)
+              ? result.snapshot.home_team_id
+              : result.snapshot.away_team_id;
+            if (winnerTeamId) {
+              try { await advanceWinnerToNextGame(gameRow.tournament_id, completedGameId, winnerTeamId); } catch (_) {}
+            }
+          }
         }
       } catch (tournamentUpdateError) {
         console.error('Error running tournament updates on game completion:', tournamentUpdateError);
