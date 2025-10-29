@@ -285,7 +285,18 @@ export function usePitchByPitchScoring(gameId: string, umpireId: string) {
   }, [gameId, umpireId, umpireActions]);
 
   const handleFlipCupResult = useCallback(async (payload: FlipCupEventPayload) => {
-    const response = await umpireActions.submitFlipCup(gameId, payload, umpireId);
+    // Attach hit_type derived from pendingCupHit for accurate history/scoring
+    let hit_type: 'single' | 'double' | 'triple' | 'homerun' | undefined;
+    if (pendingCupHit === 1) hit_type = 'single';
+    else if (pendingCupHit === 2) hit_type = 'double';
+    else if (pendingCupHit === 3) hit_type = 'triple';
+    else if (pendingCupHit === 4) hit_type = 'homerun';
+
+    const response = await umpireActions.submitFlipCup(
+      gameId,
+      { ...payload, hit_type },
+      umpireId
+    );
     
     if (response?.success) {
       setFlipCupModalOpen(false);

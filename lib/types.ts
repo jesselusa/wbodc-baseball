@@ -231,6 +231,8 @@ export interface FlipCupEventPayload {
   batter_id: string;
   catcher_id: string;
   errors?: string[]; // player_ids who made errors
+  // Optional explicit hit type derived from the triggering cup hit
+  hit_type?: 'single' | 'double' | 'triple' | 'homerun';
 }
 
 export interface AtBatEventPayload {

@@ -168,8 +168,9 @@ export class BaseballGameStateMachine {
     const sideEffects: StateTransitionSideEffect[] = [];
 
     if (result === 'offense wins') {
-      // Determine hit type from previous cup hit event
-      const hitType = this.determineHitTypeFromPreviousEvent(previousEvents);
+      // Prefer explicit hit_type from payload; fallback to prior cup-hit pitch
+      const explicitHit = (payload as any).hit_type as string | undefined;
+      const hitType = explicitHit || this.determineHitTypeFromPreviousEvent(previousEvents);
       const basesToAdvance = this.getBasesForHitType(hitType);
       
       // Calculate runs scored BEFORE updating runners

@@ -231,34 +231,7 @@ export function EndGameModal({
             </div>
           </div>
 
-          {/* Winner Display */}
-          {homeScore !== awayScore && (
-            <div style={{
-              background: homeScore > awayScore ? '#f0fdf4' : '#eff6ff',
-              border: `1px solid ${homeScore > awayScore ? '#bbf7d0' : '#bfdbfe'}`,
-              borderRadius: '8px',
-              padding: '1rem',
-              textAlign: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <h4 style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: homeScore > awayScore ? '#166534' : '#1e40af',
-                marginBottom: '0.25rem'
-              }}>
-                Winner: {homeScore > awayScore ? homeTeamName : awayTeamName}
-              </h4>
-              <p style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: homeScore > awayScore ? '#15803d' : '#2563eb',
-                margin: 0
-              }}>
-                {Math.max(homeScore, awayScore)} - {Math.min(homeScore, awayScore)}
-              </p>
-            </div>
-          )}
+          {/* Winner Display removed as redundant */}
 
           {/* Notes */}
           <div style={{ marginBottom: '1.5rem' }}>

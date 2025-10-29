@@ -41,6 +41,7 @@ export default function UmpirePage() {
   const [endGameModalOpen, setEndGameModalOpen] = useState(false);
   const [endInningModalOpen, setEndInningModalOpen] = useState(false);
   const [updateCounter, setUpdateCounter] = useState(0); // Force re-renders
+  const [hiddenEventIds, setHiddenEventIds] = useState<Set<string>>(new Set());
 
   // Real-time hooks
   const {
@@ -52,7 +53,7 @@ export default function UmpirePage() {
     gameId,
     autoConnect: true,
     filters: {
-      eventTypes: ['pitch', 'flip_cup', 'at_bat', 'game_start', 'game_end']
+      eventTypes: ['pitch', 'flip_cup', 'at_bat', 'game_start', 'game_end', 'inning_end']
     }
   });
 
@@ -247,6 +248,9 @@ export default function UmpirePage() {
       const json = await res.json();
       if (!json?.success) {
         console.error('[UmpirePage] Undo failed:', json?.error);
+      } else {
+        // Locally hide the undone event from the feed immediately
+        setHiddenEventIds(prev => new Set(prev).add(payload.target_event_id));
       }
     } catch (e) {
       console.error('[UmpirePage] Undo threw:', e);
@@ -798,7 +802,7 @@ export default function UmpirePage() {
                 <div style={{ flex: 1, minHeight: 0, height: '100%', overflow: 'hidden' }}>
                   <EventHistory
                     key={`events-${updateCounter}-${events?.length || 0}`}
-                    events={events || []}
+                    events={(events || []).filter(e => !hiddenEventIds.has(e.id))}
                     onUndo={handleUndo}
                     onEdit={handleEdit}
                     disabled={umpireActions.state.submitting}

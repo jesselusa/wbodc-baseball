@@ -24,6 +24,7 @@ import {
   TakeoverEventPayload,
   GameStartEventPayload,
   GameEndEventPayload,
+  InningEndEventPayload,
   EventSubmissionRequest,
   EventSubmissionResponse,
   LiveGameStatus,
@@ -536,6 +537,34 @@ export function validateGameEndEvent(
   return { isValid: true };
 }
 
+// Validate inning end events
+export function validateInningEndEvent(
+  payload: InningEndEventPayload,
+  gameSnapshot: GameSnapshot
+): ValidationResult {
+  const { inning_number, is_top_of_inning, score_home, score_away } = payload;
+
+  // Basic validation
+  if (typeof inning_number !== 'number' || inning_number < 1) {
+    return { isValid: false, error: 'Invalid inning number' };
+  }
+  if (score_home < 0 || score_away < 0) {
+    return { isValid: false, error: 'Scores cannot be negative' };
+  }
+
+  // Game state validation
+  if (gameSnapshot.status !== 'in_progress') {
+    return { isValid: false, error: 'Inning end can only be recorded for games in progress' };
+  }
+
+  // Ensure we are ending the current half-inning
+  if (inning_number !== gameSnapshot.current_inning || is_top_of_inning !== gameSnapshot.is_top_of_inning) {
+    return { isValid: false, error: 'Inning end must match the current half-inning' };
+  }
+
+  return { isValid: true };
+}
+
 // Master validation function
 export function validateEvent(
   type: EventType,
@@ -567,6 +596,9 @@ export function validateEvent(
     
     case 'game_end':
       return validateGameEndEvent(payload as GameEndEventPayload, gameSnapshot);
+    
+    case 'inning_end':
+      return validateInningEndEvent(payload as InningEndEventPayload, gameSnapshot);
     
     default:
       return { isValid: false, error: `Unknown event type: ${type}` };
@@ -848,8 +880,10 @@ async function rebuildSnapshotForGame(gameId: string): Promise<{ success: boolea
 
   let snapshot = BaseballGameStateMachine.transition(preStartSnapshot, gameStart as any, events).snapshot;
 
-  // Replay remaining events except undo/edit
-  const remaining = events.filter(e => e.id !== gameStart.id && e.type !== 'undo' && e.type !== 'edit');
+  // Replay remaining events except undo/edit and any duplicate game_start
+  const remaining = events
+    .filter(e => e.type !== 'game_start')
+    .filter(e => e.type !== 'undo' && e.type !== 'edit');
   for (const e of remaining) {
     const result = BaseballGameStateMachine.transition(snapshot, e as any, events);
     if (result.error) {

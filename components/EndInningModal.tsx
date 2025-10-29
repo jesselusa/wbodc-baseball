@@ -233,32 +233,7 @@ export function EndInningModal({
             </div>
           </div>
 
-          {/* Current Score Display */}
-          <div style={{
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '8px',
-            padding: '1rem',
-            textAlign: 'center',
-            marginBottom: '1.5rem'
-          }}>
-            <h4 style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#1e40af',
-              marginBottom: '0.25rem'
-            }}>
-              Current Score
-            </h4>
-            <p style={{
-              fontSize: '1.25rem',
-              fontWeight: '700',
-              color: '#2563eb',
-              margin: 0
-            }}>
-              {awayTeamName} {awayScore} - {homeScore} {homeTeamName}
-            </p>
-          </div>
+          {/* Removed duplicate current score display to reduce redundancy */}
 
           {/* Notes */}
           <div style={{ marginBottom: '1.5rem' }}>

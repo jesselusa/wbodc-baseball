@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   GameEvent, 
   UndoEventPayload, 
@@ -7,6 +7,7 @@ import {
   AtBatResult,
   FlipCupResult
 } from '../lib/types';
+import { BaseballGameStateMachine } from '../lib/state-machine';
 
 export interface EventHistoryProps {
   events: GameEvent[];
@@ -43,9 +44,27 @@ export function EventHistory({
   for (const id of pendingUndoIds) undoneEventIds.add(id);
 
   // Filter out undone events and undo/edit events themselves, then sort and limit
+  // Determine boundary: most recent inning_end, else last game_start
+  const mostRecentInningEnd = events
+    .filter(e => e.type === 'inning_end')
+    .sort((a, b) => b.sequence_number - a.sequence_number)[0];
+  const mostRecentGameStart = events
+    .filter(e => e.type === 'game_start')
+    .sort((a, b) => b.sequence_number - a.sequence_number)[0];
+  const boundarySeq = mostRecentInningEnd?.sequence_number ?? mostRecentGameStart?.sequence_number ?? -Infinity;
+
   const recentEvents = events
-    .filter(e => !undoneEventIds.has(e.id) && e.type !== 'undo' && e.type !== 'edit')
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .filter(e => e.sequence_number > boundarySeq)
+    .filter(e => !undoneEventIds.has(e.id) && e.type !== 'undo' && e.type !== 'edit' && e.type !== 'inning_end' && e.type !== 'game_start')
+    // Sort by sequence_number (authoritative ordering), fallback to created_at when missing
+    .sort((a: any, b: any) => {
+      const seqA = typeof (a as any).sequence_number === 'number' ? (a as any).sequence_number : -Infinity;
+      const seqB = typeof (b as any).sequence_number === 'number' ? (b as any).sequence_number : -Infinity;
+      if (seqA !== seqB) return seqB - seqA;
+      const ca = new Date((a as any).created_at).getTime();
+      const cb = new Date((b as any).created_at).getTime();
+      return cb - ca;
+    })
     .slice(0, maxEvents);
 
   const handleUndo = (eventId: string) => {
@@ -128,6 +147,7 @@ export function EventHistory({
             <EventCard
               key={event.id}
               event={event}
+              allEvents={events}
               onUndo={() => handleUndo(event.id)}
               disabled={disabled}
               isRecent={index === 0}
@@ -143,6 +163,7 @@ export function EventHistory({
 // EventCard component for individual events
 interface EventCardProps {
   event: GameEvent;
+  allEvents: GameEvent[];
   onUndo: () => void;
   disabled: boolean;
   isRecent: boolean;
@@ -151,6 +172,7 @@ interface EventCardProps {
 
 function EventCard({
   event,
+  allEvents,
   onUndo,
   disabled,
   isRecent,
@@ -175,7 +197,7 @@ function EventCard({
       case 'pitch':
         return `Pitch: ${formatPitchResult((event.payload as any).result)}`;
       case 'flip_cup':
-        return `Flip Cup: ${(event.payload as any).result === 'offense wins' ? 'Offense Wins' : 'Defense Wins'}`;
+        return formatFlipCupTitle(event, allEvents);
       case 'at_bat':
         return `At-Bat: ${formatAtBatResult((event.payload as any).result)}`;
       case 'game_start':
@@ -190,6 +212,100 @@ function EventCard({
         return `Umpire Takeover: ${(event.payload as any).new_umpire_id}`;
       default:
         return `${event.type} event`;
+    }
+  };
+
+  const formatFlipCupTitle = (flipEvent: GameEvent, events: GameEvent[]) => {
+    // Prefer explicit hit_type saved in payload
+    const payloadAny = flipEvent.payload as any;
+    const explicit = payloadAny?.hit_type as ('single'|'double'|'triple'|'homerun'|undefined);
+    const explicitLabel = explicit ? formatAtBatResult(explicit as any) : null;
+    // Fallback: derive from the most recent cup-hit pitch prior to this flip cup
+    const hitLabel = explicitLabel || deriveHitFromPreviousPitch(events, flipEvent);
+    // Compute runs scored by simulating state before/after this flip cup
+    const runs = useMemo(() => computeRunsForFlipCup(events, flipEvent), [events, flipEvent.id]);
+    if (runs && runs > 0) {
+      return `${hitLabel}: ${runs} run${runs === 1 ? '' : 's'} scored`;
+    }
+    return hitLabel;
+  };
+
+  const deriveHitFromPreviousPitch = (events: GameEvent[], flipEvent: GameEvent) => {
+    // Look back for the latest pitch event with a cup hit prior to this flip cup's sequence_number
+    const priorCupPitch = [...events]
+      .filter(e => e.type === 'pitch' && e.sequence_number < flipEvent.sequence_number)
+      .sort((a, b) => b.sequence_number - a.sequence_number)
+      .find(e => {
+        const r = (e.payload as any).result as PitchResult;
+        return r === 'first cup hit' || r === 'second cup hit' || r === 'third cup hit' || r === 'fourth cup hit';
+      });
+
+    if (!priorCupPitch) return 'Hit';
+    const r = (priorCupPitch.payload as any).result as PitchResult;
+    if (r === 'first cup hit') return 'Single';
+    if (r === 'second cup hit') return 'Double';
+    if (r === 'third cup hit') return 'Triple';
+    if (r === 'fourth cup hit') return 'Home Run';
+    return 'Hit';
+  };
+
+  const computeRunsForFlipCup = (events: GameEvent[], flipEvent: GameEvent): number | null => {
+    try {
+      // Find game_start event
+      const gameStart = events.find(e => e.type === 'game_start');
+      if (!gameStart) return null;
+      const gameId = flipEvent.game_id;
+
+      // Build a minimal pre-start snapshot
+      const preStart: any = {
+        game_id: gameId,
+        current_inning: 1,
+        is_top_of_inning: true,
+        outs: 0,
+        balls: 0,
+        strikes: 0,
+        score_home: 0,
+        score_away: 0,
+        home_team_id: '',
+        away_team_id: '',
+        batter_id: null,
+        catcher_id: null,
+        base_runners: { first: null, second: null, third: null },
+        home_lineup: [],
+        away_lineup: [],
+        home_lineup_position: 0,
+        away_lineup_position: 0,
+        last_event_id: null,
+        umpire_id: null,
+        status: 'not_started',
+        last_updated: new Date().toISOString(),
+        scoring_method: 'live',
+        is_quick_result: false
+      };
+
+      // Apply game_start
+      let before = BaseballGameStateMachine.transition(preStart, gameStart as any, events).snapshot;
+
+      // Replay events strictly before the flip cup (skip undo/edit and duplicate game_start)
+      const priorEvents = events
+        .filter(e => e.sequence_number < flipEvent.sequence_number)
+        .filter(e => e.type !== 'undo' && e.type !== 'edit' && e.type !== 'game_start')
+        .sort((a, b) => a.sequence_number - b.sequence_number);
+
+      for (const e of priorEvents) {
+        before = BaseballGameStateMachine.transition(before, e as any, events).snapshot;
+      }
+
+      const battingAway = before.is_top_of_inning;
+      const beforeHome = before.score_home;
+      const beforeAway = before.score_away;
+
+      // Apply the flip cup event
+      const after = BaseballGameStateMachine.transition(before, flipEvent as any, events).snapshot;
+      const delta = battingAway ? after.score_away - beforeAway : after.score_home - beforeHome;
+      return Math.max(0, delta);
+    } catch (_) {
+      return null;
     }
   };
 

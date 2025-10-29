@@ -42,7 +42,29 @@ export async function POST(request: NextRequest) {
     if (type === 'undo') {
       const undoPayload = payload as UndoEventPayload;
 
-      // Delete the target event (UI restricts to latest; server does not re-check)
+      // Enforce that only the most recent gameplay event can be undone
+      const { data: latestEvents, error: latestErr } = await supabaseAdmin
+        .from('game_events')
+        .select('*')
+        .eq('game_id', game_id)
+        .not('type', 'in', '(undo,edit)')
+        .order('sequence_number', { ascending: false })
+        .limit(1);
+
+      if (latestErr) {
+        return NextResponse.json({ success: false, error: `Failed to load latest event: ${latestErr.message}` }, { status: 400 });
+      }
+
+      const latestEvent = latestEvents && latestEvents[0];
+      if (!latestEvent) {
+        return NextResponse.json({ success: false, error: 'No events to undo' }, { status: 400 });
+      }
+
+      if (latestEvent.id !== undoPayload.target_event_id) {
+        return NextResponse.json({ success: false, error: 'Can only undo the most recent event' }, { status: 400 });
+      }
+
+      // Delete the target event
       const { error: delErr } = await supabaseAdmin
         .from('game_events')
         .delete()
@@ -97,7 +119,10 @@ export async function POST(request: NextRequest) {
       } as any;
 
       let snapshot = BaseballGameStateMachine.transition(preStart, gameStart as any, events).snapshot;
-      const remaining = events.filter(e => e.id !== gameStart.id && e.type !== 'undo' && e.type !== 'edit');
+      // Skip any additional game_start events during replay to avoid duplicate start errors
+      const remaining = events
+        .filter(e => e.type !== 'game_start')
+        .filter(e => e.type !== 'undo' && e.type !== 'edit');
       for (const e of remaining) {
         const result = BaseballGameStateMachine.transition(snapshot, e as any, events);
         if (result.error) {

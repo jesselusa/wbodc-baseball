@@ -63,7 +63,7 @@ export async function GET(
       );
     }
 
-    // Fetch game snapshots for active games to get live state
+    // Fetch game snapshots for active games to get live state (including scores)
     // Note: Supporting both 'active' and 'in_progress' for compatibility during transition
     const activeGameIds = games?.filter(game => game.status === 'in_progress').map(game => game.id) || [];
     let gameSnapshots: any[] = [];
@@ -71,7 +71,7 @@ export async function GET(
     if (activeGameIds.length > 0) {
       const { data: snapshots } = await supabaseAdmin
         .from('game_snapshots')
-        .select('game_id, current_inning, is_top_of_inning, outs, balls, strikes, base_runners')
+        .select('game_id, score_home, score_away, current_inning, is_top_of_inning, outs, balls, strikes, base_runners')
         .in('game_id', activeGameIds);
       
       gameSnapshots = snapshots || [];
@@ -97,8 +97,9 @@ export async function GET(
           id: game.away_team_id,
           name: game.away_team?.name || 'Unknown Team'
         },
-        home_score: game.home_score || 0,
-        away_score: game.away_score || 0,
+        // Prefer live scores from snapshot when available
+        home_score: (snapshot?.score_home ?? game.home_score) || 0,
+        away_score: (snapshot?.score_away ?? game.away_score) || 0,
         status: game.status || 'scheduled',
         current_inning: snapshot?.current_inning || game.current_inning || 1,
         is_top_of_inning: snapshot?.is_top_of_inning ?? game.is_top_inning ?? false,
