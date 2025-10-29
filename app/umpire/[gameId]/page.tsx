@@ -16,7 +16,7 @@ import { ConnectionStatus } from '../../../components/ConnectionStatus';
 import { useGameEvents } from '../../../hooks/useGameEvents';
 import { usePitchByPitchScoring } from '../../../hooks/useUmpireActions';
 import { GameSnapshot, GameSetupData, LiveGameStatus, AtBatResult, AtBatEventPayload, FlipCupEventPayload, UndoEventPayload, EditEventPayload, TakeoverEventPayload, GameEndEventPayload, InningEndEventPayload } from '../../../lib/types';
-import { getGameSnapshot, getLiveGameStatus } from '../../../lib/api';
+import { getGameSnapshot, getLiveGameStatus, submitEvent } from '../../../lib/api';
 
 /**
  * Main umpire interface for live game scorekeeping
@@ -192,10 +192,70 @@ export default function UmpirePage() {
   };
 
   // Handle game setup completion
-  const handleGameStarted = (setupData: GameSetupData) => {
-    setGameStarted(true);
-    setUmpireId(setupData.umpire_id);
-    // The real-time hook will pick up the updated snapshot
+  const handleGameStarted = async (setupData: GameSetupData) => {
+    try {
+      const targetGameId = setupData.game_id || gameId;
+
+      // Submit game_start so a snapshot exists
+      const startResponse = await submitEvent({
+        game_id: targetGameId,
+        type: 'game_start',
+        payload: {
+          umpire_id: setupData.umpire_id,
+          home_team_id: setupData.home_team_id,
+          away_team_id: setupData.away_team_id,
+          lineups: setupData.lineups || { home: [], away: [] },
+          innings: setupData.innings
+        },
+        umpire_id: setupData.umpire_id
+      });
+
+      if (!startResponse.success) {
+        setError(startResponse.error || 'Failed to start game');
+        return;
+      }
+
+      // If quick result requested, immediately end the game
+      if (setupData.quick_result) {
+        const endResponse = await submitEvent({
+          game_id: targetGameId,
+          type: 'game_end',
+          payload: {
+            final_score_home: setupData.quick_result.final_score_home,
+            final_score_away: setupData.quick_result.final_score_away,
+            notes: setupData.quick_result.notes,
+            scoring_method: 'quick_result'
+          },
+          umpire_id: setupData.umpire_id
+        });
+
+        if (!endResponse.success) {
+          setError(endResponse.error || 'Failed to submit quick result');
+          return;
+        }
+
+        // After quick result, go to results page
+        router.push(`/results`);
+        return;
+      }
+
+      // For live scoring, mark started and refresh local state
+      setGameStarted(true);
+      setUmpireId(setupData.umpire_id);
+
+      try {
+        const [snapshotResponse, statusResponse] = await Promise.all([
+          getGameSnapshot(targetGameId),
+          getLiveGameStatus(targetGameId)
+        ]);
+        if (snapshotResponse) setGameSnapshot(snapshotResponse);
+        if (statusResponse) setLiveStatus(statusResponse);
+      } catch (e) {
+        // non-fatal
+      }
+    } catch (err) {
+      setError('Failed to start game');
+    }
   };
 
   // Handle navigation back

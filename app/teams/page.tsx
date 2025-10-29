@@ -11,6 +11,7 @@ interface TeamWithStandings extends TournamentTeamWithPlayers {
   gamesPlayed: number;
   winPercentage: number;
   runDifferential: number;
+  homeRuns?: number;
 }
 
 export default function TeamsPage() {
@@ -89,7 +90,7 @@ export default function TeamsPage() {
       }
 
       const teams = teamsData.data;
-      const standings = (standingsData?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number; gamesPlayed?: number; runDifferential?: number }>;
+      const standings = (standingsData?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number; gamesPlayed?: number; runDifferential?: number; home_runs?: number }>;
       const standingsMap = new Map(standings.map(s => [s.teamId, s]));
 
       // Merge teams with real standings (fallback to zeros when missing)
@@ -106,16 +107,28 @@ export default function TeamsPage() {
           losses,
           gamesPlayed,
           winPercentage,
-          runDifferential
+          runDifferential,
+          homeRuns: s?.home_runs ?? 0
         };
       });
 
-      // Sort by win percentage (highest first), then by wins
+      // Sort by wins > win% > run differential > most home runs > team name
       teamsWithData.sort((a, b) => {
+        if (b.wins !== a.wins) {
+          return b.wins - a.wins;
+        }
         if (b.winPercentage !== a.winPercentage) {
           return b.winPercentage - a.winPercentage;
         }
-        return b.wins - a.wins;
+        if (b.runDifferential !== a.runDifferential) {
+          return b.runDifferential - a.runDifferential;
+        }
+        const aHR = a.homeRuns ?? 0;
+        const bHR = b.homeRuns ?? 0;
+        if (bHR !== aHR) {
+          return bHR - aHR;
+        }
+        return a.team_name.localeCompare(b.team_name);
       });
 
       setTeams(teamsWithData);

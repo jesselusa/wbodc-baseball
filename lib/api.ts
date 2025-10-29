@@ -1146,6 +1146,25 @@ export async function updateGameSnapshotWithStateMachine(
           console.error('Error updating games table:', gameUpdateError);
           // Don't throw here, just log the error
         }
+      } else if (sideEffect.type === 'game_end') {
+        // Persist game completion to games table
+        const { error: gameCompleteErr } = await supabase
+          .from('games')
+          .update({
+            status: 'completed',
+            completed_at: newSnapshot.last_updated,
+            home_score: newSnapshot.score_home,
+            away_score: newSnapshot.score_away
+          })
+          .eq('id', currentSnapshot.game_id);
+
+        if (gameCompleteErr) {
+          console.error('Error marking game as completed:', gameCompleteErr);
+        }
+
+        // Note: downstream systems (standings/bracket) listen for game updates
+        // and/or are triggered by server processes.
+
       } else if (sideEffect.type === 'score_change') {
         // Note: Games table updates are handled server-side via API
         // This side effect is processed by the server-side event handler

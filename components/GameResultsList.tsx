@@ -443,7 +443,8 @@ export default function GameResultsList({
   }
 
   const renderGameCard = (game: HistoricalGame, gameNumber: number, roundNumber: number) => {
-        const winner = getWinnerTeam(game);
+    const winner = getWinnerTeam(game);
+    const isFinal = game.status === 'completed';
     const isGameStarted = game.status !== 'scheduled' || game.started_at;
     
     // Check if this is a bracket game with seed placeholders
@@ -554,13 +555,13 @@ export default function GameResultsList({
                 <div style={{ textAlign: 'center' }}>
                   <div 
                     style={{ 
-                      fontWeight: winner && !winner.isHome ? '700' : '500',
+                      fontWeight: isFinal && winner && !winner.isHome ? '700' : '500',
                       marginBottom: '8px',
-                      color: winner && !winner.isHome ? '#1c1b20' : '#374151'
+                      color: isFinal && winner && !winner.isHome ? '#1c1b20' : '#374151'
                     }}
                   >
                 {awayTeamName}
-                    {winner && !winner.isHome && (
+                    {isFinal && winner && !winner.isHome && (
                       <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                     )}
                   </div>
@@ -568,7 +569,7 @@ export default function GameResultsList({
                     style={{ 
                       fontSize: '24px',
                       fontWeight: '700',
-                      color: winner && !winner.isHome ? '#059669' : '#1c1b20'
+                      color: isFinal && winner && !winner.isHome ? '#059669' : '#1c1b20'
                     }}
                   >
                 {isGameStarted ? game.away_score : '-'}
@@ -592,13 +593,13 @@ export default function GameResultsList({
                 <div style={{ textAlign: 'center' }}>
                   <div 
                     style={{ 
-                      fontWeight: winner && winner.isHome ? '700' : '500',
+                      fontWeight: isFinal && winner && winner.isHome ? '700' : '500',
                       marginBottom: '8px',
-                      color: winner && winner.isHome ? '#1c1b20' : '#374151'
+                      color: isFinal && winner && winner.isHome ? '#1c1b20' : '#374151'
                     }}
                   >
                 {homeTeamName}
-                    {winner && winner.isHome && (
+                    {isFinal && winner && winner.isHome && (
                       <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                     )}
                   </div>
@@ -606,7 +607,7 @@ export default function GameResultsList({
                     style={{ 
                       fontSize: '24px',
                       fontWeight: '700',
-                      color: winner && winner.isHome ? '#059669' : '#1c1b20'
+                      color: isFinal && winner && winner.isHome ? '#059669' : '#1c1b20'
                     }}
                   >
                 {isGameStarted ? game.home_score : '-'}

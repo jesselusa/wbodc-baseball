@@ -308,10 +308,14 @@ export function GameSetup({
 
       // Check if this is rejoining an active/in-progress game
       if (selectedGame.status === 'in_progress') {
-        // For active/in-progress games, just navigate to the umpire interface
-        // The user can manually take over using the "Become Umpire" button if needed
-        window.location.href = `/umpire/${selectedGame.id}`;
-        return;
+        // If user chose Quick Result, allow immediate quick result flow instead of refresh
+        if (scoringMethod !== 'quick_result') {
+          // For active/in-progress games without quick result, just navigate to the umpire interface
+          // The user can manually take over using the "Become Umpire" button if needed
+          window.location.href = `/umpire/${selectedGame.id}`;
+          return;
+        }
+        // else: fall through to quick result confirmation/submission below
       }
 
       // For scheduled games, proceed with normal game start or quick result

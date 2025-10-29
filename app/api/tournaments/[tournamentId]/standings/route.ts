@@ -22,6 +22,7 @@ export async function GET(
       .from('tournament_player_assignments')
       .select(`
         team_id,
+        player_id,
         teams!inner (
           id,
           name
@@ -51,6 +52,7 @@ export async function GET(
     const { data: roundRobinGames, error: gamesError } = await supabase
       .from('games')
       .select(`
+        id,
         home_team_id,
         away_team_id,
         home_score,
@@ -72,9 +74,13 @@ export async function GET(
 
     // Convert teams to the format expected by standings calculation (use teams.id)
     const teamsMap = new Map<string, string>();
+    const playerToTeam = new Map<string, string>();
     teamAssignments.forEach((assignment: any) => {
       if (assignment.teams?.id && assignment.teams?.name) {
         teamsMap.set(assignment.teams.id, assignment.teams.name);
+      }
+      if (assignment.player_id && assignment.team_id) {
+        playerToTeam.set(assignment.player_id, assignment.team_id);
       }
     });
     const teams = Array.from(teamsMap.entries()).map(([id, name]) => ({ id, name }));
@@ -100,6 +106,31 @@ export async function GET(
     // Identify tiebreaker situations
     const tiebreakers = identifyTiebreakers(standings, roundRobinGames || []);
 
+    // Calculate team home runs from at-bat homerun events within round robin games
+    let homeRunsByTeam = new Map<string, number>();
+    try {
+      const roundRobinGameIds = (roundRobinGames || []).map((g: any) => g.id).filter(Boolean);
+      if (roundRobinGameIds.length > 0) {
+        const { data: hrEvents } = await supabase
+          .from('game_events')
+          .select('game_id, payload')
+          .in('game_id', roundRobinGameIds)
+          .eq('type', 'at_bat')
+          .contains('payload', { result: 'homerun' });
+
+        (hrEvents || []).forEach((evt: any) => {
+          const batterId = evt?.payload?.batter_id as string | undefined;
+          const teamId = batterId ? playerToTeam.get(batterId) : undefined;
+          if (teamId) {
+            homeRunsByTeam.set(teamId, (homeRunsByTeam.get(teamId) || 0) + 1);
+          }
+        });
+      }
+    } catch (e) {
+      // If any issue fetching HRs, default map remains empty
+      console.error('Failed to compute home runs per team:', e);
+    }
+
     // Calculate additional statistics
     const standingsWithStats = standings.map(standing => {
       const teamGames = roundRobinGames?.filter(g => 
@@ -116,7 +147,8 @@ export async function GET(
         avg_runs_scored: Math.round(avgRunsScored * 100) / 100,
         avg_runs_allowed: Math.round(avgRunsAllowed * 100) / 100,
         win_percentage: Math.round(winPercentage * 1000) / 10,
-        games_played: teamGames.length
+        games_played: teamGames.length,
+        home_runs: homeRunsByTeam.get(standing.teamId) || 0
       };
     });
 

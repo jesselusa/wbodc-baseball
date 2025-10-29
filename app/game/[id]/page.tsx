@@ -500,8 +500,9 @@ export default function GamePage({ params }: GamePageProps) {
                         color: (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) ? '#1c1b20' : '#374151'
                       }}
                     >
-                      {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)}
-                      {(currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) && (
+                    {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)}
+                    {(initialGame.status === 'completed' || currentState?.status === 'completed') &&
+                      ( (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score)) && (
                         <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                       )}
                     </div>
@@ -509,7 +510,9 @@ export default function GamePage({ params }: GamePageProps) {
                       style={{ 
                         fontSize: '24px',
                         fontWeight: '700',
-                        color: (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) ? '#059669' : '#1c1b20'
+                        color: (initialGame.status === 'completed' || currentState?.status === 'completed') &&
+                               ( (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score))
+                               ? '#059669' : '#1c1b20'
                       }}
                     >
                       {currentState?.score_away ?? initialGame.away_score}
@@ -530,8 +533,9 @@ export default function GamePage({ params }: GamePageProps) {
                         color: (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) ? '#1c1b20' : '#374151'
                       }}
                     >
-                      {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)}
-                      {(currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) && (
+                    {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)}
+                    {(initialGame.status === 'completed' || currentState?.status === 'completed') &&
+                      ( (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score)) && (
                         <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
                       )}
                     </div>
@@ -539,7 +543,9 @@ export default function GamePage({ params }: GamePageProps) {
                       style={{ 
                         fontSize: '24px',
                         fontWeight: '700',
-                        color: (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) ? '#059669' : '#1c1b20'
+                        color: (initialGame.status === 'completed' || currentState?.status === 'completed') &&
+                               ( (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score))
+                               ? '#059669' : '#1c1b20'
                       }}
                     >
                       {currentState?.score_home ?? initialGame.home_score}
