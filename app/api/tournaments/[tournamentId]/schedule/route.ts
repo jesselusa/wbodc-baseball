@@ -101,14 +101,13 @@ export async function POST(
       home_team_id: match.homeTeam.id,
       away_team_id: match.awayTeam.id,
       status: 'scheduled',
-      game_type: 'tournament',
+      game_type: 'round_robin',
       total_innings: tournament.pool_play_innings || 3,
       scheduled_start: null, // Will be set by time slot distribution
       actual_start: null,
       actual_end: null,
       home_score: 0,
       away_score: 0,
-      game_type: 'round_robin',
       round_robin_round: match.round
     }));
 
