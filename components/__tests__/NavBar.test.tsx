@@ -30,7 +30,6 @@ describe('NavBar', () => {
     expect(screen.getByText('Games')).toBeInTheDocument();
     expect(screen.getByText('Teams')).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('Admin')).toBeInTheDocument();
   });
 
 
@@ -115,7 +114,6 @@ describe('NavBar', () => {
     expect(screen.getByText('Games').closest('a')).toHaveAttribute('href', '/games');
     expect(screen.getByText('Teams').closest('a')).toHaveAttribute('href', '/teams');
     expect(screen.getByText('Players').closest('a')).toHaveAttribute('href', '/players');
-    expect(screen.getByText('Admin').closest('a')).toHaveAttribute('href', '/admin');
   });
 
   it('closes mobile menu when backdrop is clicked', () => {

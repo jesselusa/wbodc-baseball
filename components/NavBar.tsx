@@ -13,7 +13,6 @@ const navLinks = [
   { href: "/games", label: "Games" },
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
-  { href: "/admin", label: "Admin" },
 ];
 
 const HEADER_HEIGHT = 64; // px (increased for better alignment)
