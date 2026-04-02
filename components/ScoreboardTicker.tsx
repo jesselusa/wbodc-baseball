@@ -100,7 +100,7 @@ export default function ScoreboardTicker() {
 					alignItems: 'center',
 					height: '100%',
 					overflowX: 'auto',
-					padding: '0 8px',
+					padding: '0 8px 0 140px',
 					maxWidth: 1400,
 					margin: '0 auto',
 					width: '100%',
@@ -115,7 +115,7 @@ export default function ScoreboardTicker() {
 				) : (
 					games.map((game, i) => (
 						<div key={game.id} style={{ display: 'flex', alignItems: 'center', height: '100%', flexShrink: 0 }}>
-							{i > 0 && <div style={{ width: 1, height: 36, backgroundColor: '#D0D0D0', margin: '0 8px' }} />}
+							<div style={{ width: 1, height: 36, backgroundColor: '#D0D0D0', margin: '0 8px' }} />
 							<a
 								href={`/game/${game.id}`}
 								style={{

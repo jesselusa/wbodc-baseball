@@ -13,11 +13,41 @@ export default function AppleIcon() {
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					backgroundColor: '#F5F5F0',
+					backgroundColor: '#CC0000',
 					borderRadius: 36,
 				}}
 			>
-				<span style={{ fontSize: 120 }}>⚾</span>
+				<div style={{
+					width: 120,
+					height: 120,
+					borderRadius: 60,
+					border: '6px solid #FFFFFF',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					position: 'relative',
+				}}>
+					<div style={{
+						position: 'absolute',
+						width: 6,
+						height: 80,
+						backgroundColor: '#FFFFFF',
+						borderRadius: 3,
+						transform: 'rotate(30deg)',
+						left: 22,
+						display: 'flex',
+					}} />
+					<div style={{
+						position: 'absolute',
+						width: 6,
+						height: 80,
+						backgroundColor: '#FFFFFF',
+						borderRadius: 3,
+						transform: 'rotate(-30deg)',
+						right: 22,
+						display: 'flex',
+					}} />
+				</div>
 			</div>
 		),
 		{ ...size }

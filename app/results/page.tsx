@@ -30,6 +30,7 @@ function ResultsContent() {
 			const { data } = await supabase
 				.from('tournaments')
 				.select('*')
+				.neq('status', 'upcoming')
 				.order('tournament_number', { ascending: false });
 			setTournaments(data || []);
 			setLoading(false);

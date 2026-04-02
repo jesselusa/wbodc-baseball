@@ -13,11 +13,43 @@ export default function Icon() {
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					backgroundColor: '#F5F5F0',
-					borderRadius: 16,
+					backgroundColor: '#CC0000',
+					borderRadius: 6,
 				}}
 			>
-				<span style={{ fontSize: 20 }}>⚾</span>
+				{/* White circle for baseball */}
+				<div style={{
+					width: 22,
+					height: 22,
+					borderRadius: 11,
+					border: '2px solid #FFFFFF',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					position: 'relative',
+				}}>
+					{/* Stitching lines */}
+					<div style={{
+						position: 'absolute',
+						width: 2,
+						height: 14,
+						backgroundColor: '#FFFFFF',
+						borderRadius: 1,
+						transform: 'rotate(30deg)',
+						left: 4,
+						display: 'flex',
+					}} />
+					<div style={{
+						position: 'absolute',
+						width: 2,
+						height: 14,
+						backgroundColor: '#FFFFFF',
+						borderRadius: 1,
+						transform: 'rotate(-30deg)',
+						right: 4,
+						display: 'flex',
+					}} />
+				</div>
 			</div>
 		),
 		{ ...size }
