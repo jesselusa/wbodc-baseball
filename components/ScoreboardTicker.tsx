@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase } from '../lib/api';
 
 interface TickerGame {
 	id: string;
@@ -18,29 +19,45 @@ export default function ScoreboardTicker() {
 	useEffect(() => {
 		async function loadGames() {
 			try {
-				const [gamesRes, teamsRes] = await Promise.all([
-					fetch('/api/results').then(r => r.json()),
-					fetch('/api/tournaments/current').then(r => r.json()),
-				]);
+				// Get most recent tournament
+				const { data: tournament } = await supabase
+					.from('tournaments')
+					.select('id')
+					.order('tournament_number', { ascending: false })
+					.limit(1)
+					.single();
 
-				// Build team name lookup from whatever data we have
-				const teamMap = new Map<string, string>();
+				if (!tournament) {
+					setLoading(false);
+					return;
+				}
 
-				// Try to get games from the results endpoint
-				const rawGames = Array.isArray(gamesRes) ? gamesRes : (gamesRes?.data || []);
+				// Get completed games for that tournament
+				const { data: gamesData } = await supabase
+					.from('games')
+					.select(`
+						id, home_score, away_score, status,
+						home_team:teams!games_home_team_id_fkey(name),
+						away_team:teams!games_away_team_id_fkey(name)
+					`)
+					.eq('tournament_id', tournament.id)
+					.in('status', ['completed', 'in_progress'])
+					.order('started_at', { ascending: true })
+					.limit(12);
 
-				if (Array.isArray(rawGames) && rawGames.length > 0) {
-					const tickerGames: TickerGame[] = rawGames
-						.filter((g: any) => g.status === 'completed' || g.status === 'in_progress')
-						.slice(0, 12)
-						.map((g: any) => ({
+				if (gamesData && gamesData.length > 0) {
+					const tickerGames: TickerGame[] = gamesData.map((g: any) => {
+						const homeTeam = Array.isArray(g.home_team) ? g.home_team[0] : g.home_team;
+						const awayTeam = Array.isArray(g.away_team) ? g.away_team[0] : g.away_team;
+						return {
 							id: g.id,
-							homeTeam: g.home_team?.name?.slice(0, 3)?.toUpperCase() || 'HME',
-							awayTeam: g.away_team?.name?.slice(0, 3)?.toUpperCase() || 'AWY',
+							homeTeam: homeTeam?.name?.slice(0, 3)?.toUpperCase() || 'HME',
+							awayTeam: awayTeam?.name?.slice(0, 3)?.toUpperCase() || 'AWY',
 							homeScore: g.home_score || 0,
 							awayScore: g.away_score || 0,
 							status: g.status === 'in_progress' ? 'LIVE' : 'FINAL',
-						}));
+						};
+					});
 					setGames(tickerGames);
 				}
 			} catch (err) {
@@ -52,11 +69,6 @@ export default function ScoreboardTicker() {
 
 		loadGames();
 	}, []);
-
-	// Hide ticker entirely if no games to show
-	if (!loading && games.length === 0) {
-		return null;
-	}
 
 	return (
 		<div
