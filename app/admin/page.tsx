@@ -684,14 +684,6 @@ export default function AdminPage() {
 
 
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#6C6D6F', fontSize: 14 }}>Loading admin...</span>
-      </div>
-    );
-  }
-
   // Filter and sort players
   const filteredPlayers = useMemo(() => players
     .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.nickname && p.nickname.toLowerCase().includes(searchQuery.toLowerCase())))
@@ -700,6 +692,14 @@ export default function AdminPage() {
       if (sortBy === 'name') return multiplier * a.name.localeCompare(b.name);
       return multiplier * ((a.championships_won || 0) - (b.championships_won || 0));
     }), [players, searchQuery, sortBy, sortOrder]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: '#6C6D6F', fontSize: 14 }}>Loading admin...</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
@@ -1008,7 +1008,7 @@ export default function AdminPage() {
                           {team.players.length === 0 ? (
                             <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>Empty</div>
                           ) : (
-                            team.players.sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
+                            [...team.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
                               <div
                                 key={p.id}
                                 onClick={() => { setCardPlayer(p); setShowCard(true); }}

@@ -1,17 +1,19 @@
 'use client';
 
+import React from 'react';
+
 interface AvatarInitialProps {
 	name: string;
 	size?: number;
 	imageUrl?: string | null;
 }
 
-export default function AvatarInitial({ name, size = 28, imageUrl }: AvatarInitialProps) {
+function AvatarInitial({ name, size = 28, imageUrl }: AvatarInitialProps) {
 	if (imageUrl && !imageUrl.includes('placeholder')) {
 		return (
 			<img
 				src={imageUrl}
-				alt=""
+				alt={name}
 				style={{
 					width: size,
 					height: size,
@@ -41,3 +43,5 @@ export default function AvatarInitial({ name, size = 28, imageUrl }: AvatarIniti
 		</div>
 	);
 }
+
+export default React.memo(AvatarInitial);

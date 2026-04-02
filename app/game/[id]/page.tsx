@@ -41,49 +41,6 @@ export default function GamePage({ params }: GamePageProps) {
     onError: (error) => console.error('Real-time error:', error)
   });
 
-  // Navigation helper
-  const handleTournamentClick = () => {
-    if (initialGame?.tournament) {
-      const gameDate = initialGame.scheduled_start || initialGame.actual_start;
-      if (gameDate) {
-        const year = new Date(gameDate).getFullYear();
-        const currentYear = new Date().getFullYear();
-
-        // Route to /games for current year (2025), /results for historical years
-        if (year === currentYear) {
-          router.push('/games');
-        } else {
-          router.push(`/results?year=${year}`);
-        }
-      } else {
-        // Fallback to current year if no date available
-        const currentYear = new Date().getFullYear();
-        router.push('/games');
-      }
-    }
-  };
-
-  // Format game phase (same logic as results page)
-  const formatGamePhase = () => {
-    // For now, we'll use a simple heuristic based on game timing
-    // In a real implementation, you might want to store this data
-    if (!initialGame) return 'Tournament';
-
-    // This is a simplified version - in reality you'd want to determine
-    // this based on tournament structure or explicit game phase data
-    const gameDate = new Date(initialGame.actual_start || initialGame.scheduled_start || '');
-    const hour = gameDate.getHours();
-
-    // Simple heuristic: early games are pool play, later games are elimination
-    if (hour < 14) {
-      return 'Pool Play';
-    } else if (hour < 17) {
-      return 'Semifinal';
-    } else {
-      return 'Championship';
-    }
-  };
-
   // Fetch team players
   const fetchPlayersForGame = async () => {
     if (!initialGame) return;

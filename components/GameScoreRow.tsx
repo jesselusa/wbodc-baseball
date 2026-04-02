@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 
 interface GameScoreRowProps {
@@ -22,7 +23,7 @@ function formatGameType(type: string): string {
 	return type;
 }
 
-export default function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
+function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 	const awayWon = game.status === 'completed' && game.away_score > game.home_score;
 	const homeWon = game.status === 'completed' && game.home_score > game.away_score;
 
@@ -72,3 +73,5 @@ export default function GameScoreRow({ game, showBorder = true }: GameScoreRowPr
 		</Link>
 	);
 }
+
+export default React.memo(GameScoreRow);

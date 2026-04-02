@@ -88,14 +88,15 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 				finalAway = inningScores.reduce((sum, i) => sum + i.away, 0);
 
 				// Save inning scores
-				for (let i = 0; i < inningScores.length; i++) {
-					await supabase.from('inning_scores').upsert({
+				await supabase.from('inning_scores').upsert(
+					inningScores.map((inn, i) => ({
 						game_id: game.id,
 						inning: i + 1,
-						home_runs: inningScores[i].home,
-						away_runs: inningScores[i].away,
-					}, { onConflict: 'game_id,inning' });
-				}
+						home_runs: inn.home,
+						away_runs: inn.away,
+					})),
+					{ onConflict: 'game_id,inning' }
+				);
 			}
 
 			// Update game record
@@ -113,8 +114,8 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 
 			setSuccess(true);
 			setTimeout(() => router.push(`/game/${game.id}`), 1500);
-		} catch (err: any) {
-			setError(err.message || 'Failed to submit score');
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : 'Failed to submit score');
 		} finally {
 			setSubmitting(false);
 		}

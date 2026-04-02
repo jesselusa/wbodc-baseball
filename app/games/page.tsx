@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/api';
 import { normalizeJoin } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
@@ -21,7 +21,14 @@ interface GameData {
 
 type FilterTab = 'all' | 'final' | 'pool_play' | 'bracket';
 
-function GamesContent() {
+const tabs: { key: FilterTab; label: string }[] = [
+	{ key: 'all', label: 'All' },
+	{ key: 'final', label: 'Completed' },
+	{ key: 'pool_play', label: 'Pool Play' },
+	{ key: 'bracket', label: 'Bracket' },
+];
+
+export default function GamesPage() {
 	const [games, setGames] = useState<GameData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [tournamentName, setTournamentName] = useState('');
@@ -74,20 +81,13 @@ function GamesContent() {
 		loadGames();
 	}, []);
 
-	const filteredGames = games.filter(g => {
+	const filteredGames = useMemo(() => games.filter(g => {
 		if (activeTab === 'all') return true;
 		if (activeTab === 'final') return g.status === 'completed';
 		if (activeTab === 'pool_play') return g.game_type === 'round_robin';
 		if (activeTab === 'bracket') return g.game_type === 'bracket' || g.game_type === 'single_elimination';
 		return true;
-	});
-
-	const tabs: { key: FilterTab; label: string }[] = [
-		{ key: 'all', label: 'All' },
-		{ key: 'final', label: 'Completed' },
-		{ key: 'pool_play', label: 'Pool Play' },
-		{ key: 'bracket', label: 'Bracket' },
-	];
+	}), [games, activeTab]);
 
 	return (
 		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
@@ -147,15 +147,5 @@ function GamesContent() {
 				</div>
 			)}
 		</div>
-	);
-}
-
-export default function GamesPage() {
-	return (
-		<Suspense fallback={
-			<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F' }}>Loading...</div>
-		}>
-			<GamesContent />
-		</Suspense>
 	);
 }

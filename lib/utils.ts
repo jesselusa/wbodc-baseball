@@ -5,8 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function normalizeJoin<T>(val: T | T[]): T {
-	return Array.isArray(val) ? val[0] : val;
+export function normalizeJoin<T>(val: T | T[]): T | undefined {
+	if (Array.isArray(val)) return val[0];
+	return val;
 }
 
 export const ESPN = {

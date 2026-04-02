@@ -80,17 +80,6 @@ body {
 	border: 0 !important;
 }
 
-/* ESPN-style section header */
-.section-header {
-	background-color: var(--espn-gray-900);
-	color: white;
-	font-size: 12px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	padding: 8px 16px;
-}
-
 /* Live indicator pulse animation */
 @keyframes pulse {
 	0% {
@@ -109,17 +98,6 @@ body {
 
 .live-indicator {
 	animation: pulse 2s infinite;
-}
-
-/* Live badge */
-.live-badge {
-	background-color: var(--espn-red);
-	color: white;
-	font-size: 11px;
-	font-weight: 700;
-	padding: 2px 6px;
-	border-radius: 3px;
-	text-transform: uppercase;
 }
 
 /* Spin animation for loading indicators */
@@ -144,22 +122,3 @@ body {
 	}
 }
 
-/* Tabular numbers for scores/stats */
-.tabular-nums {
-	font-variant-numeric: tabular-nums;
-}
-
-/* ESPN-style ticker scroll animation */
-@keyframes ticker-scroll {
-	0% {
-		transform: translateX(0);
-	}
-	100% {
-		transform: translateX(-50%);
-	}
-}
-
-/* Alternating table row stripe */
-.table-stripe:nth-child(even) {
-	background-color: var(--espn-gray-50);
-}

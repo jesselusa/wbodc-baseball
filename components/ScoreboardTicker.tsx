@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '../lib/api';
 import { normalizeJoin } from '../lib/utils';
 
@@ -117,7 +118,7 @@ export default function ScoreboardTicker() {
 					games.map((game, i) => (
 						<div key={game.id} style={{ display: 'flex', alignItems: 'center', height: '100%', flexShrink: 0 }}>
 							<div style={{ width: 1, height: 36, backgroundColor: '#D0D0D0', margin: '0 8px' }} />
-							<a
+							<Link
 								href={`/game/${game.id}`}
 								style={{
 									display: 'flex',
@@ -160,7 +161,7 @@ export default function ScoreboardTicker() {
 								) : (
 									<span style={{ fontSize: 10, color: '#6C6D6F', fontWeight: 500 }}>F</span>
 								)}
-							</a>
+							</Link>
 						</div>
 					))
 				)}

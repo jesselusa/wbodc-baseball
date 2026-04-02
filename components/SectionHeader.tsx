@@ -1,12 +1,14 @@
 'use client';
 
+import React from 'react';
+
 interface SectionHeaderProps {
 	title: string;
 	rightText?: string;
 	style?: React.CSSProperties;
 }
 
-export default function SectionHeader({ title, rightText, style }: SectionHeaderProps) {
+function SectionHeader({ title, rightText, style }: SectionHeaderProps) {
 	return (
 		<div style={{
 			backgroundColor: '#2B2C2D',
@@ -31,3 +33,5 @@ export default function SectionHeader({ title, rightText, style }: SectionHeader
 		</div>
 	);
 }
+
+export default React.memo(SectionHeader);
