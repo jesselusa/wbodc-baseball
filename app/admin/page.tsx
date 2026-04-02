@@ -96,6 +96,28 @@ export default function AdminPage() {
     }
   }, [players, tournamentSettings, teamAssignments, loading]);
 
+  // Sync currentTeams when num_teams changes in settings
+  useEffect(() => {
+    if (loading) return;
+    const desired = tournamentSettings.num_teams;
+    const current = currentTeams.length;
+    if (desired === current) return;
+
+    if (desired > current) {
+      // Add new teams
+      const newTeams = [...currentTeams];
+      for (let i = current + 1; i <= desired; i++) {
+        newTeams.push({ id: `new-team-${i}-${Date.now()}`, name: `Team ${i}`, players: [], isLocked: false });
+      }
+      setCurrentTeams(newTeams);
+      setHasUnsavedChanges(true);
+    } else {
+      // Remove teams from the end (move their players to unassigned)
+      setCurrentTeams(currentTeams.slice(0, desired));
+      setHasUnsavedChanges(true);
+    }
+  }, [tournamentSettings.num_teams]);
+
   // Auto-save status timer
   useEffect(() => {
     if (saveStatus.type && saveStatus.timestamp) {
