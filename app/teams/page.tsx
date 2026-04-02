@@ -152,7 +152,7 @@ export default function TeamsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 48px' }}>
       {/* ESPN dark section header */}
       <div style={{
         background: '#1a1a1a',
