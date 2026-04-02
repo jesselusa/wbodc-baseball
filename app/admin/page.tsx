@@ -918,9 +918,10 @@ export default function AdminPage() {
                         display: 'grid',
                         gridTemplateColumns: '1fr 120px',
                         alignItems: 'center',
-                        padding: '6px 0',
+                        padding: '6px 8px',
                         borderBottom: '1px solid #F1F2F3',
                         gap: 8,
+                        backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>
