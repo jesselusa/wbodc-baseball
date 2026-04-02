@@ -812,7 +812,7 @@ export default function AdminPage() {
                 onClick={handleAddPlayer}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#CC0000',
+                  backgroundColor: '#2B2C2D',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: 4,
