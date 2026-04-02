@@ -33,6 +33,7 @@ export default function TeamsPage() {
       const { data: tournament } = await supabase
         .from('tournaments')
         .select('id, name')
+        .neq('status', 'upcoming')
         .order('start_date', { ascending: false })
         .limit(1)
         .single();
@@ -126,7 +127,7 @@ export default function TeamsPage() {
 
   if (standings.length === 0) {
     return (
-      <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 16px', textAlign: 'center', color: '#6c6c6c' }}>
+      <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 16px', textAlign: 'center', color: '#6c6c6c' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#2B2C2D' }}>No standings available</h2>
         <p style={{ marginTop: '8px', fontSize: '14px' }}>Teams and standings will appear once a tournament is configured.</p>
       </div>
@@ -151,7 +152,7 @@ export default function TeamsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
       {/* ESPN dark section header */}
       <div style={{
         background: '#1a1a1a',

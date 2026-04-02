@@ -100,7 +100,7 @@ export default function ScoreboardTicker() {
 					alignItems: 'center',
 					height: '100%',
 					overflowX: 'auto',
-					padding: '0 8px 0 140px',
+					padding: '0 8px 0 148px',
 					maxWidth: 1400,
 					margin: '0 auto',
 					width: '100%',

@@ -32,6 +32,7 @@ function GamesContent() {
 				const { data: tournament } = await supabase
 					.from('tournaments')
 					.select('id, name, status, tournament_number')
+					.neq('status', 'upcoming')
 					.order('tournament_number', { ascending: false })
 					.limit(1)
 					.single();
@@ -87,7 +88,7 @@ function GamesContent() {
 	];
 
 	return (
-		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
 			{/* Section header */}
 			<div style={{
 				backgroundColor: '#2B2C2D',
