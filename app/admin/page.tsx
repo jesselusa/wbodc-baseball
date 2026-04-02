@@ -23,6 +23,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 import PlayerActionsModal from '../../components/PlayerActionsModal';
 import BaseballCard from '../../components/BaseballCard';
+import AvatarInitial from '../../components/AvatarInitial';
+import SettingsSelect from '../../components/SettingsSelect';
 
 
 interface ValidationError {
@@ -879,9 +881,7 @@ export default function AdminPage() {
                     <tr key={player.id} style={{ borderBottom: '1px solid #E5E5E5', backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}>
                       <td style={{ padding: '10px 12px', fontSize: 13 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>
-                            {player.name.charAt(0)}
-                          </div>
+                          <AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
                           <div>
                             <span
                               onClick={() => handleShowCard(player)}
@@ -951,9 +951,7 @@ export default function AdminPage() {
                         backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>
-                            {player.name.charAt(0)}
-                          </div>
+                          <AvatarInitial name={player.name} size={24} imageUrl={player.avatar_url} />
                           <span onClick={() => { setCardPlayer(player); setShowCard(true); }} style={{ fontSize: 13, color: '#0066CC', fontWeight: 500, cursor: 'pointer' }}>{player.name}</span>
                         </div>
                         <select
@@ -1067,18 +1065,20 @@ export default function AdminPage() {
                 Teams
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Number of Teams</label>
-                  <select value={tournamentSettings.num_teams} onChange={(e) => handleSettingsChange({ ...tournamentSettings, num_teams: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Players per Team</label>
-                  <select value={tournamentSettings.team_size} onChange={(e) => handleSettingsChange({ ...tournamentSettings, team_size: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
+                <SettingsSelect
+                  label="Number of Teams"
+                  value={tournamentSettings.num_teams}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, num_teams: parseInt(v) })}
+                  options={[2,3,4,5,6,7,8].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Players per Team"
+                  value={tournamentSettings.team_size}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, team_size: parseInt(v) })}
+                  options={[2,3,4,5,6,7,8].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
               </div>
             </div>
 
@@ -1088,18 +1088,20 @@ export default function AdminPage() {
                 Pool Play
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Games per Team</label>
-                  <select value={tournamentSettings.pool_play_games} onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_games: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Innings per Game</label>
-                  <select value={tournamentSettings.pool_play_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
+                <SettingsSelect
+                  label="Games per Team"
+                  value={tournamentSettings.pool_play_games}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, pool_play_games: parseInt(v) })}
+                  options={[1,2,3,4,5,6,7,8,9,10].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Innings per Game"
+                  value={tournamentSettings.pool_play_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, pool_play_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
               </div>
             </div>
 
@@ -1109,25 +1111,27 @@ export default function AdminPage() {
                 Bracket Play
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Format</label>
-                  <select value={tournamentSettings.bracket_type} onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_type: e.target.value as 'single_elimination' | 'double_elimination' })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    <option value="single_elimination">Single Elimination</option>
-                    <option value="double_elimination">Double Elimination</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Bracket Innings</label>
-                  <select value={tournamentSettings.bracket_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Finals Innings</label>
-                  <select value={tournamentSettings.final_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, final_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
-                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
+                <SettingsSelect
+                  label="Format"
+                  value={tournamentSettings.bracket_type}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, bracket_type: v as 'single_elimination' | 'double_elimination' })}
+                  options={[{ value: 'single_elimination', label: 'Single Elimination' }, { value: 'double_elimination', label: 'Double Elimination' }]}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Bracket Innings"
+                  value={tournamentSettings.bracket_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, bracket_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Finals Innings"
+                  value={tournamentSettings.final_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, final_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
               </div>
             </div>
 

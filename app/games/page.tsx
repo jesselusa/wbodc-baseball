@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
 import { supabase } from '../../lib/api';
 import { normalizeJoin } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
+import GameScoreRow from '../../components/GameScoreRow';
 
 interface GameData {
 	id: string;
@@ -142,81 +142,7 @@ function GamesContent() {
 			) : (
 				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 					{filteredGames.map((game, i) => (
-						<Link
-							key={game.id}
-							href={`/game/${game.id}`}
-							style={{
-								display: 'block',
-								textDecoration: 'none',
-								borderBottom: i < filteredGames.length - 1 ? '1px solid #E5E5E5' : 'none',
-								padding: '12px 16px',
-								transition: 'background-color 0.1s',
-							}}
-						>
-							{/* Away team row */}
-							<div style={{
-								display: 'grid',
-								gridTemplateColumns: '1fr 36px 60px',
-								alignItems: 'center',
-								marginBottom: 2,
-							}}>
-								<span style={{
-									fontSize: 14,
-									fontWeight: game.status === 'completed' && game.away_score > game.home_score ? 700 : 400,
-									color: '#151617',
-								}}>
-									{game.away_team?.name || 'TBD'}
-								</span>
-								<span style={{
-									fontSize: 16,
-									fontWeight: game.status === 'completed' && game.away_score > game.home_score ? 700 : 400,
-									color: '#151617',
-									fontVariantNumeric: 'tabular-nums',
-									textAlign: 'right',
-								}}>
-									{game.status !== 'scheduled' ? game.away_score : ''}
-								</span>
-								<span style={{
-									fontSize: 11,
-									color: '#6C6D6F',
-									fontWeight: 600,
-									textAlign: 'right',
-								}}>
-									{game.status === 'completed' ? 'FINAL' : game.status === 'in_progress' ? 'LIVE' : 'TBD'}
-								</span>
-							</div>
-							{/* Home team row */}
-							<div style={{
-								display: 'grid',
-								gridTemplateColumns: '1fr 36px 60px',
-								alignItems: 'center',
-							}}>
-								<span style={{
-									fontSize: 14,
-									fontWeight: game.status === 'completed' && game.home_score > game.away_score ? 700 : 400,
-									color: '#151617',
-								}}>
-									{game.home_team?.name || 'TBD'}
-								</span>
-								<span style={{
-									fontSize: 16,
-									fontWeight: game.status === 'completed' && game.home_score > game.away_score ? 700 : 400,
-									color: '#151617',
-									fontVariantNumeric: 'tabular-nums',
-									textAlign: 'right',
-								}}>
-									{game.status !== 'scheduled' ? game.home_score : ''}
-								</span>
-								<span style={{
-									fontSize: 10,
-									color: '#A5A6A7',
-									textTransform: 'uppercase',
-									textAlign: 'right',
-								}}>
-									{game.game_type === 'round_robin' ? 'Pool' : game.game_type === 'bracket' || game.game_type === 'single_elimination' ? 'Bracket' : game.game_type}
-								</span>
-							</div>
-						</Link>
+						<GameScoreRow key={game.id} game={game} showBorder={i < filteredGames.length - 1} />
 					))}
 				</div>
 			)}

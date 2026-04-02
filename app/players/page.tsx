@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/api';
 import BaseballCard from '../../components/BaseballCard';
 import { Player } from '../../lib/types';
+import AvatarInitial from '../../components/AvatarInitial';
 
 type SortKey = 'name' | 'current_town' | 'championships_won';
 
@@ -125,17 +126,7 @@ export default function PlayersPage() {
 							}}
 						>
 							<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-								{player.avatar_url && !player.avatar_url.includes('placeholder') ? (
-									<img
-										src={player.avatar_url}
-										alt=""
-										style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
-									/>
-								) : (
-									<div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#6C6D6F' }}>
-										{player.name.charAt(0)}
-									</div>
-								)}
+								<AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
 								<div>
 									<span style={{ fontWeight: 600, color: '#151617' }}>{player.name}</span>
 									{player.nickname && (

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '../../lib/api';
 import { normalizeJoin } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
+import GameScoreRow from '../../components/GameScoreRow';
 import { TournamentRecord } from '../../lib/types';
 
 interface GameResult {
@@ -159,61 +159,7 @@ function ResultsContent() {
 					) : (
 						<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							{games.map((game, i) => (
-								<Link
-									key={game.id}
-									href={`/game/${game.id}`}
-									style={{
-										display: 'block',
-										textDecoration: 'none',
-										borderBottom: i < games.length - 1 ? '1px solid #E5E5E5' : 'none',
-										padding: '12px 16px',
-									}}
-								>
-									<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-										<div style={{ flex: 1 }}>
-											<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-												<span style={{
-													fontSize: 14,
-													fontWeight: game.away_score > game.home_score ? 700 : 400,
-													color: '#151617',
-												}}>
-													{game.away_team?.name || 'TBD'}
-												</span>
-												<span style={{
-													fontSize: 16,
-													fontWeight: game.away_score > game.home_score ? 700 : 400,
-													color: '#151617',
-													fontVariantNumeric: 'tabular-nums',
-												}}>
-													{game.away_score}
-												</span>
-											</div>
-											<div style={{ display: 'flex', justifyContent: 'space-between' }}>
-												<span style={{
-													fontSize: 14,
-													fontWeight: game.home_score > game.away_score ? 700 : 400,
-													color: '#151617',
-												}}>
-													{game.home_team?.name || 'TBD'}
-												</span>
-												<span style={{
-													fontSize: 16,
-													fontWeight: game.home_score > game.away_score ? 700 : 400,
-													color: '#151617',
-													fontVariantNumeric: 'tabular-nums',
-												}}>
-													{game.home_score}
-												</span>
-											</div>
-										</div>
-										<div style={{ marginLeft: 16, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-											<span style={{ fontSize: 11, color: '#6C6D6F', fontWeight: 600 }}>FINAL</span>
-											<span style={{ fontSize: 10, color: '#A5A6A7', textTransform: 'uppercase' }}>
-												{game.game_type === 'round_robin' ? 'Pool' : 'Bracket'}
-											</span>
-										</div>
-									</div>
-								</Link>
+								<GameScoreRow key={game.id} game={game} showBorder={i < games.length - 1} />
 							))}
 						</div>
 					)}
