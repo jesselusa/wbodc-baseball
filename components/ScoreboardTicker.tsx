@@ -26,10 +26,11 @@ export default function ScoreboardTicker() {
 	useEffect(() => {
 		async function loadGames() {
 			try {
-				// Get most recent tournament
+				// Get most recent completed tournament (not upcoming)
 				const { data: tournament } = await supabase
 					.from('tournaments')
 					.select('id')
+					.neq('status', 'upcoming')
 					.order('tournament_number', { ascending: false })
 					.limit(1)
 					.single();

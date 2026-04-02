@@ -8,26 +8,16 @@ export default function AppleIcon() {
 		(
 			<div
 				style={{
-					width: '100%',
-					height: '100%',
+					width: 180,
+					height: 180,
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					backgroundColor: '#CC0000',
+					backgroundColor: '#F5F5F0',
 					borderRadius: 36,
 				}}
 			>
-				<span
-					style={{
-						color: '#FFFFFF',
-						fontSize: 120,
-						fontWeight: 900,
-						fontStyle: 'italic',
-						fontFamily: '-apple-system, system-ui, sans-serif',
-					}}
-				>
-					W
-				</span>
+				<span style={{ fontSize: 120 }}>⚾</span>
 			</div>
 		),
 		{ ...size }

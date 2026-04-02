@@ -307,7 +307,7 @@ export default function Page() {
 						borderRadius: '0 0 10px 10px',
 					}}>
 						<Link
-							href="/results"
+							href="/games"
 							style={{
 								color: '#0066CC',
 								fontSize: 14,
@@ -315,7 +315,7 @@ export default function Page() {
 								textDecoration: 'none',
 							}}
 						>
-							View full tournament history →
+							View all results →
 						</Link>
 					</div>
 				</div>

@@ -8,26 +8,16 @@ export default function Icon() {
 		(
 			<div
 				style={{
-					width: '100%',
-					height: '100%',
+					width: 32,
+					height: 32,
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					backgroundColor: '#CC0000',
-					borderRadius: 6,
+					backgroundColor: '#F5F5F0',
+					borderRadius: 16,
 				}}
 			>
-				<span
-					style={{
-						color: '#FFFFFF',
-						fontSize: 22,
-						fontWeight: 900,
-						fontStyle: 'italic',
-						fontFamily: '-apple-system, system-ui, sans-serif',
-					}}
-				>
-					W
-				</span>
+				<span style={{ fontSize: 20 }}>⚾</span>
 			</div>
 		),
 		{ ...size }

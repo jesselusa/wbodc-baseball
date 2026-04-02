@@ -77,7 +77,7 @@ function ResultsContent() {
 	const selected = tournaments.find(t => t.id === selectedId);
 
 	return (
-		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
 			{/* Section header */}
 			<div style={{
 				backgroundColor: '#2B2C2D',
