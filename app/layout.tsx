@@ -6,6 +6,10 @@ import ScoreboardTicker from "../components/ScoreboardTicker";
 export const metadata: Metadata = {
 	title: "WBoDC Baseball",
 	description: "World Bunch of Dudes Championship — Annual reunion baseball tournament",
+	icons: {
+		icon: [{ url: '/favicon.png', sizes: '32x32', type: 'image/png' }],
+		apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+	},
 	openGraph: {
 		title: "WBoDC Baseball",
 		description: "World Bunch of Dudes Championship — Annual reunion baseball tournament",
@@ -26,9 +30,6 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<head>
-				<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-			</head>
 			<body
 				className="antialiased"
 				style={{

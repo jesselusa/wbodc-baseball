@@ -67,19 +67,20 @@ export default function NavBar() {
 								zIndex: 0,
 							}}
 						/>
-						<span
+						<img
+							src="/logo-white.svg"
+							alt="WBoDC"
+							width={411}
+							height={94}
+							decoding="async"
 							style={{
 								position: 'relative',
 								zIndex: 1,
-								color: ESPN.white,
-								fontWeight: 900,
-								fontSize: 20,
-								fontStyle: 'italic',
-								letterSpacing: '-0.02em',
+								display: 'block',
+								height: 17,
+								width: 'auto',
 							}}
-						>
-							WBoDC
-						</span>
+						/>
 					</Link>
 
 					{/* Desktop Nav - links right next to logo */}

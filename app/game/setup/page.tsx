@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameSetup } from '../../../components/GameSetup';
 import BackButton from '../../../components/BackButton';
+import SectionHeader from '../../../components/SectionHeader';
+import { ESPN } from '../../../lib/utils';
 import { GameSetupData, GameStartEventPayload, GameEndEventPayload } from '../../../lib/types';
 import { createNewGame, submitEvent, fetchTeamPlayers } from '../../../lib/api';
 
@@ -139,24 +141,24 @@ export default function GameSetupPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
         style={{
-          backgroundColor: '#F1F2F3',
-          color: '#151617'
+          backgroundColor: ESPN.gray100,
+          color: ESPN.black
         }}
       >
         <div className="text-center max-w-md">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Setup Error</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-5xl mb-4" style={{ color: ESPN.red }}>!</div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: ESPN.black }}>Setup Error</h1>
+          <p className="mb-4" style={{ color: ESPN.gray500 }}>{error}</p>
           <div className="space-y-2">
             <button
               onClick={() => setError(undefined)}
-              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: '#CC0000' }}
+              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: ESPN.red }}
             >
               Try Again
             </button>
             <button
               onClick={handleCancel}
-              className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: ESPN.gray500 }}
             >
               Back to Home
             </button>
@@ -170,13 +172,13 @@ export default function GameSetupPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
         style={{
-          backgroundColor: '#F1F2F3',
-          color: '#151617'
+          backgroundColor: ESPN.gray100,
+          color: ESPN.black
         }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#CC0000' }}></div>
-          <p className="mt-4 text-gray-600">Creating your game...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: ESPN.red }}></div>
+          <p className="mt-4" style={{ color: ESPN.gray500 }}>Creating your game...</p>
         </div>
       </main>
     );

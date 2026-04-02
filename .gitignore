@@ -34,3 +34,5 @@ yarn-error.log*
 next-env.d.ts
 .playwright-mcp/
 *.png
+!public/favicon.png
+!public/apple-touch-icon.png
