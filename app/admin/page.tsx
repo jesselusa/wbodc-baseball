@@ -673,7 +673,6 @@ export default function AdminPage() {
         border: '1px solid #D0D0D0',
         padding: '64px 32px',
         textAlign: 'center',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         maxWidth: '1200px',
         margin: '0 auto',
         marginTop: '64px'
@@ -704,14 +703,13 @@ export default function AdminPage() {
     <div style={{
       backgroundColor: '#F1F2F3',
       minHeight: '100vh',
-      paddingTop: '64px'
+      paddingTop: '0'
     }}>
       <div style={{
         backgroundColor: '#F1F2F3',
         borderRadius: '10px',
         border: '1px solid #D0D0D0',
         overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         maxWidth: '1200px',
         margin: '32px auto'
       }}>
@@ -719,30 +717,10 @@ export default function AdminPage() {
         <div style={{
           backgroundColor: '#2B2C2D',
           color: 'white',
-          padding: isMobile ? '24px' : '32px',
+          padding: '16px 20px',
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Decorative elements */}
-          <div style={{
-            position: 'absolute',
-            top: '-50px',
-            right: '-50px',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '50%'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-30px',
-            left: '-30px',
-            width: '100px',
-            height: '100px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '50%'
-          }} />
-
           <div style={{ position: 'relative', zIndex: 5 }}>
             <h1 style={{
               fontSize: '24px',
@@ -867,9 +845,9 @@ export default function AdminPage() {
                   padding: '12px 24px',
                   background: (currentTeams.length === 0) 
                     ? '#e5e7eb' 
-                    : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    : '#059669',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                   color: (currentTeams.length === 0) ? '#9ca3af' : 'white',
                   fontSize: '14px',
                   fontWeight: '600',
@@ -899,9 +877,9 @@ export default function AdminPage() {
                 alignItems: 'center',
                 gap: '12px',
                 padding: '12px 16px',
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                background: '#059669',
                 color: 'white',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 fontSize: '14px',
                 fontWeight: '600'
               }}>
@@ -921,9 +899,9 @@ export default function AdminPage() {
               disabled={startingTournament}
               style={{
                 padding: '12px 24px',
-                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                background: '#CC0000',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 color: 'white',
                 fontSize: '14px',
                 fontWeight: '600',
@@ -951,7 +929,7 @@ export default function AdminPage() {
                 padding: '12px 24px',
                 background: '#f3f4f6',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 color: '#374151',
                 fontSize: '14px',
                 fontWeight: '600',
@@ -971,7 +949,7 @@ export default function AdminPage() {
                            validationErrors.length > 0 ? '#d1d5db' :
                            '#CC0000',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 color: 'white',
                 fontSize: '14px',
                 fontWeight: '600',
