@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Player } from '../lib/types';
 
 interface BaseballCardProps {
@@ -10,347 +9,179 @@ interface BaseballCardProps {
 }
 
 export default function BaseballCard({ player, isOpen, onClose }: BaseballCardProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   if (!isOpen) return null;
 
+  const statLabelStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#6C6D6F',
+    textTransform: 'uppercase',
+    marginBottom: 4
+  };
+
+  const statValueStyle: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#151617'
+  };
+
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
-        inset: '0',
+        inset: 0,
         backgroundColor: 'rgba(0,0,0,0.5)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
-        backdropFilter: 'blur(8px)',
-        padding: isMobile ? '16px' : '20px'
+        zIndex: 1000
       }}
       onClick={onClose}
     >
-      <div 
+      <div
         style={{
           backgroundColor: '#FFFFFF',
           borderRadius: 10,
-          padding: '0',
-          width: isMobile ? '100%' : '400px',
+          width: '400px',
           maxWidth: '90vw',
-          maxHeight: isMobile ? '90vh' : '80vh',
+          maxHeight: '90vh',
           border: '1px solid #D0D0D0',
           overflow: 'hidden',
-          position: 'relative',
-          transform: 'scale(0.95)',
-          animation: 'cardEnter 0.3s ease-out forwards',
           display: 'flex',
           flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with gradient background */}
+        {/* Header */}
         <div style={{
           backgroundColor: '#2B2C2D',
-          color: '#FFFFFF',
-          padding: isMobile ? '24px 20px 20px' : '32px 32px 24px',
+          padding: 20,
           position: 'relative',
-          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           flexShrink: 0
         }}>
-          {/* Decorative elements */}
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            width: isMobile ? '80px' : '120px',
-            height: isMobile ? '80px' : '120px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '50%',
-            transform: 'translate(30px, -30px)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '10px',
-            left: '10px',
-            width: isMobile ? '60px' : '80px',
-            height: isMobile ? '60px' : '80px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '50%',
-            transform: 'translate(-20px, 20px)'
-          }} />
-          
           {/* Close button */}
           <button
             onClick={onClose}
             style={{
               position: 'absolute',
-              top: isMobile ? '12px' : '16px',
-              right: isMobile ? '12px' : '16px',
-              background: 'rgba(255, 255, 255, 0.1)',
+              top: 12,
+              right: 12,
+              background: 'none',
               border: 'none',
-              borderRadius: '50%',
-              width: isMobile ? '36px' : '32px',
-              height: isMobile ? '36px' : '32px',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              padding: 4,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'white',
-              transition: 'all 0.2s ease',
-              zIndex: 10,
-              minHeight: isMobile ? '44px' : 'auto' // Touch target size
-            }}
-            onMouseEnter={(e) => {
-              if (!isMobile) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isMobile) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.currentTarget.style.transform = 'scale(1)';
-              }
-            }}
-            onTouchStart={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'scale(0.95)';
-            }}
-            onTouchEnd={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.transform = 'scale(1)';
+              justifyContent: 'center'
             }}
           >
-            <svg width={isMobile ? "16" : "14"} height={isMobile ? "16" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
 
-          {/* Player photo and name */}
+          {/* Avatar */}
           <div style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            backgroundColor: player.avatar_url ? undefined : '#484A4A',
+            backgroundImage: player.avatar_url ? `url(${player.avatar_url})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             display: 'flex',
             alignItems: 'center',
-            gap: isMobile ? '16px' : '20px',
-            position: 'relative',
-            zIndex: 5
+            justifyContent: 'center',
+            fontSize: 28,
+            fontWeight: 600,
+            color: '#FFFFFF',
+            marginBottom: 12
           }}>
-            <div style={{
-              width: isMobile ? '64px' : '80px',
-              height: isMobile ? '64px' : '80px',
-              borderRadius: '50%',
-              background: player.avatar_url ? `url(${player.avatar_url})` : 'rgba(255, 255, 255, 0.15)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: '3px solid rgba(255, 255, 255, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: isMobile ? '24px' : '28px',
-              fontWeight: '600',
-              color: 'white',
-              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)'
-            }}>
-              {!player.avatar_url && player.name.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h2 style={{
-                margin: '0 0 8px 0',
-                fontSize: isMobile ? '22px' : '28px',
-                fontWeight: '700',
-                color: 'white',
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                lineHeight: isMobile ? '1.2' : '1.1',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {player.name}
-              </h2>
-              {player.nickname && (
-                <p style={{
-                  margin: '0',
-                  fontSize: isMobile ? '14px' : '16px',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontStyle: 'italic',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  "{player.nickname}"
-                </p>
-              )}
-            </div>
+            {!player.avatar_url && player.name.charAt(0).toUpperCase()}
           </div>
 
-          {/* Championships badge */}
-          {(player.championships_won || 0) > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: isMobile ? '12px' : '16px',
-              left: isMobile ? '12px' : '16px',
-              background: '#FFD700',
-              color: '#8B4513',
-              padding: isMobile ? '6px 10px' : '8px 12px',
-              borderRadius: '20px',
-              fontSize: isMobile ? '10px' : '12px',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              boxShadow: '0 4px 8px rgba(255, 215, 0, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              maxWidth: isMobile ? '120px' : 'auto'
+          {/* Name */}
+          <h2 style={{
+            margin: 0,
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#FFFFFF',
+            textAlign: 'center'
+          }}>
+            {player.name}
+          </h2>
+
+          {/* Nickname */}
+          {player.nickname && (
+            <p style={{
+              margin: '4px 0 0 0',
+              fontSize: 14,
+              color: '#A5A6A7',
+              textAlign: 'center'
             }}>
-              <svg width={isMobile ? "10" : "12"} height={isMobile ? "10" : "12"} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {player.championships_won} Champion{player.championships_won > 1 ? 's' : ''}
-              </span>
-            </div>
+              &ldquo;{player.nickname}&rdquo;
+            </p>
           )}
         </div>
 
-        {/* Content */}
+        {/* Body / Stats */}
         <div style={{
-          padding: isMobile ? '20px' : '32px',
+          padding: 20,
+          backgroundColor: '#FFFFFF',
           display: 'flex',
           flexDirection: 'column',
-          gap: isMobile ? '16px' : '24px',
+          gap: 16,
           flex: 1,
           overflowY: 'auto'
         }}>
-          {/* Player stats */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? '12px' : '16px'
-          }}>
-            <div style={{
-              background: 'rgba(139, 138, 148, 0.05)',
-              padding: isMobile ? '12px' : '16px',
-              borderRadius: '12px',
-              border: '1px solid #D0D0D0'
-            }}>
-              <div style={{
-                fontSize: isMobile ? '11px' : '12px',
-                fontWeight: '600',
-                color: '#6C6D6F',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '8px'
-              }}>
-                Current Location
-              </div>
-              <div style={{
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '600',
-                color: '#151617'
-              }}>
-                {player.current_town || 'N/A'}
-              </div>
-            </div>
-            
-            <div style={{
-              background: 'rgba(139, 138, 148, 0.05)',
-              padding: isMobile ? '12px' : '16px',
-              borderRadius: '12px',
-              border: '1px solid #D0D0D0'
-            }}>
-              <div style={{
-                fontSize: isMobile ? '11px' : '12px',
-                fontWeight: '600',
-                color: '#6C6D6F',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '8px'
-              }}>
-                Hometown
-              </div>
-              <div style={{
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '600',
-                color: '#151617'
-              }}>
-                {player.hometown || 'N/A'}
-              </div>
-            </div>
+          {/* Current Town */}
+          <div>
+            <div style={statLabelStyle}>Current Town</div>
+            <div style={statValueStyle}>{player.current_town || 'N/A'}</div>
           </div>
 
-          {/* Championships */}
-          <div style={{
-            background: 'rgba(255, 215, 0, 0.08)',
-            padding: isMobile ? '16px' : '20px',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: isMobile ? '12px' : '14px',
-              fontWeight: '600',
-              color: '#6C6D6F',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '8px'
-            }}>
-              Championships Won
-            </div>
-            <div style={{
-              fontSize: isMobile ? '24px' : '32px',
-              fontWeight: '700',
-              color: '#151617',
-              marginBottom: '4px'
-            }}>
-              {(player.championships_won || 0) > 0 
-                ? '💍'.repeat(Math.min(player.championships_won || 0, isMobile ? 5 : 10))
-                : '-'
-              }
-              {(player.championships_won || 0) > (isMobile ? 5 : 10) && (
-                <span style={{ fontSize: isMobile ? '16px' : '20px', color: '#6C6D6F' }}>
-                  +{(player.championships_won || 0) - (isMobile ? 5 : 10)}
-                </span>
-              )}
-            </div>
-            <div style={{
-              fontSize: isMobile ? '11px' : '12px',
-              color: '#6C6D6F',
-              fontStyle: 'italic'
-            }}>
-              {(player.championships_won || 0) === 0 ? 'Ready to win their first!' : 
-               (player.championships_won || 0) === 1 ? 'Championship winner!' : 
-               'Multiple-time champion!'}
+          {/* Hometown */}
+          <div>
+            <div style={statLabelStyle}>Hometown</div>
+            <div style={statValueStyle}>{player.hometown || 'N/A'}</div>
+          </div>
+
+          {/* Championships Won */}
+          <div>
+            <div style={statLabelStyle}>Championships Won</div>
+            <div style={statValueStyle}>
+              {(player.championships_won || 0) > 0
+                ? `\uD83C\uDFC6 ${player.championships_won}`
+                : '0'}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Animation styles */}
-      <style jsx>{`
-        @keyframes cardEnter {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
+        {/* Close button at bottom */}
+        <div style={{ padding: '0 20px 20px 20px', flexShrink: 0 }}>
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%',
+              backgroundColor: '#F1F2F3',
+              color: '#484A4A',
+              border: 'none',
+              borderRadius: 4,
+              padding: 10,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 } 
