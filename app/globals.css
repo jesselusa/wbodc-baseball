@@ -3,123 +3,162 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+	:root {
+		/* ESPN-inspired color system */
+		--espn-black: #151617;
+		--espn-dark: #1D1E1F;
+		--espn-gray-900: #2B2C2D;
+		--espn-gray-700: #484A4A;
+		--espn-gray-500: #6C6D6F;
+		--espn-gray-400: #A5A6A7;
+		--espn-gray-200: #D0D0D0;
+		--espn-gray-100: #F1F2F3;
+		--espn-gray-50: #F9F9F9;
+		--espn-white: #FFFFFF;
+		--espn-red: #CC0000;
+		--espn-red-bright: #FF3333;
+		--espn-green: #00AA00;
+		--espn-blue: #0066CC;
+		--espn-section-bg: #EDEDE0;
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-  }
+		/* Mapped to shadcn variable slots */
+		--background: 0 0% 100%;
+		--foreground: 210 3% 15%;
+		--card: 0 0% 100%;
+		--card-foreground: 210 3% 15%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 210 3% 15%;
+		--primary: 0 100% 40%;
+		--primary-foreground: 0 0% 100%;
+		--secondary: 210 7% 95%;
+		--secondary-foreground: 210 3% 15%;
+		--muted: 210 7% 95%;
+		--muted-foreground: 210 3% 43%;
+		--accent: 210 7% 95%;
+		--accent-foreground: 210 3% 15%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 0 0% 100%;
+		--border: 0 0% 82%;
+		--input: 0 0% 82%;
+		--ring: 0 100% 40%;
+		--radius: 0.625rem;
+	}
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-white text-foreground;
+		font-family: -apple-system, "system-ui", Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
+	}
 }
 
 /* Global base styles */
 html,
 body {
-  height: 100%;
-  overflow-x: hidden;
-  max-width: 100vw;
+	height: 100%;
+	overflow-x: hidden;
+	max-width: 100vw;
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 .sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	padding: 0 !important;
+	margin: -1px !important;
+	overflow: hidden !important;
+	clip: rect(0, 0, 0, 0) !important;
+	white-space: nowrap !important;
+	border: 0 !important;
+}
+
+/* ESPN-style section header */
+.section-header {
+	background-color: var(--espn-gray-900);
+	color: white;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 8px 16px;
 }
 
 /* Live indicator pulse animation */
 @keyframes pulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+	0% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.7;
+		transform: scale(0.95);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
 
 .live-indicator {
-  animation: pulse 2s infinite;
+	animation: pulse 2s infinite;
+}
+
+/* Live badge */
+.live-badge {
+	background-color: var(--espn-red);
+	color: white;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 3px;
+	text-transform: uppercase;
 }
 
 /* Spin animation for loading indicators */
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
 }
 
 /* Card entrance animation */
 @keyframes cardEnter {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+	from {
+		transform: scale(0.9);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* Tabular numbers for scores/stats */
+.tabular-nums {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ESPN-style ticker scroll animation */
+@keyframes ticker-scroll {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+/* Alternating table row stripe */
+.table-stripe:nth-child(even) {
+	background-color: var(--espn-gray-50);
 }
