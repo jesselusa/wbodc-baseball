@@ -890,6 +890,7 @@ export default function AdminPage() {
 
         {activeTab === 'teams' && (
           <div style={{ padding: '20px' }}>
+            {/* Action bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <span style={{ fontSize: 14, color: '#6C6D6F' }}>{currentTeams.length} teams · {players.length} players</span>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -903,142 +904,174 @@ export default function AdminPage() {
                 No teams configured. Go to Settings tab to set number of teams, then come back here.
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                {currentTeams.map((team, ti) => (
-                  <div key={team.id} style={{ border: '1px solid #D0D0D0', borderRadius: 10, overflow: 'hidden' }}>
-                    <div style={{ backgroundColor: '#2B2C2D', color: '#FFFFFF', padding: '10px 16px', fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{team.name}</span>
-                      <span style={{ fontSize: 11, color: '#A5A6A7', fontWeight: 400 }}>{team.players.length} players</span>
-                    </div>
-                    <div style={{ backgroundColor: '#FFFFFF', padding: '8px 0' }}>
-                      {team.players.length === 0 ? (
-                        <div style={{ padding: '16px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>No players assigned</div>
-                      ) : (
-                        team.players.map((p, pi) => (
-                          <div key={p.id} style={{ padding: '6px 16px', fontSize: 13, color: '#151617', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>{p.name.charAt(0)}</div>
-                            {p.name}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 0 }}>
+                {/* Left: Player assignment list */}
+                <div style={{ padding: '0 16px 0 0' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 8 }}>
+                    Assign Players
+                  </div>
+                  {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((player, i) => {
+                    // Find which team this player is on
+                    const assignedTeam = currentTeams.find(t => t.players.some(p => p.id === player.id));
+                    return (
+                      <div key={player.id} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 120px',
+                        alignItems: 'center',
+                        padding: '6px 0',
+                        borderBottom: '1px solid #F1F2F3',
+                        gap: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>
+                            {player.name.charAt(0)}
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                          <span style={{ fontSize: 13, color: '#151617', fontWeight: 500 }}>{player.name}</span>
+                        </div>
+                        <select
+                          value={assignedTeam?.id || ''}
+                          onChange={(e) => {
+                            const newTeams = currentTeams.map(t => ({
+                              ...t,
+                              players: t.players.filter(p => p.id !== player.id),
+                            }));
+                            if (e.target.value) {
+                              const targetTeam = newTeams.find(t => t.id === e.target.value);
+                              if (targetTeam) {
+                                targetTeam.players.push(player);
+                              }
+                            }
+                            setCurrentTeams(newTeams);
+                            setHasUnsavedChanges(true);
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            border: '1px solid #D0D0D0',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            backgroundColor: '#FFFFFF',
+                            color: assignedTeam ? '#151617' : '#A5A6A7',
+                          }}
+                        >
+                          <option value="">Unassigned</option>
+                          {currentTeams.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* Unassigned players */}
-            {(() => {
-              const assignedIds = new Set(currentTeams.flatMap(t => t.players.map(p => p.id)));
-              const unassigned = players.filter(p => !assignedIds.has(p.id));
-              if (unassigned.length === 0) return null;
-              return (
-                <div style={{ marginTop: 24 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 8 }}>
-                    Unassigned Players ({unassigned.length})
+                {/* Vertical divider */}
+                <div style={{ backgroundColor: '#D0D0D0' }} />
+
+                {/* Right: Team viewer */}
+                <div style={{ padding: '0 0 0 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 12 }}>
+                    Teams
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {unassigned.map(p => (
-                      <span key={p.id} style={{ padding: '4px 10px', fontSize: 12, backgroundColor: '#F1F2F3', borderRadius: 4, color: '#484A4A' }}>{p.name}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {currentTeams.map(team => (
+                      <div key={team.id} style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
+                        <div style={{ backgroundColor: '#2B2C2D', color: '#FFFFFF', padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{team.name}</span>
+                          <span style={{ fontSize: 11, color: '#A5A6A7', fontWeight: 400 }}>{team.players.length}</span>
+                        </div>
+                        <div style={{ backgroundColor: '#FFFFFF' }}>
+                          {team.players.length === 0 ? (
+                            <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>Empty</div>
+                          ) : (
+                            team.players.sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
+                              <div key={p.id} style={{ padding: '5px 12px', fontSize: 12, color: '#484A4A', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none' }}>
+                                {p.name}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'settings' && (
           <div style={{ padding: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Number of Teams</label>
-                <select
-                  value={tournamentSettings.num_teams}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, num_teams: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+            {/* Teams Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Teams
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Team Size</label>
-                <select
-                  value={tournamentSettings.team_size}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, team_size: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Pool Play Games</label>
-                <select
-                  value={tournamentSettings.pool_play_games}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_games: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Number of Teams</label>
+                  <select value={tournamentSettings.num_teams} onChange={(e) => handleSettingsChange({ ...tournamentSettings, num_teams: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Players per Team</label>
+                  <select value={tournamentSettings.team_size} onChange={(e) => handleSettingsChange({ ...tournamentSettings, team_size: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Pool Play Innings</label>
-                <select
-                  value={tournamentSettings.pool_play_innings}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_innings: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+            {/* Pool Play Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Pool Play
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Bracket Type</label>
-                <select
-                  value={tournamentSettings.bracket_type}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_type: e.target.value as 'single_elimination' | 'double_elimination' })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  <option value="single_elimination">Single Elimination</option>
-                  <option value="double_elimination">Double Elimination</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Bracket Innings</label>
-                <select
-                  value={tournamentSettings.bracket_innings}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_innings: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Games per Team</label>
+                  <select value={tournamentSettings.pool_play_games} onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_games: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Innings per Game</label>
+                  <select value={tournamentSettings.pool_play_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, pool_play_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', marginBottom: 6 }}>Final Innings</label>
-                <select
-                  value={tournamentSettings.final_innings}
-                  onChange={(e) => handleSettingsChange({ ...tournamentSettings, final_innings: parseInt(e.target.value) })}
-                  disabled={settingsLocked}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}
-                >
-                  {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+            {/* Bracket Play Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Bracket Play
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Format</label>
+                  <select value={tournamentSettings.bracket_type} onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_type: e.target.value as 'single_elimination' | 'double_elimination' })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    <option value="single_elimination">Single Elimination</option>
+                    <option value="double_elimination">Double Elimination</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Bracket Innings</label>
+                  <select value={tournamentSettings.bracket_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, bracket_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6C6D6F', marginBottom: 6 }}>Finals Innings</label>
+                  <select value={tournamentSettings.final_innings} onChange={(e) => handleSettingsChange({ ...tournamentSettings, final_innings: parseInt(e.target.value) })} disabled={settingsLocked} style={{ width: '100%', padding: '8px 12px', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 14, backgroundColor: settingsLocked ? '#F9F9F9' : '#FFFFFF' }}>
+                    {[3,5,7,9].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
             {settingsLocked && (
-              <div style={{ marginTop: 20, padding: '12px 16px', backgroundColor: '#F9F9F9', borderRadius: 4, fontSize: 13, color: '#6C6D6F', border: '1px solid #E5E5E5' }}>
+              <div style={{ padding: '12px 16px', backgroundColor: '#F9F9F9', borderRadius: 4, fontSize: 13, color: '#6C6D6F', border: '1px solid #E5E5E5' }}>
                 Settings are locked while the tournament is active.
               </div>
             )}
