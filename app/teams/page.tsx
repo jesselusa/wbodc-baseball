@@ -20,7 +20,6 @@ export default function TeamsPage() {
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [tournamentName, setTournamentName] = useState('');
   const [loading, setLoading] = useState(true);
-  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
 
@@ -168,82 +167,69 @@ export default function TeamsPage() {
       </div>
 
       {/* Table */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', border: '1px solid #E5E5E5', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
-        <thead>
-          <tr style={{ background: '#F9F9F9', borderBottom: '2px solid #E5E5E5' }}>
-            <th style={{ ...headerCell, textAlign: 'center', width: '40px' }}>RK</th>
-            <th style={{ ...headerCell, textAlign: 'left' }}>TEAM</th>
-            <th style={{ ...headerCell, width: '44px' }}>W</th>
-            <th style={{ ...headerCell, width: '44px' }}>L</th>
-            <th style={{ ...headerCell, width: '56px' }}>PCT</th>
-            <th style={{ ...headerCell, width: '44px' }}>RS</th>
-            <th style={{ ...headerCell, width: '44px' }}>RA</th>
-            <th style={{ ...headerCell, width: '56px' }}>DIFF</th>
-          </tr>
-        </thead>
-        <tbody>
-          {standings.map((row, i) => {
-            const isExpanded = expandedTeam === row.teamId;
-            const rowBg = i % 2 === 0 ? '#ffffff' : '#F9F9F9';
-            return (
-              <React.Fragment key={row.teamId}>
-                <tr style={{ cursor: 'pointer' }} onClick={() => setExpandedTeam(isExpanded ? null : row.teamId)}>
-                  <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{i + 1}</td>
-                  <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>
+      <div style={{ overflow: 'hidden', borderRadius: '0 0 10px 10px', border: '1px solid #E5E5E5', borderTop: 'none' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+          <thead>
+            <tr style={{ background: '#F9F9F9', borderBottom: '2px solid #E5E5E5' }}>
+              <th style={{ ...headerCell, textAlign: 'center', width: '40px' }}>RK</th>
+              <th style={{ ...headerCell, textAlign: 'left' }}>Team</th>
+              <th style={{ ...headerCell, textAlign: 'left' }}>Players</th>
+              <th style={{ ...headerCell, width: '44px' }}>W</th>
+              <th style={{ ...headerCell, width: '44px' }}>L</th>
+              <th style={{ ...headerCell, width: '56px' }}>PCT</th>
+              <th style={{ ...headerCell, width: '44px' }}>RS</th>
+              <th style={{ ...headerCell, width: '44px' }}>RA</th>
+              <th style={{ ...headerCell, width: '56px' }}>DIFF</th>
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map((row, i) => {
+              const rowBg = i % 2 === 0 ? '#ffffff' : '#F9F9F9';
+              return (
+                <tr key={row.teamId}>
+                  <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{i + 1}</td>
+                  <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5', whiteSpace: 'nowrap' }}>
                     {row.teamName}
-                    <span style={{ marginLeft: '6px', fontSize: '10px', color: '#999' }}>{isExpanded ? '\u25B2' : '\u25BC'}</span>
                   </td>
-                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{row.wins}</td>
-                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{row.losses}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{pct(row.wins, row.losses)}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{row.runsScored}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5' }}>{row.runsAllowed}</td>
+                  <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: '#6C6D6F' }}>
+                    {row.players.length === 0 ? (
+                      <span style={{ fontStyle: 'italic', color: '#A5A6A7' }}>—</span>
+                    ) : (
+                      [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
+                        <span key={p.id}>
+                          <span
+                            onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                            style={{ cursor: 'pointer', textDecoration: 'none', color: '#0066CC' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                          >
+                            {p.name}
+                          </span>
+                          {j < row.players.length - 1 && <span style={{ color: '#A5A6A7' }}>, </span>}
+                        </span>
+                      ))
+                    )}
+                  </td>
+                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.wins}</td>
+                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.losses}</td>
+                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{pct(row.wins, row.losses)}</td>
+                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsScored}</td>
+                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsAllowed}</td>
                   <td style={{
                     ...dataCell,
                     fontWeight: 600,
                     color: row.runDiff > 0 ? '#2e7d32' : row.runDiff < 0 ? '#c62828' : '#2B2C2D',
                     background: rowBg,
-                    borderBottom: isExpanded ? 'none' : '1px solid #E5E5E5',
+                    borderBottom: '1px solid #E5E5E5',
                   }}>
                     {row.runDiff > 0 ? '+' : ''}{row.runDiff}
                   </td>
                 </tr>
-                {isExpanded && (
-                  <tr>
-                    <td colSpan={8} style={{ padding: '0 16px 12px 16px', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '4px' }}>
-                        {row.players.length === 0 && (
-                          <span style={{ fontSize: '12px', color: '#999', fontStyle: 'italic' }}>No players assigned</span>
-                        )}
-                        {row.players.map(p => (
-                          <span
-                            key={p.id}
-                            onClick={(e) => { e.stopPropagation(); setCardPlayer(p); setShowCard(true); }}
-                            style={{
-                              display: 'inline-block',
-                              padding: '4px 10px',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              color: '#1a1a1a',
-                              background: '#EEEEEE',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#D6D6D6'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#EEEEEE'; }}
-                          >
-                            {p.name}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Baseball Card Modal */}
       {cardPlayer && (

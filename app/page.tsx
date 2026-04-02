@@ -315,43 +315,8 @@ export default function Page() {
 				</div>
 			)}
 
-			{/* Tournament history quick list */}
-			<div style={{
-				borderTop: '1px solid #D0D0D0',
-				padding: '32px 0',
-			}}>
-				<div style={{
-					backgroundColor: '#2B2C2D',
-					color: '#FFFFFF',
-					fontSize: 12,
-					fontWeight: 700,
-					textTransform: 'uppercase',
-					letterSpacing: '0.05em',
-					padding: '8px 16px',
-					marginBottom: 0,
-					borderRadius: '10px 10px 0 0',
-				}}>
-					All-Time History
-				</div>
-				<div style={{
-					backgroundColor: '#FFFFFF',
-					border: '1px solid #D0D0D0',
-					borderTop: 'none',
-					padding: '16px',
-					borderRadius: '0 0 10px 10px',
-				}}>
-					<Link
-						href="/results"
-						style={{
-							color: '#0066CC',
-							fontSize: 14,
-							fontWeight: 600,
-							textDecoration: 'none',
-						}}
-					>
-						View all {lastCompleted ? lastCompleted.tournament_number : 9} tournaments →
-					</Link>
-				</div>
+			{/* Bottom spacing */}
+			<div style={{ padding: '16px 0' }}>
 			</div>
 		</div>
 	);
