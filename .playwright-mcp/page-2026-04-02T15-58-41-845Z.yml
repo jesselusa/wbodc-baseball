@@ -1,0 +1,1591 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - region [ref=e4]:
+        - button "Skip to main content" [ref=e5] [cursor=pointer]
+        - button "Skip to navigation" [ref=e6] [cursor=pointer]
+        - generic [ref=e8]:
+          - generic [ref=e9]:
+            - text: 
+            - button "Top Events " [ref=e11] [cursor=pointer]
+          - text:   
+          - generic:  <
+          - generic [ref=e12] [cursor=pointer]:  >
+          - list [ref=e14]:
+            - listitem [ref=e15]:
+              - generic [ref=e16]:
+                - heading "NCAAM" [level=2] [ref=e19] [cursor=pointer]
+                - generic [ref=e20]:
+                  - text: 
+                  - link "4:00 PM PT ESPN TLSA 29-7 UNM 26-10" [ref=e21] [cursor=pointer]:
+                    - /url: /mens-college-basketball/game/_/gameId/401858361/tulsa-new-mexico
+                    - generic [ref=e22]:
+                      - generic [ref=e23]: 4:00 PM PT
+                      - generic [ref=e26]: ESPN
+                    - list [ref=e28]:
+                      - listitem [ref=e29]:
+                        - generic [ref=e31]:
+                          - generic [ref=e32]: TLSA
+                          - generic [ref=e33]: 29-7
+                      - listitem [ref=e34]:
+                        - generic [ref=e36]:
+                          - generic [ref=e37]: UNM
+                          - generic [ref=e38]: 26-10
+                - generic [ref=e39]:
+                  - text: 
+                  - link "6:30 PM PT ESPN ILST 23-12 AUB 20-16" [ref=e40] [cursor=pointer]:
+                    - /url: /mens-college-basketball/game/_/gameId/401858362/illinois-st-auburn
+                    - generic [ref=e41]:
+                      - generic [ref=e42]: 6:30 PM PT
+                      - generic [ref=e45]: ESPN
+                    - list [ref=e47]:
+                      - listitem [ref=e48]:
+                        - generic [ref=e50]:
+                          - generic [ref=e51]: ILST
+                          - generic [ref=e52]: 23-12
+                      - listitem [ref=e53]:
+                        - generic [ref=e55]:
+                          - generic [ref=e56]: AUB
+                          - generic [ref=e57]: 20-16
+            - listitem [ref=e58]:
+              - generic [ref=e59]:
+                - heading "MLB" [level=2] [ref=e62] [cursor=pointer]
+                - link "11:10 AM PT MLB.TV MIN 1-4 KC 3-2" [ref=e64] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814779/twins-royals
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: 11:10 AM PT
+                    - generic [ref=e69]: MLB.TV
+                  - list [ref=e71]:
+                    - listitem [ref=e72]:
+                      - generic [ref=e74]:
+                        - generic [ref=e75]: MIN
+                        - generic [ref=e76]: 1-4
+                    - listitem [ref=e77]:
+                      - generic [ref=e79]:
+                        - generic [ref=e80]: KC
+                        - generic [ref=e81]: 3-2
+                - link "6:40 PM PT ESPN Unlmtd ATL 4-2 ARI 3-3" [ref=e83] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814781/braves-diamondbacks
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: 6:40 PM PT
+                    - generic [ref=e88]: ESPN Unlmtd
+                  - list [ref=e90]:
+                    - listitem [ref=e91]:
+                      - generic [ref=e93]:
+                        - generic [ref=e94]: ATL
+                        - generic [ref=e95]: 4-2
+                    - listitem [ref=e96]:
+                      - generic [ref=e98]:
+                        - generic [ref=e99]: ARI
+                        - generic [ref=e100]: 3-3
+                - link "6:45 PM PT MLB Net /MLB.TV NYM 3-3 SF 2-4" [ref=e102] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814782/mets-giants
+                  - generic [ref=e103]:
+                    - generic [ref=e104]: 6:45 PM PT
+                    - generic [ref=e106]:
+                      - generic [ref=e107]: MLB Net
+                      - generic [ref=e108]: /MLB.TV
+                  - list [ref=e110]:
+                    - listitem [ref=e111]:
+                      - generic [ref=e113]:
+                        - generic [ref=e114]: NYM
+                        - generic [ref=e115]: 3-3
+                    - listitem [ref=e116]:
+                      - generic [ref=e118]:
+                        - generic [ref=e119]: SF
+                        - generic [ref=e120]: 2-4
+            - listitem [ref=e121]:
+              - generic [ref=e122]:
+                - heading "NBA" [level=2] [ref=e125] [cursor=pointer]
+                - generic [ref=e126]:
+                  - text: 
+                  - link "4:00 PM PT PHX 42-34 CHA 40-36" [ref=e127] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810969/suns-hornets
+                    - generic [ref=e129]: 4:00 PM PT
+                    - list [ref=e131]:
+                      - listitem [ref=e132]:
+                        - generic [ref=e134]:
+                          - generic [ref=e135]: PHX
+                          - generic [ref=e136]: 42-34
+                      - listitem [ref=e137]:
+                        - generic [ref=e139]:
+                          - generic [ref=e140]: CHA
+                          - generic [ref=e141]: 40-36
+                - generic [ref=e142]:
+                  - text: 
+                  - link "4:00 PM PT Prime Video MIN 46-29 DET 55-21" [ref=e143] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810970/timberwolves-pistons
+                    - generic [ref=e144]:
+                      - generic [ref=e145]: 4:00 PM PT
+                      - generic [ref=e148]: Prime Video
+                    - list [ref=e150]:
+                      - listitem [ref=e151]:
+                        - generic [ref=e153]:
+                          - generic [ref=e154]: MIN
+                          - generic [ref=e155]: 46-29
+                      - listitem [ref=e156]:
+                        - generic [ref=e158]:
+                          - generic [ref=e159]: DET
+                          - generic [ref=e160]: 55-21
+                - generic [ref=e161]:
+                  - text: 
+                  - link "6:30 PM PT Prime Video LAL 50-26 OKC 60-16" [ref=e162] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810971/lakers-thunder
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: 6:30 PM PT
+                      - generic [ref=e167]: Prime Video
+                    - list [ref=e169]:
+                      - listitem [ref=e170]:
+                        - generic [ref=e172]:
+                          - generic [ref=e173]: LAL
+                          - generic [ref=e174]: 50-26
+                      - listitem [ref=e175]:
+                        - generic [ref=e177]:
+                          - generic [ref=e178]: OKC
+                          - generic [ref=e179]: 60-16
+                - generic [ref=e180]:
+                  - text: 
+                  - link "7:00 PM PT CLE 47-29 GS 36-40" [ref=e181] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810972/cavaliers-warriors
+                    - generic [ref=e183]: 7:00 PM PT
+                    - list [ref=e185]:
+                      - listitem [ref=e186]:
+                        - generic [ref=e188]:
+                          - generic [ref=e189]: CLE
+                          - generic [ref=e190]: 47-29
+                      - listitem [ref=e191]:
+                        - generic [ref=e193]:
+                          - generic [ref=e194]: GS
+                          - generic [ref=e195]: 36-40
+                - generic [ref=e196]:
+                  - text: 
+                  - link "7:00 PM PT NO 25-51 POR 39-38" [ref=e197] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810973/pelicans-trail-blazers
+                    - generic [ref=e199]: 7:00 PM PT
+                    - list [ref=e201]:
+                      - listitem [ref=e202]:
+                        - generic [ref=e204]:
+                          - generic [ref=e205]: "NO"
+                          - generic [ref=e206]: 25-51
+                      - listitem [ref=e207]:
+                        - generic [ref=e209]:
+                          - generic [ref=e210]: POR
+                          - generic [ref=e211]: 39-38
+                - generic [ref=e212]:
+                  - text: 
+                  - link "7:30 PM PT SA 58-18 LAC 39-37" [ref=e213] [cursor=pointer]:
+                    - /url: /nba/game/_/gameId/401810974/spurs-clippers
+                    - generic [ref=e215]: 7:30 PM PT
+                    - list [ref=e217]:
+                      - listitem [ref=e218]:
+                        - generic [ref=e220]:
+                          - generic [ref=e221]: SA
+                          - generic [ref=e222]: 58-18
+                      - listitem [ref=e223]:
+                        - generic [ref=e225]:
+                          - generic [ref=e226]: LAC
+                          - generic [ref=e227]: 39-37
+            - listitem [ref=e228]:
+              - generic [ref=e229]:
+                - heading "NHL" [level=2] [ref=e232] [cursor=pointer]
+                - generic [ref=e233]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ BUF 46-21-8 OTT 38-26-10" [ref=e234] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803542/sabres-senators
+                    - generic [ref=e235]:
+                      - generic [ref=e236]: 4:00 PM PT
+                      - generic [ref=e239]: ESPN+
+                    - list [ref=e241]:
+                      - listitem [ref=e242]:
+                        - generic [ref=e244]:
+                          - generic [ref=e245]: BUF
+                          - generic [ref=e246]: 46-21-8
+                      - listitem [ref=e247]:
+                        - generic [ref=e249]:
+                          - generic [ref=e250]: OTT
+                          - generic [ref=e251]: 38-26-10
+                - generic [ref=e252]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ PIT 38-21-16 TB 46-22-6" [ref=e253] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803543/penguins-lightning
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: 4:00 PM PT
+                      - generic [ref=e258]: ESPN+
+                    - list [ref=e260]:
+                      - listitem [ref=e261]:
+                        - generic [ref=e263]:
+                          - generic [ref=e264]: PIT
+                          - generic [ref=e265]: 38-21-16
+                      - listitem [ref=e266]:
+                        - generic [ref=e268]:
+                          - generic [ref=e269]: TB
+                          - generic [ref=e270]: 46-22-6
+                - generic [ref=e271]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ BOS 43-24-8 FLA 36-35-3" [ref=e272] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803544/bruins-panthers
+                    - generic [ref=e273]:
+                      - generic [ref=e274]: 4:00 PM PT
+                      - generic [ref=e277]: ESPN+
+                    - list [ref=e279]:
+                      - listitem [ref=e280]:
+                        - generic [ref=e282]:
+                          - generic [ref=e283]: BOS
+                          - generic [ref=e284]: 43-24-8
+                      - listitem [ref=e285]:
+                        - generic [ref=e287]:
+                          - generic [ref=e288]: FLA
+                          - generic [ref=e289]: 36-35-3
+                - generic [ref=e290]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ MTL 43-21-10 NYR 31-35-9" [ref=e291] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803546/canadiens-rangers
+                    - generic [ref=e292]:
+                      - generic [ref=e293]: 4:00 PM PT
+                      - generic [ref=e296]: ESPN+
+                    - list [ref=e298]:
+                      - listitem [ref=e299]:
+                        - generic [ref=e301]:
+                          - generic [ref=e302]: MTL
+                          - generic [ref=e303]: 43-21-10
+                      - listitem [ref=e304]:
+                        - generic [ref=e306]:
+                          - generic [ref=e307]: NYR
+                          - generic [ref=e308]: 31-35-9
+                - generic [ref=e309]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ DET 39-27-8 PHI 37-25-12" [ref=e310] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803547/red-wings-flyers
+                    - generic [ref=e311]:
+                      - generic [ref=e312]: 4:00 PM PT
+                      - generic [ref=e315]: ESPN+
+                    - list [ref=e317]:
+                      - listitem [ref=e318]:
+                        - generic [ref=e320]:
+                          - generic [ref=e321]: DET
+                          - generic [ref=e322]: 39-27-8
+                      - listitem [ref=e323]:
+                        - generic [ref=e325]:
+                          - generic [ref=e326]: PHI
+                          - generic [ref=e327]: 37-25-12
+                - generic [ref=e328]:
+                  - text: 
+                  - link "4:00 PM PT ESPN+ CBJ 38-25-12 CAR 47-21-6" [ref=e329] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803548/blue-jackets-hurricanes
+                    - generic [ref=e330]:
+                      - generic [ref=e331]: 4:00 PM PT
+                      - generic [ref=e334]: ESPN+
+                    - list [ref=e336]:
+                      - listitem [ref=e337]:
+                        - generic [ref=e339]:
+                          - generic [ref=e340]: CBJ
+                          - generic [ref=e341]: 38-25-12
+                      - listitem [ref=e342]:
+                        - generic [ref=e344]:
+                          - generic [ref=e345]: CAR
+                          - generic [ref=e346]: 47-21-6
+                - generic [ref=e347]:
+                  - text: 
+                  - link "4:30 PM PT ESPN+ /Hulu WSH 38-28-9 NJ 38-34-2" [ref=e348] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803545/capitals-devils
+                    - generic [ref=e349]:
+                      - generic [ref=e350]: 4:30 PM PT
+                      - generic [ref=e352]:
+                        - generic [ref=e353]: ESPN+
+                        - generic [ref=e354]: /Hulu
+                    - list [ref=e356]:
+                      - listitem [ref=e357]:
+                        - generic [ref=e359]:
+                          - generic [ref=e360]: WSH
+                          - generic [ref=e361]: 38-28-9
+                      - listitem [ref=e362]:
+                        - generic [ref=e364]:
+                          - generic [ref=e365]: NJ
+                          - generic [ref=e366]: 38-34-2
+                - generic [ref=e367]:
+                  - text: 
+                  - link "5:00 PM PT ESPN+ WPG 32-30-12 DAL 44-19-12" [ref=e368] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803549/jets-stars
+                    - generic [ref=e369]:
+                      - generic [ref=e370]: 5:00 PM PT
+                      - generic [ref=e373]: ESPN+
+                    - list [ref=e375]:
+                      - listitem [ref=e376]:
+                        - generic [ref=e378]:
+                          - generic [ref=e379]: WPG
+                          - generic [ref=e380]: 32-30-12
+                      - listitem [ref=e381]:
+                        - generic [ref=e383]:
+                          - generic [ref=e384]: DAL
+                          - generic [ref=e385]: 44-19-12
+                - generic [ref=e386]:
+                  - text: 
+                  - link "5:00 PM PT ESPN+ VAN 22-44-8 MIN 41-21-12" [ref=e387] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803550/canucks-wild
+                    - generic [ref=e388]:
+                      - generic [ref=e389]: 5:00 PM PT
+                      - generic [ref=e392]: ESPN+
+                    - list [ref=e394]:
+                      - listitem [ref=e395]:
+                        - generic [ref=e397]:
+                          - generic [ref=e398]: VAN
+                          - generic [ref=e399]: 22-44-8
+                      - listitem [ref=e400]:
+                        - generic [ref=e402]:
+                          - generic [ref=e403]: MIN
+                          - generic [ref=e404]: 41-21-12
+                - generic [ref=e405]:
+                  - text: 
+                  - link "6:00 PM PT ESPN+ CHI 27-34-14 EDM 38-28-9" [ref=e406] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803551/blackhawks-oilers
+                    - generic [ref=e407]:
+                      - generic [ref=e408]: 6:00 PM PT
+                      - generic [ref=e411]: ESPN+
+                    - list [ref=e413]:
+                      - listitem [ref=e414]:
+                        - generic [ref=e416]:
+                          - generic [ref=e417]: CHI
+                          - generic [ref=e418]: 27-34-14
+                      - listitem [ref=e419]:
+                        - generic [ref=e421]:
+                          - generic [ref=e422]: EDM
+                          - generic [ref=e423]: 38-28-9
+                - generic [ref=e424]:
+                  - text: 
+                  - link "7:00 PM PT ESPN+ CGY 31-35-8 VGK 33-26-16" [ref=e425] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803552/flames-golden-knights
+                    - generic [ref=e426]:
+                      - generic [ref=e427]: 7:00 PM PT
+                      - generic [ref=e430]: ESPN+
+                    - list [ref=e432]:
+                      - listitem [ref=e433]:
+                        - generic [ref=e435]:
+                          - generic [ref=e436]: CGY
+                          - generic [ref=e437]: 31-35-8
+                      - listitem [ref=e438]:
+                        - generic [ref=e440]:
+                          - generic [ref=e441]: VGK
+                          - generic [ref=e442]: 33-26-16
+                - generic [ref=e443]:
+                  - text: 
+                  - link "7:00 PM PT ESPN+ TOR 32-30-13 SJ 35-31-7" [ref=e444] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803553/maple-leafs-sharks
+                    - generic [ref=e445]:
+                      - generic [ref=e446]: 7:00 PM PT
+                      - generic [ref=e449]: ESPN+
+                    - list [ref=e451]:
+                      - listitem [ref=e452]:
+                        - generic [ref=e454]:
+                          - generic [ref=e455]: TOR
+                          - generic [ref=e456]: 32-30-13
+                      - listitem [ref=e457]:
+                        - generic [ref=e459]:
+                          - generic [ref=e460]: SJ
+                          - generic [ref=e461]: 35-31-7
+                - generic [ref=e462]:
+                  - text: 
+                  - link "7:00 PM PT ESPN+ /Hulu UTA 38-30-6 SEA 32-30-11" [ref=e463] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803554/mammoth-kraken
+                    - generic [ref=e464]:
+                      - generic [ref=e465]: 7:00 PM PT
+                      - generic [ref=e467]:
+                        - generic [ref=e468]: ESPN+
+                        - generic [ref=e469]: /Hulu
+                    - list [ref=e471]:
+                      - listitem [ref=e472]:
+                        - generic [ref=e474]:
+                          - generic [ref=e475]: UTA
+                          - generic [ref=e476]: 38-30-6
+                      - listitem [ref=e477]:
+                        - generic [ref=e479]:
+                          - generic [ref=e480]: SEA
+                          - generic [ref=e481]: 32-30-11
+                - generic [ref=e482]:
+                  - text: 
+                  - link "7:30 PM PT ESPN+ NSH 34-31-9 LA 30-26-18" [ref=e483] [cursor=pointer]:
+                    - /url: https://www.espn.com/nhl/game/_/gameId/401803555/predators-kings
+                    - generic [ref=e484]:
+                      - generic [ref=e485]: 7:30 PM PT
+                      - generic [ref=e488]: ESPN+
+                    - list [ref=e490]:
+                      - listitem [ref=e491]:
+                        - generic [ref=e493]:
+                          - generic [ref=e494]: NSH
+                          - generic [ref=e495]: 34-31-9
+                      - listitem [ref=e496]:
+                        - generic [ref=e498]:
+                          - generic [ref=e499]: LA
+                          - generic [ref=e500]: 30-26-18
+            - listitem [ref=e501]:
+              - generic [ref=e502]:
+                - heading "PGA Tour" [level=2] [ref=e505] [cursor=pointer]
+                - link "Valero Texas Open NBC,ESPN+,Golf Chnl,Peacock Round 1 - In Progress 1. A. Smotherman -4" [ref=e507] [cursor=pointer]:
+                  - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                  - generic [ref=e508]:
+                    - generic [ref=e510]: Valero Texas Open
+                    - generic [ref=e512]: NBC,ESPN+,Golf Chnl,Peacock
+                  - generic [ref=e515]: Round 1 - In Progress
+                  - generic [ref=e516]:
+                    - generic [ref=e517]: "1."
+                    - img [ref=e519]
+                    - generic [ref=e521]: A. Smotherman
+                    - generic [ref=e523]: "-4"
+            - listitem [ref=e524]:
+              - generic [ref=e525]:
+                - heading "LPGA Tour" [level=2] [ref=e528] [cursor=pointer]
+                - link "Aramco Championship Golf Chnl Round 1 - In Progress 1. L. Coughlin -2" [ref=e530] [cursor=pointer]:
+                  - /url: https://www.espn.com/golf/leaderboard?tournamentId=401835143
+                  - generic [ref=e531]:
+                    - generic [ref=e533]: Aramco Championship
+                    - generic [ref=e535]: Golf Chnl
+                  - generic [ref=e538]: Round 1 - In Progress
+                  - generic [ref=e539]:
+                    - generic [ref=e540]: "1."
+                    - img [ref=e542]
+                    - generic [ref=e544]: L. Coughlin
+                    - generic [ref=e546]: "-2"
+            - listitem [ref=e547]:
+              - generic [ref=e548]:
+                - heading "NCAA Softball" [level=2] [ref=e551] [cursor=pointer]
+                - link "3:00 PM PT SECN+ SC 22-15 8 TENN 30-5" [ref=e553] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846754/south-carolina-tennessee
+                  - generic [ref=e554]:
+                    - generic [ref=e555]: 3:00 PM PT
+                    - generic [ref=e558]: SECN+
+                  - list [ref=e560]:
+                    - listitem [ref=e561]:
+                      - generic [ref=e563]:
+                        - generic [ref=e564]: SC
+                        - generic [ref=e565]: 22-15
+                    - listitem [ref=e566]:
+                      - generic [ref=e568]: "8"
+                      - generic [ref=e569]:
+                        - generic [ref=e570]: TENN
+                        - generic [ref=e571]: 30-5
+                - link "3:00 PM PT ACC Extra 17 UVA 31-3 19 DUKE 25-11" [ref=e573] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401849343/virginia-duke
+                  - generic [ref=e574]:
+                    - generic [ref=e575]: 3:00 PM PT
+                    - generic [ref=e578]: ACC Extra
+                  - list [ref=e580]:
+                    - listitem [ref=e581]:
+                      - generic [ref=e583]: "17"
+                      - generic [ref=e584]:
+                        - generic [ref=e585]: UVA
+                        - generic [ref=e586]: 31-3
+                    - listitem [ref=e587]:
+                      - generic [ref=e589]: "19"
+                      - generic [ref=e590]:
+                        - generic [ref=e591]: DUKE
+                        - generic [ref=e592]: 25-11
+                - link "3:00 PM PT ACC Extra ND 16-19 10 FSU 32-4" [ref=e594] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401849344/notre-dame-florida-st
+                  - generic [ref=e595]:
+                    - generic [ref=e596]: 3:00 PM PT
+                    - generic [ref=e599]: ACC Extra
+                  - list [ref=e601]:
+                    - listitem [ref=e602]:
+                      - generic [ref=e604]:
+                        - generic [ref=e605]: ND
+                        - generic [ref=e606]: 16-19
+                    - listitem [ref=e607]:
+                      - generic [ref=e609]: "10"
+                      - generic [ref=e610]:
+                        - generic [ref=e611]: FSU
+                        - generic [ref=e612]: 32-4
+                - link "3:00 PM PT ACC Extra CLEM 24-13 12 VT 31-4" [ref=e614] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401849350/clemson-virginia-tech
+                  - generic [ref=e615]:
+                    - generic [ref=e616]: 3:00 PM PT
+                    - generic [ref=e619]: ACC Extra
+                  - list [ref=e621]:
+                    - listitem [ref=e622]:
+                      - generic [ref=e624]:
+                        - generic [ref=e625]: CLEM
+                        - generic [ref=e626]: 24-13
+                    - listitem [ref=e627]:
+                      - generic [ref=e629]: "12"
+                      - generic [ref=e630]:
+                        - generic [ref=e631]: VT
+                        - generic [ref=e632]: 31-4
+                - link "4:00 PM PT ESPN+ BYU 11-22 2 TTU 35-2" [ref=e634] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846180/byu-texas-tech
+                  - generic [ref=e635]:
+                    - generic [ref=e636]: 4:00 PM PT
+                    - generic [ref=e639]: ESPN+
+                  - list [ref=e641]:
+                    - listitem [ref=e642]:
+                      - generic [ref=e644]:
+                        - generic [ref=e645]: BYU
+                        - generic [ref=e646]: 11-22
+                    - listitem [ref=e647]:
+                      - generic [ref=e649]: "2"
+                      - generic [ref=e650]:
+                        - generic [ref=e651]: TTU
+                        - generic [ref=e652]: 35-2
+                - link "4:00 PM PT SECN+ 11 UGA 27-8 15 TA&M 24-11" [ref=e654] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846751/georgia-texas-am
+                  - generic [ref=e655]:
+                    - generic [ref=e656]: 4:00 PM PT
+                    - generic [ref=e659]: SECN+
+                  - list [ref=e661]:
+                    - listitem [ref=e662]:
+                      - generic [ref=e664]: "11"
+                      - generic [ref=e665]:
+                        - generic [ref=e666]: UGA
+                        - generic [ref=e667]: 27-8
+                    - listitem [ref=e668]:
+                      - generic [ref=e670]: "15"
+                      - generic [ref=e671]:
+                        - generic [ref=e672]: TA&M
+                        - generic [ref=e673]: 24-11
+                - link "4:00 PM PT SECN+ 20 LSU 23-12 MIZZ 20-18" [ref=e675] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846753/lsu-missouri
+                  - generic [ref=e676]:
+                    - generic [ref=e677]: 4:00 PM PT
+                    - generic [ref=e680]: SECN+
+                  - list [ref=e682]:
+                    - listitem [ref=e683]:
+                      - generic [ref=e685]: "20"
+                      - generic [ref=e686]:
+                        - generic [ref=e687]: LSU
+                        - generic [ref=e688]: 23-12
+                    - listitem [ref=e689]:
+                      - generic [ref=e691]:
+                        - generic [ref=e692]: MIZZ
+                        - generic [ref=e693]: 20-18
+                - link "4:00 PM PT SECN+ 1 TEX 31-2 5 ALA 33-2" [ref=e695] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846755/texas-alabama
+                  - generic [ref=e696]:
+                    - generic [ref=e697]: 4:00 PM PT
+                    - generic [ref=e700]: SECN+
+                  - list [ref=e702]:
+                    - listitem [ref=e703]:
+                      - generic [ref=e705]: "1"
+                      - generic [ref=e706]:
+                        - generic [ref=e707]: TEX
+                        - generic [ref=e708]: 31-2
+                    - listitem [ref=e709]:
+                      - generic [ref=e711]: "5"
+                      - generic [ref=e712]:
+                        - generic [ref=e713]: ALA
+                        - generic [ref=e714]: 33-2
+                - link "4:30 PM PT SECN+ UK 22-16 3 OU 35-3" [ref=e716] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401846752/kentucky-oklahoma
+                  - generic [ref=e717]:
+                    - generic [ref=e718]: 4:30 PM PT
+                    - generic [ref=e721]: SECN+
+                  - list [ref=e723]:
+                    - listitem [ref=e724]:
+                      - generic [ref=e726]:
+                        - generic [ref=e727]: UK
+                        - generic [ref=e728]: 22-16
+                    - listitem [ref=e729]:
+                      - generic [ref=e731]: "3"
+                      - generic [ref=e732]:
+                        - generic [ref=e733]: OU
+                        - generic [ref=e734]: 35-3
+                - link "5:00 PM PT ACC Extra 14 WASH 30-6 24 STAN 20-10" [ref=e736] [cursor=pointer]:
+                  - /url: /college-softball/game/_/gameId/401849348/washington-stanford
+                  - generic [ref=e737]:
+                    - generic [ref=e738]: 5:00 PM PT
+                    - generic [ref=e741]: ACC Extra
+                  - list [ref=e743]:
+                    - listitem [ref=e744]:
+                      - generic [ref=e746]: "14"
+                      - generic [ref=e747]:
+                        - generic [ref=e748]: WASH
+                        - generic [ref=e749]: 30-6
+                    - listitem [ref=e750]:
+                      - generic [ref=e752]: "24"
+                      - generic [ref=e753]:
+                        - generic [ref=e754]: STAN
+                        - generic [ref=e755]: 20-10
+            - listitem [ref=e756]:
+              - generic [ref=e757]:
+                - heading "NCAA Baseball" [level=2] [ref=e760] [cursor=pointer]
+                - link "2:00 PM PT ACC Network 7 FSU 22-6 10 UVA 23-7" [ref=e762] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847926/florida-st-virginia
+                  - generic [ref=e763]:
+                    - generic [ref=e764]: 2:00 PM PT
+                    - generic [ref=e767]: ACC Network
+                  - list [ref=e769]:
+                    - listitem [ref=e770]:
+                      - generic [ref=e772]: "7"
+                      - generic [ref=e773]:
+                        - generic [ref=e774]: FSU
+                        - generic [ref=e775]: 22-6
+                    - listitem [ref=e776]:
+                      - generic [ref=e778]: "10"
+                      - generic [ref=e779]:
+                        - generic [ref=e780]: UVA
+                        - generic [ref=e781]: 23-7
+                - link "3:00 PM PT ACC Extra 22 BC 21-9 6 UNC 25-4-1" [ref=e783] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847722/boston-college-north-carolina
+                  - generic [ref=e784]:
+                    - generic [ref=e785]: 3:00 PM PT
+                    - generic [ref=e788]: ACC Extra
+                  - list [ref=e790]:
+                    - listitem [ref=e791]:
+                      - generic [ref=e793]: "22"
+                      - generic [ref=e794]:
+                        - generic [ref=e795]: BC
+                        - generic [ref=e796]: 21-9
+                    - listitem [ref=e797]:
+                      - generic [ref=e799]: "6"
+                      - generic [ref=e800]:
+                        - generic [ref=e801]: UNC
+                        - generic [ref=e802]: 25-4-1
+                - link "3:00 PM PT ESPN+ USA 18-11 14 CCU 21-7" [ref=e804] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401853031/south-alabama-coastal
+                  - generic [ref=e805]:
+                    - generic [ref=e806]: 3:00 PM PT
+                    - generic [ref=e809]: ESPN+
+                  - list [ref=e811]:
+                    - listitem [ref=e812]:
+                      - generic [ref=e814]:
+                        - generic [ref=e815]: USA
+                        - generic [ref=e816]: 18-11
+                    - listitem [ref=e817]:
+                      - generic [ref=e819]: "14"
+                      - generic [ref=e820]:
+                        - generic [ref=e821]: CCU
+                        - generic [ref=e822]: 21-7
+                - link "3:00 PM PT ESPN+ 8 USM 21-8 ODU 13-15" [ref=e824] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401853310/southern-miss-old-dominion
+                  - generic [ref=e825]:
+                    - generic [ref=e826]: 3:00 PM PT
+                    - generic [ref=e829]: ESPN+
+                  - list [ref=e831]:
+                    - listitem [ref=e832]:
+                      - generic [ref=e834]: "8"
+                      - generic [ref=e835]:
+                        - generic [ref=e836]: USM
+                        - generic [ref=e837]: 21-8
+                    - listitem [ref=e838]:
+                      - generic [ref=e840]:
+                        - generic [ref=e841]: ODU
+                        - generic [ref=e842]: 13-15
+                - link "3:30 PM PT SECN+ MISS 20-10 21 FLA 23-7" [ref=e844] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847226/ole-miss-florida
+                  - generic [ref=e845]:
+                    - generic [ref=e846]: 3:30 PM PT
+                    - generic [ref=e849]: SECN+
+                  - list [ref=e851]:
+                    - listitem [ref=e852]:
+                      - generic [ref=e854]:
+                        - generic [ref=e855]: MISS
+                        - generic [ref=e856]: 20-10
+                    - listitem [ref=e857]:
+                      - generic [ref=e859]: "21"
+                      - generic [ref=e860]:
+                        - generic [ref=e861]: FLA
+                        - generic [ref=e862]: 23-7
+                - link "4:00 PM PT ESPN2 17 ARK 19-11 18 AUB 20-8" [ref=e864] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847127/arkansas-auburn
+                  - generic [ref=e865]:
+                    - generic [ref=e866]: 4:00 PM PT
+                    - generic [ref=e869]: ESPN2
+                  - list [ref=e871]:
+                    - listitem [ref=e872]:
+                      - generic [ref=e874]: "17"
+                      - generic [ref=e875]:
+                        - generic [ref=e876]: ARK
+                        - generic [ref=e877]: 19-11
+                    - listitem [ref=e878]:
+                      - generic [ref=e880]: "18"
+                      - generic [ref=e881]:
+                        - generic [ref=e882]: AUB
+                        - generic [ref=e883]: 20-8
+                - link "4:00 PM PT SECN+ 5 UGA 24-6 4 MSST 25-4" [ref=e885] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847279/georgia-mississippi-st
+                  - generic [ref=e886]:
+                    - generic [ref=e887]: 4:00 PM PT
+                    - generic [ref=e890]: SECN+
+                  - list [ref=e892]:
+                    - listitem [ref=e893]:
+                      - generic [ref=e895]: "5"
+                      - generic [ref=e896]:
+                        - generic [ref=e897]: UGA
+                        - generic [ref=e898]: 24-6
+                    - listitem [ref=e899]:
+                      - generic [ref=e901]: "4"
+                      - generic [ref=e902]:
+                        - generic [ref=e903]: MSST
+                        - generic [ref=e904]: 25-4
+                - link "4:00 PM PT SEC Network 2 TEX 24-4 SC 14-16" [ref=e906] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847562/texas-south-carolina
+                  - generic [ref=e907]:
+                    - generic [ref=e908]: 4:00 PM PT
+                    - generic [ref=e911]: SEC Network
+                  - list [ref=e913]:
+                    - listitem [ref=e914]:
+                      - generic [ref=e916]: "2"
+                      - generic [ref=e917]:
+                        - generic [ref=e918]: TEX
+                        - generic [ref=e919]: 24-4
+                    - listitem [ref=e920]:
+                      - generic [ref=e922]:
+                        - generic [ref=e923]: SC
+                        - generic [ref=e924]: 14-16
+                - link "4:30 PM PT SECN+ 16 ALA 23-7 11 OU 20-8" [ref=e926] [cursor=pointer]:
+                  - /url: /college-baseball/game/_/gameId/401847072/alabama-oklahoma
+                  - generic [ref=e927]:
+                    - generic [ref=e928]: 4:30 PM PT
+                    - generic [ref=e931]: SECN+
+                  - list [ref=e933]:
+                    - listitem [ref=e934]:
+                      - generic [ref=e936]: "16"
+                      - generic [ref=e937]:
+                        - generic [ref=e938]: ALA
+                        - generic [ref=e939]: 23-7
+                    - listitem [ref=e940]:
+                      - generic [ref=e942]: "11"
+                      - generic [ref=e943]:
+                        - generic [ref=e944]: OU
+                        - generic [ref=e945]: 20-8
+            - listitem [ref=e946]:
+              - generic [ref=e947]:
+                - heading "Augusta National Women's Amateur" [level=2] [ref=e950] [cursor=pointer]
+                - link "Augusta National Wom... NBC,Golf Chnl Round 2 - In Progress 1. M. Örtengren -11" [ref=e952] [cursor=pointer]:
+                  - /url: https://www.espn.com/golf/leaderboard?tournamentId=401863493
+                  - generic [ref=e953]:
+                    - generic [ref=e955]: Augusta National Wom...
+                    - generic [ref=e957]: NBC,Golf Chnl
+                  - generic [ref=e960]: Round 2 - In Progress
+                  - generic [ref=e961]:
+                    - generic [ref=e962]: "1."
+                    - img [ref=e964]
+                    - generic [ref=e966]: M. Örtengren
+                    - generic [ref=e968]: "-11"
+            - listitem [ref=e969]:
+              - generic [ref=e970]:
+                - heading "UEFA Women's Champions League" [level=2] [ref=e973] [cursor=pointer]
+                - link "9:45 AM PT ESPN Deportes /Paramount+ BAR RMA" [ref=e975] [cursor=pointer]:
+                  - /url: /soccer/match/_/gameId/401842601/real-madrid-barcelona
+                  - generic [ref=e976]:
+                    - generic [ref=e977]: 9:45 AM PT
+                    - generic [ref=e979]:
+                      - generic [ref=e980]: ESPN Deportes
+                      - generic [ref=e981]: /Paramount+
+                  - list [ref=e983]:
+                    - listitem [ref=e984]:
+                      - generic [ref=e987]: BAR
+                    - listitem [ref=e988]:
+                      - generic [ref=e991]: RMA
+                - link "12:00 PM PT ESPN Deportes /Paramount+ LYON WOB" [ref=e994] [cursor=pointer]:
+                  - /url: /soccer/match/_/gameId/401842602/vfl-wolfsburg-ol-lyonnes
+                  - generic [ref=e995]:
+                    - generic [ref=e996]: 12:00 PM PT
+                    - generic [ref=e998]:
+                      - generic [ref=e999]: ESPN Deportes
+                      - generic [ref=e1000]: /Paramount+
+                  - list [ref=e1002]:
+                    - listitem [ref=e1003]:
+                      - generic [ref=e1006]: LYON
+                    - listitem [ref=e1007]:
+                      - generic [ref=e1010]: WOB
+      - banner [ref=e1012]:
+        - generic:
+          - heading "ESPN" [level=2] [ref=e1013]:
+            - link "ESPN" [ref=e1014] [cursor=pointer]:
+              - /url: /
+          - list [ref=e1015]:
+            - text: 
+            - listitem [ref=e1016]:
+              - button "Open Search" [ref=e1017] [cursor=pointer]: 
+              - generic:
+                - generic:
+                  - textbox "Search" [ref=e1018]:
+                    - /placeholder: Search Sports, Teams or Players...
+                  - button "Submit" [ref=e1019] [cursor=pointer]
+            - listitem [ref=e1020]
+            - listitem
+        - navigation [ref=e1021]:
+          - list [ref=e1022]:
+            - listitem [ref=e1023]:
+              - link "NFL" [ref=e1024] [cursor=pointer]:
+                - /url: /nfl/
+                - generic [ref=e1025]: NFL
+              - text: 
+            - listitem [ref=e1026]:
+              - link "NBA" [ref=e1027] [cursor=pointer]:
+                - /url: /nba/
+                - generic [ref=e1028]: NBA
+              - text: 
+            - listitem [ref=e1029]:
+              - link "NCAAM" [ref=e1030] [cursor=pointer]:
+                - /url: /mens-college-basketball/
+                - generic [ref=e1031]: NCAAM
+              - text: 
+            - listitem [ref=e1032]:
+              - link "NCAAW" [ref=e1033] [cursor=pointer]:
+                - /url: /womens-college-basketball/
+                - generic [ref=e1034]: NCAAW
+            - listitem [ref=e1035]:
+              - link "More Sports" [ref=e1036] [cursor=pointer]:
+                - /url: "#"
+                - generic [ref=e1037]: More Sports
+              - text: 
+            - listitem:
+              - link:
+                - /url: "#"
+            - listitem [ref=e1038]:
+              - link " Where to Watch" [ref=e1039] [cursor=pointer]:
+                - /url: http://www.espn.com/where-to-watch/
+                - generic [ref=e1040]:  Where to Watch
+            - listitem [ref=e1041]:
+              - link "Fantasy" [ref=e1042] [cursor=pointer]:
+                - /url: /fantasy/
+                - img [ref=e1044]
+                - generic [ref=e1045]: Fantasy
+            - listitem [ref=e1046]:
+              - link "Watch" [ref=e1047] [cursor=pointer]:
+                - /url: http://www.espn.com/watch/
+                - img [ref=e1049]
+                - generic [ref=e1050]: Watch
+    - generic [ref=e1055]:
+      - text: ı N    
+      - generic [ref=e1056]:
+        - generic [ref=e1057]:
+          - 'link "Three-round NFL mock draft: Kiper, Miller, Reid and Yates rotate through the top 100 picks We asked four draft analysts -- Mel Kiper Jr., Matt Miller, Jordan Reid and Field Yates -- to make picks in the first three rounds. Where do the top prospects land? 5h•Mel Kiper Jr., +3 More" [ref=e1059] [cursor=pointer]':
+            - /url: /nfl/draft2026/story/_/id/48357214/2026-nfl-mock-draft-three-rounds-kiper-miller-reid-yates-predictions
+            - generic [ref=e1060]:
+              - generic [ref=e1062]:
+                - 'heading "Three-round NFL mock draft: Kiper, Miller, Reid and Yates rotate through the top 100 picks" [level=2] [ref=e1063]'
+                - paragraph [ref=e1064]: We asked four draft analysts -- Mel Kiper Jr., Matt Miller, Jordan Reid and Field Yates -- to make picks in the first three rounds. Where do the top prospects land?
+              - generic [ref=e1065]: 5h•Mel Kiper Jr., +3 More
+            - figure [ref=e1066]:
+              - img [ref=e1068]
+              - generic [ref=e1070]: ESPN
+          - link "These flaws could hold back the draft's top QBs We saw a lot during the college careers of the draft's top QBs. Each has something that could set them back. 5h•Bill Connelly" [ref=e1072] [cursor=pointer]:
+            - /url: /nfl/draft2026/story/_/id/48369237/nfl-draft-2026-flaws-top-quarterbacks-fernando-mendoza-ty-simpson
+            - generic [ref=e1073]:
+              - generic [ref=e1074]:
+                - heading "These flaws could hold back the draft's top QBs" [level=2] [ref=e1075]
+                - paragraph [ref=e1076]: We saw a lot during the college careers of the draft's top QBs. Each has something that could set them back.
+              - generic [ref=e1077]: 5h•Bill Connelly
+            - figure [ref=e1078]:
+              - img [ref=e1080]
+          - generic [ref=e1082]:
+            - list [ref=e1083]:
+              - listitem [ref=e1084]:
+                - text: •
+                - link "🏈 Solak's favorite draft prospects to watch" [ref=e1085] [cursor=pointer]:
+                  - /url: /nfl/draft2026/story/_/id/48357403/2026-nfl-draft-all-tape-team-best-prospects-every-position-nussmeier-bernard-barham
+            - list [ref=e1086]:
+              - listitem [ref=e1087]:
+                - text: •
+                - link "Best team fits for 20 draft prospects ➡️" [ref=e1088] [cursor=pointer]:
+                  - /url: /nfl/draft2026/story/_/id/48346957/2026-nfl-draft-favorite-team-fits-20-top-prospects-reese-love-simpson
+          - 'link "📈 Kiper''s Big Board: Ranking top 25 prospects" [ref=e1090] [cursor=pointer]':
+            - /url: https://www.espn.com/nfl/draft2026/story/_/id/46573669/2026-nfl-draft-rankings-mel-kiper-big-board-top-prospects-players-positions
+        - text: 
+        - generic [ref=e1091]:
+          - generic [ref=e1093]:
+            - img [ref=e1095]
+            - heading "WHERE THE INVESTIGATION STANDS" [level=2] [ref=e1097]
+          - link "The latest on Kawhi Leonard, Steve Ballmer and the NBA's investigation into the LA Clippers 5h•Baxter Holmes" [ref=e1099] [cursor=pointer]:
+            - /url: /nba/story/_/id/48369328/the-latest-kawhi-leonard-steve-ballmer-nba-investigation-aspiration-la-clippers
+            - generic [ref=e1100]:
+              - heading "The latest on Kawhi Leonard, Steve Ballmer and the NBA's investigation into the LA Clippers" [level=2] [ref=e1103]
+              - generic [ref=e1104]: 5h•Baxter Holmes
+            - figure [ref=e1105]:
+              - img [ref=e1107]
+              - generic [ref=e1109]: AP Photo/Aaron Gash
+        - generic [ref=e1110]:
+          - generic [ref=e1112]:
+            - generic:
+              - img
+            - heading "THURSDAY TAKES" [level=2] [ref=e1114]
+          - generic [ref=e1115]:
+            - generic [ref=e1116]:
+              - 'heading "Stephen A. on Wemby: ''This is what greatness is made of''" [level=2] [ref=e1119]'
+              - generic [ref=e1120]: 1h
+            - figure "2:45" [ref=e1121]:
+              - generic:
+                - img
+              - generic [ref=e1124]: 2:45
+          - generic [ref=e1125]:
+            - generic [ref=e1126]:
+              - 'heading "Stephen A.: ''Boston looks like the most formidable team in the Eastern Conference''" [level=2] [ref=e1129]'
+              - generic [ref=e1130]: 12m
+            - figure "2:15" [ref=e1131]:
+              - img [ref=e1133]
+              - generic [ref=e1136]: 2:15
+        - generic [ref=e1137]:
+          - generic [ref=e1139]:
+            - generic:
+              - img
+            - heading "MLB'S FIRST VIRAL MOMENT" [level=2] [ref=e1141]
+          - 'link "''Nobody would''ve believed it if there wasn''t a video'': Remembering Randy Johnson''s bird pitch 5h•Josh Weinfuss" [ref=e1143] [cursor=pointer]':
+            - /url: /mlb/story/_/id/48356185/mlb-2026-randy-johnson-pitch-strikes-bird-25-anniversary-arizona-diamondbacks
+            - generic [ref=e1144]:
+              - 'heading "''Nobody would''ve believed it if there wasn''t a video'': Remembering Randy Johnson''s bird pitch" [level=2] [ref=e1147]'
+              - generic [ref=e1148]: 5h•Josh Weinfuss
+            - figure [ref=e1149]:
+              - img [ref=e1151]
+              - generic [ref=e1153]: End of show, “Major League Baseball Productions”
+        - generic [ref=e1154]:
+          - generic [ref=e1156]:
+            - generic:
+              - img
+            - heading "WETZEL ON MEN'S COLLEGE HOOPS" [level=2] [ref=e1158]
+          - link "Men's Final Four has a Carolina blue backdrop 5h•Dan Wetzel" [ref=e1160] [cursor=pointer]:
+            - /url: /mens-college-basketball/story/_/id/48371395/unc-not-men-final-four-looms-large
+            - generic [ref=e1161]:
+              - heading "Men's Final Four has a Carolina blue backdrop" [level=2] [ref=e1164]
+              - generic [ref=e1165]: 5h•Dan Wetzel
+            - figure [ref=e1166]:
+              - img [ref=e1168]
+              - generic [ref=e1170]: Getty Images
+          - link "Why Big Ten dominance might be here to stay A title wouldn't give the conference on par with football, but it would be a big step. 1d•Dan Wetzel" [ref=e1172] [cursor=pointer]:
+            - /url: /mens-college-basketball/story/_/id/48360723/why-big-ten-dominance-here-stay
+            - generic [ref=e1173]:
+              - generic [ref=e1174]:
+                - heading "Why Big Ten dominance might be here to stay" [level=2] [ref=e1175]
+                - paragraph [ref=e1176]: A title wouldn't give the conference on par with football, but it would be a big step.
+              - generic [ref=e1177]: 1d•Dan Wetzel
+            - figure [ref=e1178]:
+              - img [ref=e1180]
+        - generic [ref=e1181]:
+          - generic [ref=e1183]:
+            - generic:
+              - img
+            - generic [ref=e1184]:
+              - heading "WOMEN'S FINAL FOUR" [level=2] [ref=e1185]
+              - 'heading "SEMIFINALS: FRIDAY ON ESPN" [level=3] [ref=e1186]'
+          - 'link "Women''s March Madness: The 15 best players left in the field 4h•Michael Voepel and Charlie Creme" [ref=e1188] [cursor=pointer]':
+            - /url: /womens-college-basketball/story/_/id/48373247/women-final-four-march-madness-ranking-15-best-players
+            - generic [ref=e1189]:
+              - 'heading "Women''s March Madness: The 15 best players left in the field" [level=2] [ref=e1192]'
+              - generic [ref=e1193]: 4h•Michael Voepel and Charlie Creme
+            - figure [ref=e1194]:
+              - img [ref=e1196]
+              - generic [ref=e1198]: Geoff Stellfox/Getty Images
+          - 'link "Preview and predictions: Which teams will win in the semifinals? Here''s how UConn, UCLA, South Carolina and Texas can win the NCAA title, and what might derail them. 1d•Charlie Creme" [ref=e1200] [cursor=pointer]':
+            - /url: /womens-college-basketball/story/_/id/48353722/womens-final-four-march-madness-2026-predictions-preview-uconn-ucla-texas-south-carolina
+            - generic [ref=e1201]:
+              - generic [ref=e1202]:
+                - 'heading "Preview and predictions: Which teams will win in the semifinals?" [level=2] [ref=e1203]'
+                - paragraph [ref=e1204]: Here's how UConn, UCLA, South Carolina and Texas can win the NCAA title, and what might derail them.
+              - generic [ref=e1205]: 1d•Charlie Creme
+            - figure [ref=e1206]:
+              - img [ref=e1208]
+          - generic [ref=e1210]:
+            - generic [ref=e1211]:
+              - link "Fri 4:00 PM PT ESPN CONN -6.5 1 South Carolina 35-3 1 UConn 38-0" [ref=e1212] [cursor=pointer]:
+                - /url: /womens-college-basketball/game/_/gameId/401856588/south-carolina-uconn
+                - generic [ref=e1213]:
+                  - generic [ref=e1214]:
+                    - text: Fri
+                    - generic [ref=e1215]: 4:00 PM PT
+                  - generic [ref=e1217]: ESPN
+                  - generic [ref=e1218]: CONN -6.5
+                - list [ref=e1220]:
+                  - listitem [ref=e1221]:
+                    - generic [ref=e1223]: "1"
+                    - generic [ref=e1224]:
+                      - generic [ref=e1225]: South Carolina
+                      - generic [ref=e1226]: 35-3
+                  - listitem [ref=e1227]:
+                    - generic [ref=e1229]: "1"
+                    - generic [ref=e1230]:
+                      - generic [ref=e1231]: UConn
+                      - generic [ref=e1232]: 38-0
+              - generic [ref=e1234]: NCAA Women's Basketball Championship - Final Four
+            - generic [ref=e1235]:
+              - link "Fri 6:30 PM PT ESPN TEX -1.5 1 Texas 35-3 1 UCLA 35-1" [ref=e1236] [cursor=pointer]:
+                - /url: /womens-college-basketball/game/_/gameId/401856589/texas-ucla
+                - generic [ref=e1237]:
+                  - generic [ref=e1238]:
+                    - text: Fri
+                    - generic [ref=e1239]: 6:30 PM PT
+                  - generic [ref=e1241]: ESPN
+                  - generic [ref=e1242]: TEX -1.5
+                - list [ref=e1244]:
+                  - listitem [ref=e1245]:
+                    - generic [ref=e1247]: "1"
+                    - generic [ref=e1248]:
+                      - generic [ref=e1249]: Texas
+                      - generic [ref=e1250]: 35-3
+                  - listitem [ref=e1251]:
+                    - generic [ref=e1253]: "1"
+                    - generic [ref=e1254]:
+                      - generic [ref=e1255]: UCLA
+                      - generic [ref=e1256]: 35-1
+              - generic [ref=e1258]: NCAA Women's Basketball Championship - Final Four
+          - generic [ref=e1260]:
+            - list [ref=e1261]:
+              - listitem [ref=e1262]:
+                - text: •
+                - link "📈 Ranking the Final Four teams" [ref=e1263] [cursor=pointer]:
+                  - /url: /womens-college-basketball/story/_/id/48351874/womens-march-madness-2026-final-four-ranking-ncaa-tournament-teams
+            - list [ref=e1264]:
+              - listitem [ref=e1265]:
+                - text: •
+                - link "🏆 Check your brackets" [ref=e1266] [cursor=pointer]:
+                  - /url: https://fantasy.espn.com/games/tournament-challenge-bracket-women-2026/?addata=tcwomens2026_ncaaw_web_relatedlinks
+          - link "🏀 Women's NCAA tournament bracket" [ref=e1268] [cursor=pointer]:
+            - /url: https://www.espn.com/womens-college-basketball/bracket
+        - generic [ref=e1269]:
+          - generic [ref=e1271]:
+            - generic:
+              - img
+            - heading "TOP AVAILABLE PLAYERS" [level=2] [ref=e1273]
+          - link "Ranking the top 55 WNBA free agents, from MVPs to key rotation players 4h•Alexa Philippou" [ref=e1275] [cursor=pointer]:
+            - /url: /wnba/story/_/id/48372462/wnba-free-agency-2026-ranking-55-best-free-agents-mvp-starters-all-stars
+            - generic [ref=e1276]:
+              - heading "Ranking the top 55 WNBA free agents, from MVPs to key rotation players" [level=2] [ref=e1279]
+              - generic [ref=e1280]: 4h•Alexa Philippou
+            - figure [ref=e1281]:
+              - img [ref=e1283]
+              - generic [ref=e1285]: David Becker/NBAE via Getty Images
+        - generic [ref=e1286]:
+          - generic [ref=e1288]:
+            - generic:
+              - img
+            - generic [ref=e1289]:
+              - heading "MEN'S FINAL FOUR" [level=2] [ref=e1290]
+              - heading "SEMIFINALS ON SATURDAY" [level=3] [ref=e1291]
+          - 'link "Your men''s Final Four guide: Illinois-UConn, Arizona-Michigan (with predictions!) 4h•Jeff Borzello and Myron Medcalf" [ref=e1293] [cursor=pointer]':
+            - /url: /mens-college-basketball/story/_/id/48373475/march-madness-final-four-arizona-michigan-uconn-illinois-predictions-2026
+            - generic [ref=e1294]:
+              - 'heading "Your men''s Final Four guide: Illinois-UConn, Arizona-Michigan (with predictions!)" [level=2] [ref=e1297]'
+              - generic [ref=e1298]: 4h•Jeff Borzello and Myron Medcalf
+            - figure [ref=e1299]:
+              - img [ref=e1301]
+              - generic [ref=e1303]: Illustration by ESPN
+          - link "Chasing history, Arizona is staying present in run to Final Four The Wildcats are back in the national semifinals for the first time in 25 years -- but are focused on the moment. 4h•Kyle Bonagura" [ref=e1305] [cursor=pointer]:
+            - /url: /mens-college-basketball/story/_/id/48372760/arizona-final-four-run-chasing-history-championship-2026
+            - generic [ref=e1306]:
+              - generic [ref=e1307]:
+                - heading "Chasing history, Arizona is staying present in run to Final Four" [level=2] [ref=e1308]
+                - paragraph [ref=e1309]: The Wildcats are back in the national semifinals for the first time in 25 years -- but are focused on the moment.
+              - generic [ref=e1310]: 4h•Kyle Bonagura
+            - figure [ref=e1311]:
+              - img [ref=e1313]
+          - generic [ref=e1315]:
+            - generic [ref=e1316]:
+              - link "Sat 3:09 PM PT TBS/truTV/HBO Max ILL -1.5 3 Illinois 28-8 2 UConn 33-5" [ref=e1317] [cursor=pointer]:
+                - /url: /mens-college-basketball/game/_/gameId/401856598/illinois-uconn
+                - generic [ref=e1318]:
+                  - generic [ref=e1319]:
+                    - text: Sat
+                    - generic [ref=e1320]: 3:09 PM PT
+                  - generic [ref=e1322]: TBS/truTV/HBO Max
+                  - generic [ref=e1323]: ILL -1.5
+                - list [ref=e1325]:
+                  - listitem [ref=e1326]:
+                    - generic [ref=e1328]: "3"
+                    - generic [ref=e1329]:
+                      - generic [ref=e1330]: Illinois
+                      - generic [ref=e1331]: 28-8
+                  - listitem [ref=e1332]:
+                    - generic [ref=e1334]: "2"
+                    - generic [ref=e1335]:
+                      - generic [ref=e1336]: UConn
+                      - generic [ref=e1337]: 33-5
+              - generic [ref=e1339]: NCAA Men's Basketball Championship - Final Four
+            - generic [ref=e1340]:
+              - link "Sat 5:49 PM PT TBS/truTV/HBO Max MICH -1.5 1 Michigan 35-3 1 Arizona 36-2" [ref=e1341] [cursor=pointer]:
+                - /url: /mens-college-basketball/game/_/gameId/401856599/michigan-arizona
+                - generic [ref=e1342]:
+                  - generic [ref=e1343]:
+                    - text: Sat
+                    - generic [ref=e1344]: 5:49 PM PT
+                  - generic [ref=e1346]: TBS/truTV/HBO Max
+                  - generic [ref=e1347]: MICH -1.5
+                - list [ref=e1349]:
+                  - listitem [ref=e1350]:
+                    - generic [ref=e1352]: "1"
+                    - generic [ref=e1353]:
+                      - generic [ref=e1354]: Michigan
+                      - generic [ref=e1355]: 35-3
+                  - listitem [ref=e1356]:
+                    - generic [ref=e1358]: "1"
+                    - generic [ref=e1359]:
+                      - generic [ref=e1360]: Arizona
+                      - generic [ref=e1361]: 36-2
+              - generic [ref=e1363]: NCAA Men's Basketball Championship - Final Four
+          - generic [ref=e1365]:
+            - list [ref=e1366]:
+              - listitem [ref=e1367]:
+                - text: •
+                - link "📈 Ranking every starter in the Final Four" [ref=e1368] [cursor=pointer]:
+                  - /url: /mens-college-basketball/story/_/id/48364142/mens-final-four-player-starter-ranking-arizona-michigan-uconn-illinois-2026
+            - list [ref=e1369]:
+              - listitem [ref=e1370]:
+                - text: •
+                - link "🏆 Check your brackets" [ref=e1371] [cursor=pointer]:
+                  - /url: https://fantasy.espn.com/games/tournament-challenge-bracket-2026/?addata=tcmens2026_ncaam_web_relatedlinks
+          - link "🏀 Men's NCAA tournament bracket" [ref=e1373] [cursor=pointer]:
+            - /url: https://www.espn.com/mens-college-basketball/bracket
+        - generic [ref=e1374]:
+          - generic [ref=e1376]:
+            - generic:
+              - img
+            - 'heading "PGA TOUR: VALERO TEXAS OPEN" [level=2] [ref=e1378]'
+          - 'link "Watch live: First-round coverage live" [ref=e1379] [cursor=pointer]':
+            - /url: https://www.espn.com/watch/player/_/om-navmethod/espn%3Ahome%3Afeed%2Bmulti-card%2Bcollection/id/ac1aa661-9e84-412f-b1e1-f2ef0bfef850
+            - 'heading "Watch live: First-round coverage" [level=2] [ref=e1383]'
+            - figure "live" [ref=e1384]:
+              - img [ref=e1386]
+              - generic [ref=e1389]: live
+          - generic [ref=e1390]:
+            - generic [ref=e1392]:
+              - generic [ref=e1393]:
+                - generic [ref=e1394]:
+                  - generic [ref=e1395]: Rd 1 - In Progress
+                  - generic [ref=e1396]: TPC San Antonio (Oaks Course) - San Antonio, TX
+                  - generic [ref=e1397]: "Total Purse: $9,800,000"
+                - generic [ref=e1398]:
+                  - generic [ref=e1400]: NBC, ESPN+, Golf Chnl, Peacock
+                  - link "Watch" [ref=e1402] [cursor=pointer]:
+                    - /url: /watch/player?eventCalendarId=401811940&om-navmethod=espn%3Ahome%3Amulti-card%20collection
+              - generic [ref=e1403]:
+                - generic [ref=e1404]: POS
+                - generic [ref=e1405]: Player
+                - generic [ref=e1406]: Score
+                - generic [ref=e1407]: Today
+            - generic [ref=e1408]:
+              - link "1 A. Smotherman -4 -4(7)" [ref=e1410] [cursor=pointer]:
+                - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                - generic [ref=e1411]:
+                  - generic [ref=e1412]: "1"
+                  - img [ref=e1414]
+                  - generic [ref=e1415]:
+                    - generic [ref=e1416]: A. Smotherman
+                    - generic [ref=e1417]:
+                      - generic [ref=e1418]: "-4"
+                      - generic [ref=e1420]: "-4(7)"
+              - link "2 W. Zalatoris -3 -3(6)" [ref=e1422] [cursor=pointer]:
+                - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                - generic [ref=e1423]:
+                  - generic [ref=e1424]: "2"
+                  - img [ref=e1426]
+                  - generic [ref=e1427]:
+                    - generic [ref=e1428]: W. Zalatoris
+                    - generic [ref=e1429]:
+                      - generic [ref=e1430]: "-3"
+                      - generic [ref=e1432]: "-3(6)"
+              - link "3 M. Meissner -2 -2(8)" [ref=e1434] [cursor=pointer]:
+                - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                - generic [ref=e1435]:
+                  - generic [ref=e1436]: "3"
+                  - img [ref=e1438]
+                  - generic [ref=e1439]:
+                    - generic [ref=e1440]: M. Meissner
+                    - generic [ref=e1441]:
+                      - generic [ref=e1442]: "-2"
+                      - generic [ref=e1444]: "-2(8)"
+              - link "3 T. Moore -2 -2(5)" [ref=e1446] [cursor=pointer]:
+                - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                - generic [ref=e1447]:
+                  - generic [ref=e1448]: "3"
+                  - img [ref=e1450]
+                  - generic [ref=e1451]:
+                    - generic [ref=e1452]: T. Moore
+                    - generic [ref=e1453]:
+                      - generic [ref=e1454]: "-2"
+                      - generic [ref=e1456]: "-2(5)"
+              - link "3 M. Homa -2 -2(4)" [ref=e1458] [cursor=pointer]:
+                - /url: https://www.espn.com/golf/leaderboard?tournamentId=401811940
+                - generic [ref=e1459]:
+                  - generic [ref=e1460]: "3"
+                  - img [ref=e1462]
+                  - generic [ref=e1463]:
+                    - generic [ref=e1464]: M. Homa
+                    - generic [ref=e1465]:
+                      - generic [ref=e1466]: "-2"
+                      - generic [ref=e1468]: "-2(4)"
+          - list [ref=e1471]:
+            - listitem [ref=e1472]:
+              - text: •
+              - link "💰 How to bet the Valero Texas Open" [ref=e1473] [cursor=pointer]:
+                - /url: /betting/golf/story/_/id/48359955/golf-pga-tour-betting-valero-texas-open
+      - generic [ref=e1474]:
+        - generic [ref=e1475]:
+          - heading " Top Headlines" [level=2] [ref=e1477]
+          - list [ref=e1479]:
+            - listitem [ref=e1480]:
+              - link "Raiders add Cousins as possible Mendoza mentor" [ref=e1481] [cursor=pointer]:
+                - /url: /nfl/story/_/id/48376719/kirk-cousins-agrees-sign-contract-raiders-agent-says
+            - listitem [ref=e1482]:
+              - link "Iowa State hoops star Crooks entering portal" [ref=e1483] [cursor=pointer]:
+                - /url: /womens-college-basketball/story/_/id/48377229/iowa-state-women-hoops-star-audi-crooks-entering-portal
+            - listitem [ref=e1484]:
+              - 'link "Arrr you ready: Pirates call up teen phenom Griffin" [ref=e1485] [cursor=pointer]':
+                - /url: /mlb/story/_/id/48377716/pirates-call-no-1-prospect-konnor-griffin-home-opener
+            - listitem [ref=e1486]:
+              - link "Fanatics takes over exclusive NFL card license" [ref=e1487] [cursor=pointer]:
+                - /url: /nfl/story/_/id/48375610/fanatics-takes-exclusive-nfl-trading-card-license
+            - listitem [ref=e1488]:
+              - link "Rams receiver Nacua is in rehab, attorney says" [ref=e1489] [cursor=pointer]:
+                - /url: /nfl/story/_/id/48373078/los-angeles-rams-wide-receiver-puka-nacua-rehab-attorney-says
+            - listitem [ref=e1490]:
+              - link "Wemby stays hot, doubles down on MVP chase" [ref=e1491] [cursor=pointer]:
+                - /url: /nba/story/_/id/48374676/wembanyama-doubles-mvp-chase-41-point-night
+            - listitem [ref=e1492]:
+              - link "NCAA proposes ban on players who stay in draft" [ref=e1493] [cursor=pointer]:
+                - /url: /espn/story/_/id/48372762/ncaa-proposes-barring-players-opt-remain-draft
+            - listitem [ref=e1494]:
+              - link "QB Mendoza puts on show at Indiana pro day" [ref=e1495] [cursor=pointer]:
+                - /url: /nfl/story/_/id/48372927/expected-no-1-fernando-mendoza-puts-show-indiana-pro-day
+            - listitem [ref=e1496]:
+              - 'link "⚾ MLB Power Rankings: Top teams after week 1" [ref=e1497] [cursor=pointer]':
+                - /url: /mlb/story/_/id/48340812/mlb-2026-power-rankings-week-1-dodgers-yankees-mariners-blue-jays-mets
+        - generic [ref=e1502]:
+          - generic: "N"
+          - link "Manage Favorites" [ref=e1504] [cursor=pointer]:
+            - /url: "#"
+        - article [ref=e1505]:
+          - heading "Customize ESPN" [level=2] [ref=e1506]
+          - button "Create Account" [ref=e1507] [cursor=pointer]
+          - button "Log In" [ref=e1508] [cursor=pointer]
+        - article [ref=e1509]:
+          - heading "ICYMI" [level=2] [ref=e1511]
+          - list [ref=e1512]:
+            - listitem [ref=e1513]:
+              - figure [ref=e1514]:
+                - generic [ref=e1515]:
+                  - link:
+                    - /url: https://www.espn.com/video/clip?id=48373473
+                    - generic:
+                      - img
+                  - generic [ref=e1517]: 0:57
+            - listitem [ref=e1518]:
+              - heading "Hawks-Magic get into scuffle after Goga Bitadze's hard foul on Jock Landale" [level=2] [ref=e1519]:
+                - link "Hawks-Magic get into scuffle after Goga Bitadze's hard foul on Jock Landale" [ref=e1520] [cursor=pointer]:
+                  - /url: /video/clip?id=48373473
+              - paragraph [ref=e1521]: Goga Bitadze is ejected for a hard foul on Jock Landale and a scuffle ensues between the Magic and Hawks.
+        - article [ref=e1522]:
+          - heading "ESPN is now the home of MLB.TV" [level=2] [ref=e1524]
+          - list [ref=e1525]:
+            - listitem [ref=e1526]:
+              - figure [ref=e1527]:
+                - generic [ref=e1528]:
+                  - link:
+                    - /url: https://plus.espn.com/mlbtv
+                    - generic:
+                      - img
+            - listitem [ref=e1529]:
+              - heading "All MLB out-of-market Games. Live or On Demand. All in One Place." [level=2] [ref=e1530]:
+                - link "All MLB out-of-market Games. Live or On Demand. All in One Place." [ref=e1531] [cursor=pointer]:
+                  - /url: https://plus.espn.com/mlbtv
+              - paragraph
+        - article [ref=e1532]:
+          - heading "Sounding Off" [level=2] [ref=e1534]
+          - list [ref=e1535]:
+            - listitem [ref=e1536]:
+              - figure [ref=e1537]:
+                - generic [ref=e1538]:
+                  - link:
+                    - /url: https://www.espn.com/video/clip?id=48369331
+                    - generic:
+                      - img
+                  - generic [ref=e1540]: 2:19
+            - listitem [ref=e1541]:
+              - heading "Stephen A. cannot believe Kimberley’s defense of Aaron Glenn’s comments" [level=2] [ref=e1542]:
+                - link "Stephen A. cannot believe Kimberley’s defense of Aaron Glenn’s comments" [ref=e1543] [cursor=pointer]:
+                  - /url: /video/clip?id=48369331
+              - paragraph [ref=e1544]: Kimberley A. Martin and Stephen A. Smith debate Aaron Glenn’s statement that Geno Smith will lead the Jets to the “promised land.”
+        - article [ref=e1545]:
+          - heading "Trending Now" [level=2] [ref=e1547]
+          - list [ref=e1548]:
+            - listitem [ref=e1549]:
+              - figure [ref=e1550]:
+                - generic [ref=e1551]:
+                  - link:
+                    - /url: /mlb/story/_/id/48340784/mlb-2026-season-better-value-aaron-judge-shohei-ohtani-breakdown
+                    - generic:
+                      - img
+            - listitem [ref=e1552]:
+              - 'heading "MLB 2026: Who is ACTUALLY more valuable -- Judge or Ohtani?" [level=2] [ref=e1553]':
+                - 'link "MLB 2026: Who is ACTUALLY more valuable -- Judge or Ohtani?" [ref=e1554] [cursor=pointer]':
+                  - /url: /mlb/story/_/id/48340784/mlb-2026-season-better-value-aaron-judge-shohei-ohtani-breakdown
+              - paragraph [ref=e1555]: They're the unquestioned top two superstars in baseball, so we broke down their value to determine which MVP reigns supreme.
+            - listitem [ref=e1556]:
+              - figure [ref=e1557]:
+                - generic [ref=e1558]:
+                  - link:
+                    - /url: /nfl/story/_/id/48352133/18-game-regular-season-cba-nfl-owners-coaches-weigh-league-meetings-phoenix
+                    - generic:
+                      - img
+            - listitem [ref=e1559]:
+              - heading "18-game regular season? Mixed reaction by NFL owners, coaches" [level=2] [ref=e1560]:
+                - link "18-game regular season? Mixed reaction by NFL owners, coaches" [ref=e1561] [cursor=pointer]:
+                  - /url: /nfl/story/_/id/48352133/18-game-regular-season-cba-nfl-owners-coaches-weigh-league-meetings-phoenix
+              - paragraph [ref=e1562]: Colts, Chiefs, Browns and Patriots owners among those talking about the feasibility of expanding the schedule.
+            - listitem [ref=e1563]:
+              - figure [ref=e1564]:
+                - generic [ref=e1565]:
+                  - link:
+                    - /url: /nba/story/_/id/48323320/next-lebron-nba-insiders-lakers-warriors-cavs-free-agency-options
+                    - generic:
+                      - img
+            - listitem [ref=e1566]:
+              - heading "Next for LeBron? NBA insiders on Lakers, Cavs, free agency options" [level=2] [ref=e1567]:
+                - link "Next for LeBron? NBA insiders on Lakers, Cavs, free agency options" [ref=e1568] [cursor=pointer]:
+                  - /url: /nba/story/_/id/48323320/next-lebron-nba-insiders-lakers-warriors-cavs-free-agency-options
+              - paragraph [ref=e1569]: Lakers? Cavs? Warriors? A wild card? Before LeBron makes his decision this summer, sources around the league weigh in.
+            - listitem [ref=e1570]:
+              - figure [ref=e1571]:
+                - generic [ref=e1572]:
+                  - link:
+                    - /url: /mens-college-basketball/story/_/id/48273891/mens-march-madness-2026-pain-index-tournament-loss-hurt
+                    - generic:
+                      - img
+            - listitem [ref=e1573]:
+              - heading "The Men's 2026 March Madness Pain Index" [level=2] [ref=e1574]:
+                - link "The Men's 2026 March Madness Pain Index" [ref=e1575] [cursor=pointer]:
+                  - /url: /mens-college-basketball/story/_/id/48273891/mens-march-madness-2026-pain-index-tournament-loss-hurt
+              - paragraph [ref=e1576]: "Some losses are understandable in the NCAA tournament. Others will haunt us forever (see: Duke). We rank them all."
+        - article [ref=e1577]:
+          - generic [ref=e1578]:
+            - img "Play ESPN Fantasy baseball" [ref=e1580]
+            - 'heading "Sign up to play the #1 Fantasy Baseball Game" [level=2]'
+            - generic [ref=e1581]:
+              - link "Create A League" [ref=e1582] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/baseball/welcome?addata=right_rail_create_flb2026
+              - link "Join a Public League" [ref=e1583] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/baseball/welcome?addata=right_rail_join_flb2026
+              - link "Reactivate A League" [ref=e1584] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/baseball/tools/reactivate?seasonId=2025&addata=flb_2026_right_rail_reactivate
+            - link "Practice With a Mock Draft" [ref=e1586] [cursor=pointer]:
+              - /url: https://fantasy.espn.com/baseball/mockdraftlobby?addata=right_rail_mock_flb2026
+        - article [ref=e1587]:
+          - generic [ref=e1588]:
+            - img "Play ESPN Fantasy womens-basketball" [ref=e1590]
+            - heading "Sign up for FREE!" [level=2]
+            - generic [ref=e1591]:
+              - link "Reactivate A League" [ref=e1592] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/womens-basketball/tools/reactivate?seasonId=2025&addata=wfba2026_right_rail_reactivate
+              - link "Create A League" [ref=e1593] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/womens-basketball/welcome?addata=right_rail_create_wfba2026
+              - link "Join a Public League" [ref=e1594] [cursor=pointer]:
+                - /url: https://fantasy.espn.com/womens-basketball/welcome?addata=right_rail_join_wfba2026
+            - link "Practice With a Mock Draft" [ref=e1596] [cursor=pointer]:
+              - /url: https://fantasy.espn.com/womens-basketball/mockdraftlobby?addata=right_rail_mock_wfba2026
+        - generic [ref=e1597]:
+          - list [ref=e1598]:
+            - listitem [ref=e1599]:
+              - link "Terms of Use" [ref=e1600] [cursor=pointer]:
+                - /url: https://disneytermsofuse.com/english/
+            - listitem [ref=e1601]:
+              - link "Privacy Policy" [ref=e1602] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+            - listitem [ref=e1603]:
+              - link "Your US State Privacy Rights" [ref=e1604] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/your-us-state-privacy-rights/
+            - listitem [ref=e1605]:
+              - link "Children's Online Privacy Policy" [ref=e1606] [cursor=pointer]:
+                - /url: https://disneyprivacycenter.com/kids-privacy-policy/english/
+            - listitem [ref=e1607]:
+              - link "Interest-Based Ads" [ref=e1608] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/privacy-controls/online-tracking-and-advertising/
+            - listitem [ref=e1609]:
+              - link "About Nielsen Measurement" [ref=e1610] [cursor=pointer]:
+                - /url: http://www.nielsen.com/digitalprivacy
+            - listitem [ref=e1611]:
+              - link "Your Privacy Choices" [ref=e1612] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/dnssmpi/
+            - listitem [ref=e1613]:
+              - link "Contact Us" [ref=e1614] [cursor=pointer]:
+                - /url: https://www.espn.com/espn/news/story?page=contact-index
+            - listitem [ref=e1615]:
+              - link "Disney Ad Sales Site" [ref=e1616] [cursor=pointer]:
+                - /url: https://www.disneyadvertising.com/
+            - listitem [ref=e1617]:
+              - link "Work for ESPN" [ref=e1618] [cursor=pointer]:
+                - /url: https://jobs.disneycareers.com/espn
+            - listitem [ref=e1619]:
+              - link "Corrections" [ref=e1620] [cursor=pointer]:
+                - /url: https://www.espn.com/espn/corrections
+          - generic [ref=e1621]: "GAMBLING PROBLEM? CALL 1-800-GAMBLER, (800) 327-5050 or visit gamblinghelplinema.org (MA). Call 877-8-HOPENY/text HOPENY (467369) (NY). Please Gamble Responsibly. 888-789-7777/visit ccpg.org (CT), or visit www.mdgamblinghelp.org (MD). 21+ and present in most states. (18+ DC/KY/NH/WY). Void in ONT/OR/NH. Eligibility restrictions apply. On behalf of Boot Hill Casino & Resort (KS). Terms: sportsbook.draftkings.com/promos."
+          - generic [ref=e1622]: "Copyright: © 2026 ESPN Enterprises, LLC. All rights reserved."
+      - generic [ref=e1623]:
+        - generic [ref=e1624]:
+          - article [ref=e1625]:
+            - generic [ref=e1626]:
+              - heading "📍Watch on ESPN" [level=2] [ref=e1628]
+              - list [ref=e1629]:
+                - listitem [ref=e1630]:
+                  - link "Subscribe Now" [ref=e1631] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/offers?om-navmethod=button:subscribe
+                - listitem [ref=e1632]:
+                  - link "Capitals vs. Devils" [ref=e1633] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/player/_/id/a977f256-d5cd-4d6c-a5c2-db17eb6ff9aa
+                    - generic [ref=e1635]: Capitals vs. Devils
+                - listitem [ref=e1636]:
+                  - link "Mammoth vs. Kraken" [ref=e1637] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/player/_/id/93317ea4-873b-40b2-a83b-b20150f3eb0f
+                    - generic [ref=e1639]: Mammoth vs. Kraken
+                - listitem [ref=e1640]:
+                  - 'link "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/pgatour.png Live: Valero Texas Open" [ref=e1641] [cursor=pointer]':
+                    - /url: https://www.espn.com/watch/catalog/2a2a6f3a-a852-3cf9-a870-e80992a07517
+                    - img "https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/pgatour.png" [ref=e1643]
+                    - generic [ref=e1644]: "Live: Valero Texas Open"
+                - listitem [ref=e1645]:
+                  - link "MLB.TV" [ref=e1646] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/collections/48556/mlb-t-live-upcoming
+                    - generic [ref=e1648]: MLB.TV
+                - listitem [ref=e1649]:
+                  - link "NHL Power Play" [ref=e1650] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/catalog/1a5f0227-a13e-396c-8cea-8961bc288666
+                    - generic [ref=e1652]: NHL Power Play
+                - listitem [ref=e1653]:
+                  - link "NIT Semifinals" [ref=e1654] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/catalog/11965179-4504-3b99-983e-83ea0e36d5f3
+                    - generic [ref=e1656]: NIT Semifinals
+                - listitem [ref=e1657]:
+                  - link "https://artwork.espncdn.com/categories/6a062a95-0063-3abe-aa09-6a0b6866339f/logo/original_201807271359.svg NCAA Women's Gymnastics (Regionals)" [ref=e1658] [cursor=pointer]:
+                    - /url: https://www.espn.com/watch/catalog/6a062a95-0063-3abe-aa09-6a0b6866339f
+                    - img "https://artwork.espncdn.com/categories/6a062a95-0063-3abe-aa09-6a0b6866339f/logo/original_201807271359.svg" [ref=e1660]
+                    - generic [ref=e1661]: NCAA Women's Gymnastics (Regionals)
+                - listitem [ref=e1662]:
+                  - link "SportsCenter For You" [ref=e1663] [cursor=pointer]:
+                    - /url: https://www.espn.com/sportscenter-for-you
+                    - generic [ref=e1665]: SportsCenter For You
+          - article [ref=e1666]:
+            - generic [ref=e1667]:
+              - heading "Quick Links" [level=2] [ref=e1669]
+              - list [ref=e1670]:
+                - listitem [ref=e1671]:
+                  - link "Men's NCAA Bracket" [ref=e1672] [cursor=pointer]:
+                    - /url: https://www.espn.com/mens-college-basketball/bracket
+                    - generic [ref=e1674]: Men's NCAA Bracket
+                - listitem [ref=e1675]:
+                  - link "Women's NCAA Bracket" [ref=e1676] [cursor=pointer]:
+                    - /url: https://www.espn.com/womens-college-basketball/bracket
+                    - generic [ref=e1678]: Women's NCAA Bracket
+                - listitem [ref=e1679]:
+                  - link "Men's Tournament Challenge" [ref=e1680] [cursor=pointer]:
+                    - /url: https://fantasy.espn.com/games/tournament-challenge-bracket-2026/?addata=tcmens2026_ncaam_web_quicklinks_ncaam
+                    - generic [ref=e1682]: Men's Tournament Challenge
+                - listitem [ref=e1683]:
+                  - link "Women's Tournament Challenge" [ref=e1684] [cursor=pointer]:
+                    - /url: https://fantasy.espn.com/games/tournament-challenge-bracket-women-2026/?addata=tcwomens2026_ncaaw_web_quicklinks_ncaaw
+                    - generic [ref=e1686]: Women's Tournament Challenge
+                - listitem [ref=e1687]:
+                  - link "ı NCAA Baseball & Softball" [ref=e1688] [cursor=pointer]:
+                    - /url: https://www.espn.com/college-sports/
+                    - generic [ref=e1689]: ı
+                    - generic [ref=e1690]: NCAA Baseball & Softball
+                - listitem [ref=e1691]:
+                  - link "Fantasy Women's Basketball" [ref=e1692] [cursor=pointer]:
+                    - /url: https://fantasy.espn.com/womens-basketball/welcome?addata=quick_links_wfba2026
+                    - generic [ref=e1694]: Fantasy Women's Basketball
+                - listitem [ref=e1695]:
+                  - 'link "Fantasy Baseball: Sign Up" [ref=e1696] [cursor=pointer]':
+                    - /url: https://fantasy.espn.com/baseball/welcome?addata=flb_2026_quick_links
+                    - generic [ref=e1698]: "Fantasy Baseball: Sign Up"
+                - listitem [ref=e1699]:
+                  - link "Where To Watch" [ref=e1700] [cursor=pointer]:
+                    - /url: https://www.espn.com/where-to-watch?addata=w2w_p1_quicklinks
+                    - generic [ref=e1702]: Where To Watch
+                - listitem [ref=e1703]:
+                  - link "https://a.espncdn.com/assets/ESPN_IconUpdates_Jul252025/Bet/PNG/betting-filled-grey.png Today's Top Odds" [ref=e1704] [cursor=pointer]:
+                    - /url: https://www.espn.com/sports-betting/odds
+                    - img "https://a.espncdn.com/assets/ESPN_IconUpdates_Jul252025/Bet/PNG/betting-filled-grey.png" [ref=e1706]
+                    - generic [ref=e1707]: Today's Top Odds
+                - listitem [ref=e1708]:
+                  - 'link "ESPN Radio: Listen Live" [ref=e1709] [cursor=pointer]':
+                    - /url: https://www.espn.com/radio/play/_/s/espn
+                    - generic [ref=e1711]: "ESPN Radio: Listen Live"
+          - article [ref=e1712]:
+            - generic [ref=e1713]:
+              - heading "Fantasy" [level=2] [ref=e1715]
+              - list [ref=e1716]:
+                - listitem [ref=e1717]:
+                  - link "Football" [ref=e1718] [cursor=pointer]:
+                    - /url: http://www.espn.com/fantasy/football/
+                    - generic [ref=e1720]: Football
+                - listitem [ref=e1721]:
+                  - link "Baseball" [ref=e1722] [cursor=pointer]:
+                    - /url: http://www.espn.com/fantasy/baseball/
+                    - generic [ref=e1724]: Baseball
+                - listitem [ref=e1725]:
+                  - link "Hockey" [ref=e1726] [cursor=pointer]:
+                    - /url: http://www.espn.com/fantasy/hockey/
+                    - generic [ref=e1728]: Hockey
+                - listitem [ref=e1729]:
+                  - link "Men's Basketball" [ref=e1730] [cursor=pointer]:
+                    - /url: https://www.espn.com/fantasy/mens-basketball/
+                    - generic [ref=e1732]: Men's Basketball
+                - listitem [ref=e1733]:
+                  - link "Women's Basketball" [ref=e1734] [cursor=pointer]:
+                    - /url: https://www.espn.com/fantasy/womens-basketball/
+                    - generic [ref=e1736]: Women's Basketball
+          - article [ref=e1737]:
+            - generic [ref=e1738]:
+              - heading "ESPN Sites" [level=2] [ref=e1740]
+              - list [ref=e1741]:
+                - listitem [ref=e1742]:
+                  - link " ESPN Deportes" [ref=e1743] [cursor=pointer]:
+                    - /url: https://espndeportes.espn.com
+                    - generic [ref=e1744]: 
+                    - generic [ref=e1745]: ESPN Deportes
+                - listitem [ref=e1746]:
+                  - link "Andscape " [ref=e1747] [cursor=pointer]:
+                    - /url: https://andscape.com/
+                    - generic [ref=e1749]: Andscape
+                    - text: 
+                - listitem [ref=e1750]:
+                  - link "espnW" [ref=e1751] [cursor=pointer]:
+                    - /url: http://www.espn.com/espnw/
+                    - generic [ref=e1753]: espnW
+                - listitem [ref=e1754]:
+                  - link "ESPNFC" [ref=e1755] [cursor=pointer]:
+                    - /url: https://www.espn.com/soccer/
+                    - generic [ref=e1757]: ESPNFC
+                - listitem [ref=e1758]:
+                  - link "X Games " [ref=e1759] [cursor=pointer]:
+                    - /url: http://xgames.espn.com
+                    - generic [ref=e1761]: X Games
+                    - text: 
+                - listitem [ref=e1762]:
+                  - link "SEC Network " [ref=e1763] [cursor=pointer]:
+                    - /url: https://www.secsports.com
+                    - generic [ref=e1765]: SEC Network
+                    - text: 
+        - generic [ref=e1767]:
+          - img "ESPN" [ref=e1769]
+          - generic [ref=e1770]:
+            - list [ref=e1771]:
+              - listitem [ref=e1772]:
+                - link "Terms of Use" [ref=e1773] [cursor=pointer]:
+                  - /url: https://disneytermsofuse.com/english/
+              - listitem [ref=e1774]:
+                - link "Privacy Policy" [ref=e1775] [cursor=pointer]:
+                  - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+              - listitem [ref=e1776]:
+                - link "Your US State Privacy Rights" [ref=e1777] [cursor=pointer]:
+                  - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/your-us-state-privacy-rights/
+              - listitem [ref=e1778]:
+                - link "Children's Online Privacy Policy" [ref=e1779] [cursor=pointer]:
+                  - /url: https://disneyprivacycenter.com/kids-privacy-policy/english/
+              - listitem [ref=e1780]:
+                - link "Interest-Based Ads" [ref=e1781] [cursor=pointer]:
+                  - /url: https://privacy.thewaltdisneycompany.com/en/privacy-controls/online-tracking-and-advertising/
+              - listitem [ref=e1782]:
+                - link "About Nielsen Measurement" [ref=e1783] [cursor=pointer]:
+                  - /url: http://www.nielsen.com/digitalprivacy
+              - listitem [ref=e1784]:
+                - link "Your Privacy Choices" [ref=e1785] [cursor=pointer]:
+                  - /url: https://privacy.thewaltdisneycompany.com/en/dnssmpi/
+              - listitem [ref=e1786]:
+                - link "Contact Us" [ref=e1787] [cursor=pointer]:
+                  - /url: https://www.espn.com/espn/news/story?page=contact-index
+              - listitem [ref=e1788]:
+                - link "Disney Ad Sales Site" [ref=e1789] [cursor=pointer]:
+                  - /url: https://www.disneyadvertising.com/
+              - listitem [ref=e1790]:
+                - link "Work for ESPN" [ref=e1791] [cursor=pointer]:
+                  - /url: https://jobs.disneycareers.com/espn
+              - listitem [ref=e1792]:
+                - link "Corrections" [ref=e1793] [cursor=pointer]:
+                  - /url: https://www.espn.com/espn/corrections
+            - generic [ref=e1794]: "GAMBLING PROBLEM? CALL 1-800-GAMBLER, (800) 327-5050 or visit gamblinghelplinema.org (MA). Call 877-8-HOPENY/text HOPENY (467369) (NY). Please Gamble Responsibly. 888-789-7777/visit ccpg.org (CT), or visit www.mdgamblinghelp.org (MD). 21+ and present in most states. (18+ DC/KY/NH/WY). Void in ONT/OR/NH. Eligibility restrictions apply. On behalf of Boot Hill Casino & Resort (KS). Terms: sportsbook.draftkings.com/promos."
+            - generic [ref=e1795]: "Copyright: © 2026 ESPN Enterprises, LLC. All rights reserved."
+  - text: desktop

@@ -50,7 +50,8 @@
 		@apply border-border;
 	}
 	body {
-		@apply bg-white text-foreground;
+		@apply text-foreground;
+		background-color: #F1F2F3;
 		font-family: -apple-system, "system-ui", Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
 	}
 }

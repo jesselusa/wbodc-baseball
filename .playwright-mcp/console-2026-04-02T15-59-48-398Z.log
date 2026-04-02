@@ -1,0 +1,46 @@
+[     953ms] [WARNING] [GPT] Invalid arguments: SizeMappingBuilder.addSize([0, 0], [[0, 0]]). All zero-area slot sizes were removed.
+https://goo.gle/gpt-message#151 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202603260101/pubads_impl.js?cb=31097482:18
+[    1017ms] [LOG] MyBets Module removed because betting links are off or user is not logged in and this is mybets v1 @ https://a.espncdn.com/redesign/0.767.1/js/personalized-one-feed.min.js:0
+[    1076ms] [INFO] [AccessEnabler.js][info] Version: 4.7.1-5a99613 RELEASE @ https://entitlement.auth.adobe.com/entitlement/v4/AccessEnabler.js:0
+[    1111ms] [INFO] [AccessEnablerProxy.js][info] Version: 4.7.1-5a99613 RELEASE @ https://sp.auth.adobe.com/entitlement/v4/AccessEnablerProxy.js:0
+[    3622ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[    3633ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[    3676ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[    3714ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
+[    4678ms] [ERROR] [OneID] [%s]:  ERROR Session not established @ https://cdn.registerdisney.go.com/v4/OneID.js:1
+[    4678ms] [ERROR] [OneID] [%s]:  ERROR Session not established @ https://cdn.registerdisney.go.com/v4/OneID.js:1
+[    4908ms] [LOG] received a request for uspapi @ https://cdn.espn.com/onetrust/otCCPAiab.js:95
+[    4915ms] [ERROR] Error fetching device information: LocationNotAllowedException: User is not allowed to use the app in their current location.
+    at pr (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:94347)
+    at zh (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:188317)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:106234
+    at Array.every (<anonymous>)
+    at yo (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:106221)
+    at Wh.<anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:190281)
+    at Generator.next (<anonymous>)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:60128
+    at new Promise (<anonymous>)
+    at mi (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:59873)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:190239 @ https://a.espncdn.com/redesign/0.767.1/js/espn-critical.js:8
+[    4915ms] [ERROR] Error fetching analytics IDs:  LocationNotAllowedException: User is not allowed to use the app in their current location.
+    at pr (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:94347)
+    at zh (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:188317)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:106234
+    at Array.every (<anonymous>)
+    at yo (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:106221)
+    at Wh.<anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:190281)
+    at Generator.next (<anonymous>)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:60128
+    at new Promise (<anonymous>)
+    at mi (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:59873)
+    at https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:2:190239 @ https://a.espncdn.com/redesign/0.767.1/js/espn-critical.js:8
+[    4922ms] Uncaught (in promise) LocationNotAllowedException: User is not allowed to use the app in their current location.
+    at pr (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:94346)
+    at zh (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:188316)
+    at <anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:106233)
+    at yo (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:106220)
+    at <anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:190280)
+    at <anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:60127)
+    at mi (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:59872)
+    at <anonymous> (https://a.espncdn.com/redesign/0.767.1/node_modules/@fitt/bam-browser-sdk-lite/dist/bam-browser-sdk.min.js:1:190238)
+[    7906ms] [WARNING] The resource https://cdn.registerdisney.go.com/v4/asset/bundler/ESPN/v4/images/v2/espn-red-logo.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://cdn.registerdisney.go.com/v4/bundle/web/ESPN-ONESITE.WEB/en-US?cssOverride=https%3A%2F%2Fsecure.espncdn.com%2Fcombiner%2Fc%3Fcss%3Ddisneyid%2Fcorev4.css&logLevel=INFO:0

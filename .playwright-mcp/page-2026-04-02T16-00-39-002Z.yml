@@ -1,0 +1,570 @@
+- generic [ref=e6]:
+  - region "HeaderScoreboard" [ref=e9]:
+    - button "Skip to main content" [ref=e10]
+    - button "Skip to navigation" [ref=e11]
+    - generic:
+      - generic:
+        - generic:
+          - img
+          - combobox "Sports":
+            - option [selected]
+  - banner [ref=e12]:
+    - generic [ref=e13]:
+      - navigation "Global Navigation" [ref=e14]:
+        - generic [ref=e15]:
+          - link "ESPN Home Page" [ref=e18] [cursor=pointer]:
+            - /url: /
+            - text: ESPN
+          - list [ref=e19]:
+            - listitem [ref=e20]:
+              - link "ESPN NFL Home Page" [ref=e21] [cursor=pointer]:
+                - /url: /nfl/
+                - generic [ref=e23]: NFL
+              - button "NFL"
+            - listitem [ref=e24]:
+              - link "ESPN NBA Home Page" [ref=e25] [cursor=pointer]:
+                - /url: /nba/
+                - generic [ref=e27]: NBA
+              - button "NBA"
+            - listitem [ref=e28]:
+              - link "ESPN NCAAM Home Page" [ref=e29] [cursor=pointer]:
+                - /url: /mens-college-basketball/
+                - generic [ref=e31]: NCAAM
+              - button "NCAAM"
+            - listitem [ref=e32]:
+              - link "ESPN NCAAW Home Page" [ref=e33] [cursor=pointer]:
+                - /url: /womens-college-basketball/
+                - generic [ref=e35]: NCAAW
+              - button "NCAAW"
+            - listitem [ref=e36]:
+              - link "ESPN MLB Home Page" [ref=e37] [cursor=pointer]:
+                - /url: /mlb/
+                - generic [ref=e39]: MLB
+              - button "MLB"
+            - listitem [ref=e40]:
+              - link "ESPN NHL Home Page" [ref=e41] [cursor=pointer]:
+                - /url: /nhl/
+                - generic [ref=e43]: NHL
+              - button "NHL"
+            - listitem [ref=e44]:
+              - link "ESPN Soccer Home Page" [ref=e45] [cursor=pointer]:
+                - /url: /soccer/
+                - generic [ref=e47]: Soccer
+              - button "Soccer"
+            - listitem [ref=e48]:
+              - link "ESPN More Sports Home Page" [ref=e49] [cursor=pointer]:
+                - /url: "#"
+                - generic [ref=e50]: More Sports
+              - button "More Sports"
+        - generic [ref=e51]:
+          - list [ref=e52]:
+            - listitem [ref=e53]:
+              - link "Watch ESPN Watch" [ref=e54] [cursor=pointer]:
+                - /url: http://www.espn.com/watch/
+                - generic [ref=e55]:
+                  - img "Watch ESPN" [ref=e57]
+                  - generic [ref=e58]: Watch
+              - button "Watch"
+            - listitem [ref=e59]:
+              - link "ESPN Fantasy Fantasy" [ref=e60] [cursor=pointer]:
+                - /url: /fantasy/
+                - generic [ref=e61]:
+                  - img "ESPN Fantasy" [ref=e63]
+                  - generic [ref=e64]: Fantasy
+              - button "Fantasy"
+          - list [ref=e65]:
+            - listitem [ref=e66]:
+              - link "Where to Watch" [ref=e67] [cursor=pointer]:
+                - /url: https://www.espn.com/where-to-watch
+                - generic [ref=e68]:
+                  - img [ref=e70]
+                  - generic [ref=e73]: Where to Watch
+            - listitem [ref=e74] [cursor=pointer]:
+              - button "Search" [ref=e76]
+            - listitem [ref=e78]:
+              - button "Profile Management" [ref=e79] [cursor=pointer]:
+                - generic [ref=e80]:
+                  - img "Profile Management"
+      - navigation "MLB Menu - LIVE" [ref=e81]:
+        - list [ref=e83]:
+          - listitem [ref=e84]:
+            - link "ESPN MLB Home Page" [ref=e85] [cursor=pointer]:
+              - /url: /mlb/
+              - generic [ref=e86]: MLB
+          - listitem [ref=e87]:
+            - link "Home" [ref=e88] [cursor=pointer]:
+              - /url: /mlb/
+              - generic [ref=e89]: Home
+          - listitem [ref=e90]:
+            - link "Scores" [ref=e91] [cursor=pointer]:
+              - /url: /mlb/scoreboard
+              - generic [ref=e92]: Scores
+          - listitem [ref=e93]:
+            - link "Schedule" [ref=e94] [cursor=pointer]:
+              - /url: /mlb/schedule
+              - generic [ref=e95]: Schedule
+          - listitem [ref=e96]:
+            - link "Standings" [ref=e97] [cursor=pointer]:
+              - /url: /mlb/standings
+              - generic [ref=e98]: Standings
+          - listitem [ref=e99]:
+            - link "Stats" [ref=e100] [cursor=pointer]:
+              - /url: /mlb/stats
+              - generic [ref=e101]: Stats
+          - listitem [ref=e102]:
+            - link "Teams" [ref=e103] [cursor=pointer]:
+              - /url: /mlb/teams
+              - generic [ref=e104]: Teams
+            - button "Teams" [ref=e105] [cursor=pointer]:
+              - img [ref=e106]
+          - listitem [ref=e108]:
+            - link "Players" [ref=e109] [cursor=pointer]:
+              - /url: http://www.espn.com/mlb/players
+              - generic [ref=e110]: Players
+          - listitem [ref=e111]:
+            - link "Depth Charts" [ref=e112] [cursor=pointer]:
+              - /url: https://www.espn.com/mlb/story/_/id/40185033/2024-mlb-depth-charts-all-30-teams
+              - generic [ref=e113]: Depth Charts
+          - listitem [ref=e114]:
+            - link "Odds" [ref=e115] [cursor=pointer]:
+              - /url: https://www.espn.com/mlb/odds
+              - generic [ref=e116]: Odds
+            - button "Odds" [ref=e117] [cursor=pointer]:
+              - img [ref=e118]
+          - listitem [ref=e120]:
+            - link "Fantasy Baseball" [ref=e121] [cursor=pointer]:
+              - /url: https://fantasy.espn.com/baseball/welcome?addata=flb_2026_home_nav
+              - generic [ref=e122]: Fantasy Baseball
+          - listitem [ref=e123]:
+            - link "More" [ref=e124] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e125]: More
+            - button "More" [ref=e126] [cursor=pointer]:
+              - img [ref=e127]
+  - main [ref=e131]:
+    - generic [ref=e136]:
+      - main [ref=e137]:
+        - generic [ref=e139]:
+          - generic [ref=e141]:
+            - heading "MLB Scoreboard" [level=1] [ref=e143]
+            - generic [ref=e146]:
+              - generic [ref=e147]:
+                - button [ref=e148] [cursor=pointer]:
+                  - img [ref=e149]
+                - generic [ref=e152]:
+                  - generic [ref=e154]:
+                    - generic [ref=e156] [cursor=pointer]:
+                      - text: Mon
+                      - generic [ref=e157]: Mar 23
+                    - generic [ref=e159] [cursor=pointer]:
+                      - text: Tue
+                      - generic [ref=e160]: Mar 24
+                    - generic [ref=e162] [cursor=pointer]:
+                      - text: Wed
+                      - generic [ref=e163]: Mar 25
+                    - generic [ref=e165] [cursor=pointer]:
+                      - text: Thu
+                      - generic [ref=e166]: Mar 26
+                    - generic [ref=e168] [cursor=pointer]:
+                      - text: Fri
+                      - generic [ref=e169]: Mar 27
+                    - generic [ref=e171] [cursor=pointer]:
+                      - text: Sat
+                      - generic [ref=e172]: Mar 28
+                    - generic [ref=e174] [cursor=pointer]:
+                      - text: Sun
+                      - generic [ref=e175]: Mar 29
+                  - generic [ref=e177]:
+                    - generic [ref=e179] [cursor=pointer]:
+                      - text: Mon
+                      - generic [ref=e180]: Mar 30
+                    - generic [ref=e182] [cursor=pointer]:
+                      - text: Tue
+                      - generic [ref=e183]: Mar 31
+                    - generic [ref=e185] [cursor=pointer]:
+                      - text: Wed
+                      - generic [ref=e186]: Apr 1
+                    - generic [ref=e188] [cursor=pointer]:
+                      - text: Thu
+                      - generic [ref=e189]: Apr 2
+                    - generic [ref=e191] [cursor=pointer]:
+                      - text: Fri
+                      - generic [ref=e192]: Apr 3
+                    - generic [ref=e194] [cursor=pointer]:
+                      - text: Sat
+                      - generic [ref=e195]: Apr 4
+                    - generic [ref=e197] [cursor=pointer]:
+                      - text: Sun
+                      - generic [ref=e198]: Apr 5
+                  - generic [ref=e200]:
+                    - generic [ref=e202] [cursor=pointer]:
+                      - text: Mon
+                      - generic [ref=e203]: Apr 6
+                    - generic [ref=e205] [cursor=pointer]:
+                      - text: Tue
+                      - generic [ref=e206]: Apr 7
+                    - generic [ref=e208] [cursor=pointer]:
+                      - text: Wed
+                      - generic [ref=e209]: Apr 8
+                    - generic [ref=e211] [cursor=pointer]:
+                      - text: Thu
+                      - generic [ref=e212]: Apr 9
+                    - generic [ref=e214] [cursor=pointer]:
+                      - text: Fri
+                      - generic [ref=e215]: Apr 10
+                    - generic [ref=e217] [cursor=pointer]:
+                      - text: Sat
+                      - generic [ref=e218]: Apr 11
+                    - generic [ref=e220] [cursor=pointer]:
+                      - text: Sun
+                      - generic [ref=e221]: Apr 12
+                - button [ref=e222] [cursor=pointer]:
+                  - img [ref=e223]
+              - button "Calendar" [ref=e225] [cursor=pointer]:
+                - img [ref=e226]
+          - generic [ref=e229]:
+            - generic "Thursday, April 2, 2026" [ref=e230]:
+              - heading "Thursday, April 2, 2026" [level=3] [ref=e232]
+              - generic [ref=e236]:
+                - generic [ref=e237]: Odds by
+                - img "DraftKings" [ref=e238]
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - generic [ref=e242]:
+                  - generic [ref=e246]:
+                    - generic [ref=e247]:
+                      - generic [ref=e248]: 11:10 AM
+                      - generic [ref=e249]:
+                        - text: "-"
+                        - generic [ref=e250]: MLB.TV
+                    - list [ref=e252]:
+                      - listitem [ref=e253]:
+                        - link [ref=e254] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/min/minnesota-twins
+                        - generic [ref=e255]:
+                          - link "Twins" [ref=e257] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/min/minnesota-twins
+                            - generic [ref=e258]: Twins
+                          - generic [ref=e259]:
+                            - text: (1-4
+                            - generic [ref=e260]:
+                              - text: ", 1-4"
+                              - generic [ref=e261]: Away
+                            - text: )
+                      - listitem [ref=e262]:
+                        - link [ref=e263] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/kc/kansas-city-royals
+                        - generic [ref=e264]:
+                          - link "Royals" [ref=e266] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/kc/kansas-city-royals
+                            - generic [ref=e267]: Royals
+                          - generic [ref=e268]:
+                            - text: (3-2
+                            - generic [ref=e269]:
+                              - text: ", 2-0"
+                              - generic [ref=e270]: Home
+                            - text: )
+                  - generic [ref=e273]:
+                    - generic [ref=e274]:
+                      - generic [ref=e275]:
+                        - generic [ref=e276]: Kauffman Stadium
+                        - generic [ref=e277]: Kansas City, Missouri
+                      - link "74°" [ref=e279] [cursor=pointer]:
+                        - /url: http://www.accuweather.com/en/us/kauffman-stadium-mo/64106/hourly-weather-forecast/43033_poi?day=1&hbhhour=13&lang=en-us&partner=espn_sb
+                        - img [ref=e282]
+                        - generic [ref=e285]: 74°
+                    - link "Tickets as low as $7" [ref=e288] [cursor=pointer]:
+                      - /url: https://www.vividseats.com/kansas-city-royals-tickets-kauffman-stadium-4-2-2026--sports-mlb-baseball/production/5964513?wsUser=717&wsVar=us~mlb~scoreboard,mlb,en
+                      - img [ref=e289]
+                      - text: Tickets as low as $7
+                    - list [ref=e294]:
+                      - listitem [ref=e295]:
+                        - generic [ref=e296]: "ML:"
+                        - generic [ref=e297]: MIN +129
+                        - generic [ref=e298]: "@"
+                        - generic [ref=e299]: KC -156
+                - link "Gamecast" [ref=e301] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814779/twins-royals
+              - generic [ref=e302]:
+                - generic [ref=e304]:
+                  - generic [ref=e308]:
+                    - generic [ref=e309]:
+                      - generic [ref=e310]: 6:40 PM
+                      - generic [ref=e311]:
+                        - text: "-"
+                        - generic [ref=e312]: ESPN Unlmtd
+                        - generic [ref=e313]: /MLB.TV
+                    - list [ref=e315]:
+                      - listitem [ref=e316]:
+                        - link [ref=e317] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/atl/atlanta-braves
+                        - generic [ref=e318]:
+                          - link "Braves" [ref=e320] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/atl/atlanta-braves
+                            - generic [ref=e321]: Braves
+                          - generic [ref=e322]:
+                            - text: (4-2
+                            - generic [ref=e323]:
+                              - text: ", 0-0"
+                              - generic [ref=e324]: Away
+                            - text: )
+                      - listitem [ref=e325]:
+                        - link [ref=e326] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/ari/arizona-diamondbacks
+                        - generic [ref=e327]:
+                          - link "Diamondbacks" [ref=e329] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/ari/arizona-diamondbacks
+                            - generic [ref=e330]: Diamondbacks
+                          - generic [ref=e331]:
+                            - text: (3-3
+                            - generic [ref=e332]:
+                              - text: ", 3-0"
+                              - generic [ref=e333]: Home
+                            - text: )
+                  - generic [ref=e336]:
+                    - generic [ref=e338]:
+                      - generic [ref=e339]: Chase Field
+                      - generic [ref=e340]: Phoenix, Arizona
+                    - link "Tickets as low as $30" [ref=e342] [cursor=pointer]:
+                      - /url: https://www.vividseats.com/arizona-diamondbacks-tickets-chase-field-4-2-2026--sports-mlb-baseball/production/5964767?wsUser=717&wsVar=us~mlb~scoreboard,mlb,en
+                      - img [ref=e343]
+                      - text: Tickets as low as $30
+                    - list [ref=e348]:
+                      - listitem [ref=e349]:
+                        - generic [ref=e350]: "ML:"
+                        - generic [ref=e351]: ATL -122
+                        - generic [ref=e352]: "@"
+                        - generic [ref=e353]: ARI +102
+                - link "Gamecast" [ref=e355] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814781/braves-diamondbacks
+              - generic [ref=e356]:
+                - generic [ref=e358]:
+                  - generic [ref=e362]:
+                    - generic [ref=e363]:
+                      - generic [ref=e364]: 6:45 PM
+                      - generic [ref=e365]:
+                        - text: "-"
+                        - generic [ref=e366]: MLB.TV
+                        - generic [ref=e367]: /MLB Net
+                    - list [ref=e369]:
+                      - listitem [ref=e370]:
+                        - link [ref=e371] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/nym/new-york-mets
+                        - generic [ref=e372]:
+                          - link "Mets" [ref=e374] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/nym/new-york-mets
+                            - generic [ref=e375]: Mets
+                          - generic [ref=e376]:
+                            - text: (3-3
+                            - generic [ref=e377]:
+                              - text: ", 1-2"
+                              - generic [ref=e378]: Away
+                            - text: )
+                      - listitem [ref=e379]:
+                        - link [ref=e380] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/sf/san-francisco-giants
+                        - generic [ref=e381]:
+                          - link "Giants" [ref=e383] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/sf/san-francisco-giants
+                            - generic [ref=e384]: Giants
+                          - generic [ref=e385]:
+                            - text: (2-4
+                            - generic [ref=e386]:
+                              - text: ", 0-3"
+                              - generic [ref=e387]: Home
+                            - text: )
+                  - generic [ref=e390]:
+                    - generic [ref=e391]:
+                      - generic [ref=e392]:
+                        - generic [ref=e393]: Oracle Park
+                        - generic [ref=e394]: San Francisco, California
+                      - link "53°" [ref=e396] [cursor=pointer]:
+                        - /url: http://www.accuweather.com/en/us/san-francisco-ca/94103/current-weather/39377_pc?lang=en-us&partner=espn_sb
+                        - img [ref=e399]
+                        - generic [ref=e402]: 53°
+                    - link "Tickets as low as $19" [ref=e405] [cursor=pointer]:
+                      - /url: https://www.vividseats.com/san-francisco-giants-tickets-oracle-park-4-2-2026--sports-mlb-baseball/production/5964614?wsUser=717&wsVar=us~mlb~scoreboard,mlb,en
+                      - img [ref=e406]
+                      - text: Tickets as low as $19
+                    - list [ref=e411]:
+                      - listitem [ref=e412]:
+                        - generic [ref=e413]: "ML:"
+                        - generic [ref=e414]: NYM -126
+                        - generic [ref=e415]: "@"
+                        - generic [ref=e416]: SF +104
+                - link "Gamecast" [ref=e418] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814782/mets-giants
+              - generic [ref=e419]:
+                - generic [ref=e421]:
+                  - generic [ref=e425]:
+                    - generic [ref=e427]: Postponed
+                    - list [ref=e429]:
+                      - listitem [ref=e430]:
+                        - link [ref=e431] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/tor/toronto-blue-jays
+                        - generic [ref=e432]:
+                          - link "Blue Jays" [ref=e434] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/tor/toronto-blue-jays
+                            - generic [ref=e435]: Blue Jays
+                          - generic [ref=e436]:
+                            - text: (4-2
+                            - generic [ref=e437]:
+                              - text: ", 0-0"
+                              - generic [ref=e438]: Away
+                            - text: )
+                      - listitem [ref=e439]:
+                        - link [ref=e440] [cursor=pointer]:
+                          - /url: /mlb/team/_/name/chw/chicago-white-sox
+                        - generic [ref=e441]:
+                          - link "White Sox" [ref=e443] [cursor=pointer]:
+                            - /url: /mlb/team/_/name/chw/chicago-white-sox
+                            - generic [ref=e444]: White Sox
+                          - generic [ref=e445]:
+                            - text: (1-5
+                            - generic [ref=e446]:
+                              - text: ", 0-0"
+                              - generic [ref=e447]: Home
+                            - text: )
+                    - generic [ref=e449]: Inclement Weather - Makeup date April 3
+                  - generic [ref=e454]:
+                    - generic [ref=e455]: Rate Field
+                    - generic [ref=e456]: Chicago, Illinois
+                - link "Gamecast" [ref=e458] [cursor=pointer]:
+                  - /url: /mlb/game/_/gameId/401814780/blue-jays-white-sox
+      - complementary [ref=e461]:
+        - generic [ref=e462]:
+          - generic [ref=e463]:
+            - generic "MLB Videos" [ref=e464]:
+              - heading "MLB Videos" [level=3] [ref=e466]
+            - generic [ref=e467]:
+              - generic [ref=e470]:
+                - generic:
+                  - figure
+                  - generic:
+                    - img
+              - list [ref=e478]:
+                - listitem [ref=e479]:
+                  - generic [ref=e480]:
+                    - 'button "Dodgers or Yankees: Who takes top spot in Week 1''s power rankings? 3:12" [ref=e481]':
+                      - img [ref=e482]
+                      - generic [ref=e484]:
+                        - generic [ref=e485]: "Dodgers or Yankees: Who takes top spot in Week 1's power rankings?"
+                        - list [ref=e486]:
+                          - listitem [ref=e487]: 3:12
+                    - 'button "Minnesota Twins vs. Kansas City Royals: Game Highlights 1:05" [ref=e488]':
+                      - img [ref=e489]
+                      - generic [ref=e491]:
+                        - generic [ref=e492]: "Minnesota Twins vs. Kansas City Royals: Game Highlights"
+                        - list [ref=e493]:
+                          - listitem [ref=e494]: 1:05
+                    - button "Guardians win rubber match with Dodgers to take the series 1:01" [ref=e495]:
+                      - img [ref=e496]
+                      - generic [ref=e498]:
+                        - generic [ref=e499]: Guardians win rubber match with Dodgers to take the series
+                        - list [ref=e500]:
+                          - listitem [ref=e501]: 1:01
+          - complementary
+          - generic [ref=e504]:
+            - generic "📍Watch on ESPN" [ref=e505]:
+              - heading "📍Watch on ESPN" [level=3] [ref=e507]
+            - list [ref=e509]:
+              - listitem [ref=e510]:
+                - link "Live & Upcoming" [ref=e512] [cursor=pointer]:
+                  - /url: /watch/catalog/b38f959b-7865-31ac-8841-b88355519e10
+                  - generic [ref=e515]: Live & Upcoming
+              - listitem [ref=e516]:
+                - link "MLB.TV" [ref=e518] [cursor=pointer]:
+                  - /url: /watch/collections/48556/mlb-t-live-upcoming
+                  - generic [ref=e521]: MLB.TV
+              - listitem [ref=e522]:
+                - link "Baseball Tonight" [ref=e524] [cursor=pointer]:
+                  - /url: /watch/catalog/8e3f6086-3517-48b8-bc28-3afeda5bf026
+                  - generic [ref=e527]: Baseball Tonight
+              - listitem [ref=e528]:
+                - link "The Captain" [ref=e530] [cursor=pointer]:
+                  - /url: /watch/catalog/5e64dfd6-6a66-446e-9692-d8234018af37
+                  - generic [ref=e533]: The Captain
+              - listitem [ref=e534]:
+                - link "Big Papi's Places" [ref=e536] [cursor=pointer]:
+                  - /url: /watch/catalog/eeeba72d-f8ee-4a5e-8517-521d20dcc212
+                  - generic [ref=e539]: Big Papi's Places
+          - complementary [ref=e540]:
+            - generic [ref=e541]:
+              - generic "MLB News" [ref=e542]:
+                - heading "MLB News" [level=3] [ref=e544]
+              - list [ref=e546]:
+                - listitem [ref=e547]:
+                  - link "Pirates call up No. 1 prospect Konnor Griffin for home opener The Pirates are calling up 19-year-old shortstop Konnor Griffin, the No. 1 prospect in baseball, ahead of Friday's home opener against the Orioles. 7m •Jeff Passan" [ref=e548] [cursor=pointer]:
+                    - /url: /mlb/story/_/id/48377716/pirates-call-no-1-prospect-konnor-griffin-home-opener
+                    - figure [ref=e549]:
+                      - img "Pirates call up No. 1 prospect Konnor Griffin for home opener" [ref=e552]
+                    - generic [ref=e553]:
+                      - heading "Pirates call up No. 1 prospect Konnor Griffin for home opener" [level=2] [ref=e554]
+                      - generic "The Pirates are calling up 19-year-old shortstop Konnor Griffin, the No. 1 prospect in baseball, ahead of Friday's home opener against the Orioles." [ref=e555]
+                      - list [ref=e556]:
+                        - listitem [ref=e557]: 7m
+                        - listitem [ref=e558]: •Jeff Passan
+                - listitem [ref=e559]:
+                  - 'link "2026 MLB awards tracker: Odds for MVP, Cy Young, Rookie of the Year Who are the favorites to win seasonlong honors? Here are the odds for MVP, Cy Young and Rookie of the Year in the AL and NL. 1h •Doug Greenberg" [ref=e560] [cursor=pointer]':
+                    - /url: /espn/betting/story/_/id/48350446/2026-mlb-awards-sports-betting-odds-tracker-mvp-cy-young-rookie-year
+                    - figure [ref=e561]:
+                      - 'img "2026 MLB awards tracker: Odds for MVP, Cy Young, Rookie of the Year" [ref=e564]'
+                    - generic [ref=e565]:
+                      - 'heading "2026 MLB awards tracker: Odds for MVP, Cy Young, Rookie of the Year" [level=2] [ref=e566]'
+                      - generic "Who are the favorites to win seasonlong honors? Here are the odds for MVP, Cy Young and Rookie of the Year in the AL and NL." [ref=e567]
+                      - list [ref=e568]:
+                        - listitem [ref=e569]: 1h
+                        - listitem [ref=e570]: •Doug Greenberg
+                - listitem [ref=e571]:
+                  - link "Meet Pirates' Konnor Griffin, MLB's next teenage superstar The No. 1 prospect in the sport is headed to the majors -- and could be baseball's next phenom. 1h •Jeff Passan" [ref=e572] [cursor=pointer]:
+                    - /url: /mlb/story/_/id/48032977/mlb-2026-konnor-griffin-pittsburgh-pirates-no-1-prospect-opening-day-roster
+                    - figure [ref=e573]:
+                      - img "Meet Pirates' Konnor Griffin, MLB's next teenage superstar" [ref=e576]
+                    - generic [ref=e577]:
+                      - heading "Meet Pirates' Konnor Griffin, MLB's next teenage superstar" [level=2] [ref=e578]
+                      - generic "The No. 1 prospect in the sport is headed to the majors -- and could be baseball's next phenom." [ref=e579]
+                      - list [ref=e580]:
+                        - listitem [ref=e581]: 1h
+                        - listitem [ref=e582]: •Jeff Passan
+              - link "All MLB News" [ref=e584] [cursor=pointer]:
+                - /url: /mlb/
+    - region "Page Footer" [ref=e586]:
+      - generic [ref=e589]:
+        - img "ESPN" [ref=e591]
+        - region "Legal Footer Navigation" [ref=e592]:
+          - list [ref=e594]:
+            - listitem [ref=e595]:
+              - link "Terms of Use" [ref=e596] [cursor=pointer]:
+                - /url: https://disneytermsofuse.com/english/
+            - listitem [ref=e597]:
+              - link "Privacy Policy" [ref=e598] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+            - listitem [ref=e599]:
+              - link "Your US State Privacy Rights" [ref=e600] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/your-us-state-privacy-rights/
+            - listitem [ref=e601]:
+              - link "Children's Online Privacy Policy" [ref=e602] [cursor=pointer]:
+                - /url: https://disneyprivacycenter.com/kids-privacy-policy/english/
+            - listitem [ref=e603]:
+              - link "Interest-Based Ads" [ref=e604] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/privacy-controls/online-tracking-and-advertising/
+            - listitem [ref=e605]:
+              - link "About Nielsen Measurement" [ref=e606] [cursor=pointer]:
+                - /url: http://www.nielsen.com/digitalprivacy
+            - listitem [ref=e607]:
+              - link "Your Privacy Choices" [ref=e608] [cursor=pointer]:
+                - /url: https://privacy.thewaltdisneycompany.com/en/dnssmpi/
+            - listitem [ref=e609]:
+              - link "Contact Us" [ref=e610] [cursor=pointer]:
+                - /url: https://www.espn.com/espn/news/story?page=contact-index
+            - listitem [ref=e611]:
+              - link "Disney Ad Sales Site" [ref=e612] [cursor=pointer]:
+                - /url: https://www.disneyadvertising.com/
+            - listitem [ref=e613]:
+              - link "Work for ESPN" [ref=e614] [cursor=pointer]:
+                - /url: https://jobs.disneycareers.com/espn
+            - listitem [ref=e615]:
+              - link "Corrections" [ref=e616] [cursor=pointer]:
+                - /url: https://www.espn.com/espn/corrections
+          - generic [ref=e617]: "GAMBLING PROBLEM? CALL 1-800-GAMBLER, (800) 327-5050 or visit gamblinghelplinema.org (MA). Call 877-8-HOPENY/text HOPENY (467369) (NY). Please Gamble Responsibly. 888-789-7777/visit ccpg.org (CT), or visit www.mdgamblinghelp.org (MD). 21+ and present in most states. (18+ DC/KY/NH/WY). Void in ONT/OR/NH. Eligibility restrictions apply. On behalf of Boot Hill Casino & Resort (KS). Terms: sportsbook.draftkings.com/promos."
+          - generic [ref=e618]: "Copyright: © 2026 ESPN Enterprises, LLC. All rights reserved."

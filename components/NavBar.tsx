@@ -24,11 +24,17 @@ export default function NavBar() {
 	return (
 		<>
 			<nav
-				className="fixed left-0 right-0 z-[100] flex items-center px-4"
 				style={{
+					position: 'fixed',
 					top: 0,
+					left: 0,
+					right: 0,
+					zIndex: 100,
 					height: 48,
 					backgroundColor: '#1D1E1F',
+					display: 'flex',
+					alignItems: 'center',
+					padding: '0 16px',
 				}}
 			>
 				<div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: 1400, margin: '0 auto', height: '100%' }}>

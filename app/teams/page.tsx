@@ -158,7 +158,7 @@ export default function TeamsPage() {
         background: '#1a1a1a',
         color: '#ffffff',
         padding: '14px 16px',
-        borderRadius: '4px 4px 0 0',
+        borderRadius: '10px 10px 0 0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -168,7 +168,7 @@ export default function TeamsPage() {
       </div>
 
       {/* Table */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', border: '1px solid #E5E5E5', borderTop: 'none' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', border: '1px solid #E5E5E5', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
         <thead>
           <tr style={{ background: '#F9F9F9', borderBottom: '2px solid #E5E5E5' }}>
             <th style={{ ...headerCell, textAlign: 'center', width: '40px' }}>RK</th>

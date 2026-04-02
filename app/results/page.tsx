@@ -88,6 +88,7 @@ function ResultsContent() {
 				letterSpacing: '0.05em',
 				padding: '8px 16px',
 				marginTop: 24,
+				borderRadius: '10px 10px 0 0',
 			}}>
 				Tournament History
 			</div>
@@ -134,6 +135,7 @@ function ResultsContent() {
 					border: '1px solid #D0D0D0',
 					borderTop: 'none',
 					padding: '16px',
+					borderRadius: '0 0 10px 10px',
 				}}>
 					<h2 style={{ fontSize: 20, fontWeight: 700, color: '#151617', margin: '0 0 4px 0' }}>
 						{selected.name}
@@ -162,20 +164,21 @@ function ResultsContent() {
 						letterSpacing: '0.05em',
 						padding: '8px 16px',
 						marginTop: 24,
+						borderRadius: '10px 10px 0 0',
 					}}>
 						Games
 					</div>
 
 					{loadingGames ? (
-						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							Loading games...
 						</div>
 					) : games.length === 0 ? (
-						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							No games recorded for this tournament
 						</div>
 					) : (
-						<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+						<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							{games.map((game, i) => (
 								<Link
 									key={game.id}

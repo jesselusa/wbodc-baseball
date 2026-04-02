@@ -20,7 +20,7 @@ export default function RootLayout({
 				className="antialiased"
 				style={{
 					paddingTop: 48,
-					backgroundColor: '#FFFFFF',
+					backgroundColor: '#F1F2F3',
 					color: '#484A4A',
 					fontFamily: '-apple-system, system-ui, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif',
 					margin: 0,

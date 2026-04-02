@@ -157,6 +157,9 @@ export default function Page() {
 				padding: '48px 24px',
 				textAlign: 'center',
 				borderBottom: '1px solid #D0D0D0',
+				backgroundColor: '#FFFFFF',
+				borderRadius: 10,
+				marginTop: 24,
 			}}>
 				<div style={{
 					fontSize: 12,
@@ -201,6 +204,7 @@ export default function Page() {
 						letterSpacing: '0.05em',
 						padding: '8px 16px',
 						marginBottom: 0,
+						borderRadius: '10px 10px 0 0',
 					}}>
 						{lastCompleted.name} Recap
 					</div>
@@ -233,7 +237,7 @@ export default function Page() {
 
 					{/* Standings table */}
 					{standings.length > 0 && (
-						<div style={{ border: '1px solid #D0D0D0', borderTop: lastCompleted.winner ? 'none' : '1px solid #D0D0D0' }}>
+						<div style={{ border: '1px solid #D0D0D0', borderTop: lastCompleted.winner ? 'none' : '1px solid #D0D0D0', borderRadius: '0 0 10px 10px' }}>
 							{/* Table header */}
 							<div style={{
 								display: 'grid',
@@ -325,6 +329,7 @@ export default function Page() {
 					letterSpacing: '0.05em',
 					padding: '8px 16px',
 					marginBottom: 0,
+					borderRadius: '10px 10px 0 0',
 				}}>
 					All-Time History
 				</div>
@@ -333,6 +338,7 @@ export default function Page() {
 					border: '1px solid #D0D0D0',
 					borderTop: 'none',
 					padding: '16px',
+					borderRadius: '0 0 10px 10px',
 				}}>
 					<Link
 						href="/results"

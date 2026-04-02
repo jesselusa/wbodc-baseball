@@ -83,6 +83,7 @@ export default function PlayersPage() {
 				display: 'flex',
 				justifyContent: 'space-between',
 				alignItems: 'center',
+				borderRadius: '10px 10px 0 0',
 			}}>
 				<span>Players</span>
 				<label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 400, textTransform: 'none', cursor: 'pointer' }}>
@@ -99,7 +100,7 @@ export default function PlayersPage() {
 			{loading ? (
 				<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F', fontSize: 14 }}>Loading players...</div>
 			) : (
-				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', overflowX: 'auto' }}>
+				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', overflowX: 'auto', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
 					{/* Table header */}
 					<div style={{
 						display: 'grid',

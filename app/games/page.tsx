@@ -101,6 +101,7 @@ function GamesContent() {
 				display: 'flex',
 				justifyContent: 'space-between',
 				alignItems: 'center',
+				borderRadius: '10px 10px 0 0',
 			}}>
 				<span>Scoreboard</span>
 				{tournamentName && (
@@ -152,11 +153,12 @@ function GamesContent() {
 					backgroundColor: '#FFFFFF',
 					border: '1px solid #D0D0D0',
 					borderTop: 'none',
+					borderRadius: '0 0 10px 10px',
 				}}>
 					No games to show
 				</div>
 			) : (
-				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 					{filteredGames.map((game, i) => (
 						<Link
 							key={game.id}
