@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/api';
-import { normalizeJoin } from '../../lib/utils';
+import { normalizeJoin, ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
+import TabBar from '../../components/TabBar';
 
 interface GameData {
 	id: string;
@@ -94,45 +95,20 @@ export default function GamesPage() {
 			<SectionHeader title="Scoreboard" rightText={tournamentName} style={{ marginTop: 24 }} />
 
 			{/* Tab bar */}
-			<div style={{
-				display: 'flex',
-				gap: 0,
-				borderBottom: '1px solid #D0D0D0',
-				backgroundColor: '#FFFFFF',
-			}}>
-				{tabs.map(tab => (
-					<button
-						key={tab.key}
-						onClick={() => setActiveTab(tab.key)}
-						style={{
-							padding: '10px 16px',
-							fontSize: 13,
-							fontWeight: activeTab === tab.key ? 700 : 400,
-							color: activeTab === tab.key ? '#151617' : '#6C6D6F',
-							backgroundColor: 'transparent',
-							border: 'none',
-							borderBottom: activeTab === tab.key ? '2px solid #CC0000' : '2px solid transparent',
-							cursor: 'pointer',
-							transition: 'color 0.15s',
-						}}
-					>
-						{tab.label}
-					</button>
-				))}
-			</div>
+			<TabBar tabs={tabs} activeKey={activeTab} onTabChange={(key) => setActiveTab(key as FilterTab)} />
 
 			{/* Content */}
 			{loading ? (
-				<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F', fontSize: 14 }}>
+				<div style={{ padding: 48, textAlign: 'center', color: ESPN.gray500, fontSize: 14 }}>
 					Loading scores...
 				</div>
 			) : filteredGames.length === 0 ? (
 				<div style={{
 					padding: 48,
 					textAlign: 'center',
-					color: '#6C6D6F',
+					color: ESPN.gray500,
 					fontSize: 14,
-					backgroundColor: '#FFFFFF',
+					backgroundColor: ESPN.white,
 					border: '1px solid #D0D0D0',
 					borderTop: 'none',
 					borderRadius: '0 0 10px 10px',
@@ -140,7 +116,7 @@ export default function GamesPage() {
 					No games to show
 				</div>
 			) : (
-				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+				<div style={{ backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 					{filteredGames.map((game, i) => (
 						<GameScoreRow key={game.id} game={game} showBorder={i < filteredGames.length - 1} />
 					))}

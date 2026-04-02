@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/api';
-import { normalizeJoin } from '../../lib/utils';
+import { normalizeJoin, ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
 import { TournamentRecord } from '../../lib/types';
@@ -86,7 +86,7 @@ function ResultsContent() {
 
 			{/* Tournament selector */}
 			<div style={{
-				backgroundColor: '#FFFFFF',
+				backgroundColor: ESPN.white,
 				border: '1px solid #D0D0D0',
 				borderTop: 'none',
 				padding: '12px 16px',
@@ -95,7 +95,7 @@ function ResultsContent() {
 				gap: 8,
 			}}>
 				{loading ? (
-					<span style={{ color: '#6C6D6F', fontSize: 13 }}>Loading...</span>
+					<span style={{ color: ESPN.gray500, fontSize: 13 }}>Loading...</span>
 				) : (
 					tournaments.map(t => (
 						<button
@@ -105,8 +105,8 @@ function ResultsContent() {
 								padding: '6px 12px',
 								fontSize: 13,
 								fontWeight: selectedId === t.id ? 700 : 400,
-								color: selectedId === t.id ? '#FFFFFF' : '#2B2C2D',
-								backgroundColor: selectedId === t.id ? '#CC0000' : '#F1F2F3',
+								color: selectedId === t.id ? ESPN.white : ESPN.gray900,
+								backgroundColor: selectedId === t.id ? ESPN.red : ESPN.gray100,
 								border: 'none',
 								borderRadius: 4,
 								cursor: 'pointer',
@@ -122,20 +122,20 @@ function ResultsContent() {
 			{/* Selected tournament info */}
 			{selected && (
 				<div style={{
-					backgroundColor: '#FFFFFF',
+					backgroundColor: ESPN.white,
 					border: '1px solid #D0D0D0',
 					borderTop: 'none',
 					padding: '16px',
 					borderRadius: '0 0 10px 10px',
 				}}>
-					<h2 style={{ fontSize: 20, fontWeight: 700, color: '#151617', margin: '0 0 4px 0' }}>
+					<h2 style={{ fontSize: 20, fontWeight: 700, color: ESPN.black, margin: '0 0 4px 0' }}>
 						{selected.name}
 					</h2>
-					<div style={{ fontSize: 13, color: '#6C6D6F' }}>
+					<div style={{ fontSize: 13, color: ESPN.gray500 }}>
 						{selected.location}
 						{selected.start_date && ` · ${new Date(selected.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
 						{selected.winner && (
-							<span style={{ marginLeft: 12, color: '#CC0000', fontWeight: 600 }}>
+							<span style={{ marginLeft: 12, color: ESPN.red, fontWeight: 600 }}>
 								🏆 Champion: {selected.winner}
 							</span>
 						)}
@@ -149,15 +149,15 @@ function ResultsContent() {
 					<SectionHeader title="Games" style={{ marginTop: 24 }} />
 
 					{loadingGames ? (
-						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+						<div style={{ padding: 32, textAlign: 'center', color: ESPN.gray500, fontSize: 14, backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							Loading games...
 						</div>
 					) : games.length === 0 ? (
-						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+						<div style={{ padding: 32, textAlign: 'center', color: ESPN.gray500, fontSize: 14, backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							No games recorded for this tournament
 						</div>
 					) : (
-						<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+						<div style={{ backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
 							{games.map((game, i) => (
 								<GameScoreRow key={game.id} game={game} showBorder={i < games.length - 1} />
 							))}
@@ -172,7 +172,7 @@ function ResultsContent() {
 export default function ResultsPage() {
 	return (
 		<Suspense fallback={
-			<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F' }}>Loading...</div>
+			<div style={{ padding: 48, textAlign: 'center', color: ESPN.gray500 }}>Loading...</div>
 		}>
 			<ResultsContent />
 		</Suspense>

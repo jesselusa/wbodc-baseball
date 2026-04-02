@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/api';
-import { normalizeJoin } from '../../../lib/utils';
+import { normalizeJoin, ESPN } from '../../../lib/utils';
 
 interface GameData {
 	id: string;
@@ -132,7 +132,7 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 	if (loading) {
 		return (
 			<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-				<span style={{ color: '#6C6D6F', fontSize: 14 }}>Loading game...</span>
+				<span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading game...</span>
 			</div>
 		);
 	}
@@ -140,8 +140,8 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 	if (error && !game) {
 		return (
 			<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-				<span style={{ color: '#CC0000', fontSize: 16, fontWeight: 600 }}>{error}</span>
-				<Link href="/games" style={{ color: '#0066CC', fontSize: 14 }}>← Back to scores</Link>
+				<span style={{ color: ESPN.red, fontSize: 16, fontWeight: 600 }}>{error}</span>
+				<Link href="/games" style={{ color: ESPN.blue, fontSize: 14 }}>← Back to scores</Link>
 			</div>
 		);
 	}
@@ -348,7 +348,7 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 
 			{/* Link back */}
 			<div style={{ padding: '16px 0 32px', textAlign: 'center' }}>
-				<Link href={`/game/${game.id}`} style={{ color: '#0066CC', fontSize: 13, textDecoration: 'none' }}>
+				<Link href={`/game/${game.id}`} style={{ color: ESPN.blue, fontSize: 13, textDecoration: 'none' }}>
 					View game details →
 				</Link>
 			</div>

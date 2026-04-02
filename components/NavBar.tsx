@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Settings } from 'lucide-react';
+import { ESPN } from '../lib/utils';
 
 const navLinks = [
 	{ href: '/games', label: 'Scores' },
@@ -31,7 +32,7 @@ export default function NavBar() {
 					right: 0,
 					zIndex: 100,
 					height: 48,
-					backgroundColor: '#1D1E1F',
+					backgroundColor: ESPN.dark,
 					display: 'flex',
 					alignItems: 'center',
 					padding: '0 16px',
@@ -61,7 +62,7 @@ export default function NavBar() {
 								left: -60,
 								right: 0,
 								bottom: 0,
-								backgroundColor: '#CC0000',
+								backgroundColor: ESPN.red,
 								transform: 'skewX(-16deg)',
 								zIndex: 0,
 							}}
@@ -70,7 +71,7 @@ export default function NavBar() {
 							style={{
 								position: 'relative',
 								zIndex: 1,
-								color: '#FFFFFF',
+								color: ESPN.white,
 								fontWeight: 900,
 								fontSize: 20,
 								fontStyle: 'italic',
@@ -99,7 +100,7 @@ export default function NavBar() {
 									fontWeight: isActive(link.href) ? 700 : 500,
 									textDecoration: 'none',
 									transition: 'color 0.15s',
-									color: '#FFFFFF',
+									color: ESPN.white,
 									borderBottom: isActive(link.href) ? '2px solid #CC0000' : '2px solid transparent',
 								}}
 							>
@@ -115,7 +116,7 @@ export default function NavBar() {
 					<Link
 						href="/admin"
 						style={{
-							color: '#6C6D6F',
+							color: ESPN.gray500,
 							textDecoration: 'none',
 							display: 'none',
 							alignItems: 'center',
@@ -131,7 +132,7 @@ export default function NavBar() {
 						style={{
 							background: 'none',
 							border: 'none',
-							color: '#FFFFFF',
+							color: ESPN.white,
 							padding: 8,
 							cursor: 'pointer',
 							display: 'flex',
@@ -165,7 +166,7 @@ export default function NavBar() {
 							top: 88,
 							left: 0,
 							right: 0,
-							backgroundColor: '#1D1E1F',
+							backgroundColor: ESPN.dark,
 							zIndex: 99,
 							display: 'flex',
 							flexDirection: 'column',
@@ -180,7 +181,7 @@ export default function NavBar() {
 									padding: '12px 24px',
 									fontSize: 16,
 									textDecoration: 'none',
-									color: isActive(link.href) ? '#FFFFFF' : '#A5A6A7',
+									color: isActive(link.href) ? ESPN.white : ESPN.gray400,
 									fontWeight: isActive(link.href) ? 600 : 400,
 									borderLeft: isActive(link.href) ? '2px solid #CC0000' : '2px solid transparent',
 								}}
@@ -194,7 +195,7 @@ export default function NavBar() {
 							style={{
 								padding: '12px 24px',
 								fontSize: 16,
-								color: '#6C6D6F',
+								color: ESPN.gray500,
 								textDecoration: 'none',
 								display: 'flex',
 								alignItems: 'center',

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/api';
-import { normalizeJoin } from '../lib/utils';
+import { normalizeJoin, ESPN } from '../lib/utils';
 
 interface TickerGame {
 	id: string;
@@ -89,7 +89,7 @@ export default function ScoreboardTicker() {
 				right: 0,
 				zIndex: 101,
 				height: 56,
-				backgroundColor: '#FFFFFF',
+				backgroundColor: ESPN.white,
 				borderBottom: '1px solid #D0D0D0',
 				display: 'flex',
 				alignItems: 'center',
@@ -109,15 +109,15 @@ export default function ScoreboardTicker() {
 				}}
 			>
 				{loading ? (
-					<span style={{ fontSize: 12, color: '#A5A6A7', margin: '0 auto' }}>Loading scores...</span>
+					<span style={{ fontSize: 12, color: ESPN.gray400, margin: '0 auto' }}>Loading scores...</span>
 				) : games.length === 0 ? (
-					<span style={{ fontSize: 12, fontWeight: 700, color: '#2B2C2D', margin: '0 auto', letterSpacing: '0.05em' }}>
+					<span style={{ fontSize: 12, fontWeight: 700, color: ESPN.gray900, margin: '0 auto', letterSpacing: '0.05em' }}>
 						WBoDC BASEBALL
 					</span>
 				) : (
 					games.map((game, i) => (
 						<div key={game.id} style={{ display: 'flex', alignItems: 'center', height: '100%', flexShrink: 0 }}>
-							<div style={{ width: 1, height: 36, backgroundColor: '#D0D0D0', margin: '0 8px' }} />
+							<div style={{ width: 1, height: 36, backgroundColor: ESPN.gray200, margin: '0 8px' }} />
 							<Link
 								href={`/game/${game.id}`}
 								style={{
@@ -132,34 +132,34 @@ export default function ScoreboardTicker() {
 							>
 								<div style={{ display: 'flex', flexDirection: 'column', fontSize: 12, lineHeight: '18px', fontVariantNumeric: 'tabular-nums', gap: 2 }}>
 									<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-										<span style={{ fontWeight: 600, color: game.awayScore > game.homeScore ? '#151617' : '#6C6D6F', width: 32, fontSize: 12 }}>{game.awayTeam}</span>
+										<span style={{ fontWeight: 600, color: game.awayScore > game.homeScore ? ESPN.black : ESPN.gray500, width: 32, fontSize: 12 }}>{game.awayTeam}</span>
 										<span style={{
 											width: 20,
 											textAlign: 'right' as const,
 											fontWeight: 700,
 											fontSize: 13,
-											color: game.awayScore > game.homeScore ? '#151617' : '#6C6D6F',
+											color: game.awayScore > game.homeScore ? ESPN.black : ESPN.gray500,
 										}}>
 											{game.awayScore}
 										</span>
 									</div>
 									<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-										<span style={{ fontWeight: 600, color: game.homeScore > game.awayScore ? '#151617' : '#6C6D6F', width: 32, fontSize: 12 }}>{game.homeTeam}</span>
+										<span style={{ fontWeight: 600, color: game.homeScore > game.awayScore ? ESPN.black : ESPN.gray500, width: 32, fontSize: 12 }}>{game.homeTeam}</span>
 										<span style={{
 											width: 20,
 											textAlign: 'right' as const,
 											fontWeight: 700,
 											fontSize: 13,
-											color: game.homeScore > game.awayScore ? '#151617' : '#6C6D6F',
+											color: game.homeScore > game.awayScore ? ESPN.black : ESPN.gray500,
 										}}>
 											{game.homeScore}
 										</span>
 									</div>
 								</div>
 								{game.status === 'LIVE' ? (
-									<span style={{ fontSize: 10, fontWeight: 700, color: '#FFFFFF', backgroundColor: '#CC0000', padding: '2px 6px', borderRadius: 2 }}>LIVE</span>
+									<span style={{ fontSize: 10, fontWeight: 700, color: ESPN.white, backgroundColor: ESPN.red, padding: '2px 6px', borderRadius: 2 }}>LIVE</span>
 								) : (
-									<span style={{ fontSize: 10, color: '#6C6D6F', fontWeight: 500 }}>F</span>
+									<span style={{ fontSize: 10, color: ESPN.gray500, fontWeight: 500 }}>F</span>
 								)}
 							</Link>
 						</div>

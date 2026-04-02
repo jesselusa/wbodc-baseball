@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ESPN } from '../lib/utils';
 
 interface AvatarInitialProps {
 	name: string;
@@ -36,7 +37,7 @@ function AvatarInitial({ name, size = 28, imageUrl }: AvatarInitialProps) {
 			justifyContent: 'center',
 			fontSize: Math.round(size * 0.4),
 			fontWeight: 600,
-			color: '#6C6D6F',
+			color: ESPN.gray500,
 			flexShrink: 0,
 		}}>
 			{name.charAt(0)}

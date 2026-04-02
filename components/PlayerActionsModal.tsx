@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Player, PlayerFormData } from '../lib/types';
 import { savePlayer, deletePlayer } from '../lib/api';
 import { validatePlayerData } from '../lib/utils/player-validation';
+import { ESPN } from '../lib/utils';
+import ModalOverlay from './ModalOverlay';
 
 interface PlayerActionsModalProps {
   player?: Player | null;
@@ -127,35 +129,21 @@ export default function PlayerActionsModal({
     display: 'block',
     fontSize: 12,
     fontWeight: 600,
-    color: '#6C6D6F',
+    color: ESPN.gray500,
     textTransform: 'uppercase',
     marginBottom: 6
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
+    <ModalOverlay onClose={onClose} maxWidth={500}>
       <div style={{
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
-        width: '500px',
-        maxWidth: '90vw',
-        maxHeight: '90vh',
-        overflow: 'hidden',
-        border: '1px solid #D0D0D0',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        maxHeight: '90vh',
       }}>
         {/* Header */}
         <div style={{
-          backgroundColor: '#2B2C2D',
+          backgroundColor: ESPN.gray900,
           padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
@@ -166,7 +154,7 @@ export default function PlayerActionsModal({
             margin: 0,
             fontSize: 16,
             fontWeight: 700,
-            color: '#FFFFFF'
+            color: ESPN.white
           }}>
             {player?.name || 'New Player'}
           </h2>
@@ -175,7 +163,7 @@ export default function PlayerActionsModal({
             style={{
               background: 'none',
               border: 'none',
-              color: '#FFFFFF',
+              color: ESPN.white,
               cursor: 'pointer',
               padding: 4,
               display: 'flex',
@@ -328,7 +316,7 @@ export default function PlayerActionsModal({
               border: '1px solid #D0D0D0',
               borderRadius: 4,
               backgroundColor: 'transparent',
-              color: '#484A4A',
+              color: ESPN.gray700,
               fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer'
@@ -345,8 +333,8 @@ export default function PlayerActionsModal({
                 padding: '8px 16px',
                 border: 'none',
                 borderRadius: 4,
-                backgroundColor: isLoading && showDeleteConfirmation ? '#A5A6A7' : '#CC0000',
-                color: '#FFFFFF',
+                backgroundColor: isLoading && showDeleteConfirmation ? ESPN.gray400 : ESPN.red,
+                color: ESPN.white,
                 fontSize: 14,
                 fontWeight: 600,
                 cursor: isLoading ? 'not-allowed' : 'pointer'
@@ -367,8 +355,8 @@ export default function PlayerActionsModal({
               padding: '8px 16px',
               border: 'none',
               borderRadius: 4,
-              backgroundColor: isLoading && !showDeleteConfirmation ? '#A5A6A7' : '#2B2C2D',
-              color: '#FFFFFF',
+              backgroundColor: isLoading && !showDeleteConfirmation ? ESPN.gray400 : ESPN.gray900,
+              color: ESPN.white,
               fontSize: 14,
               fontWeight: 600,
               cursor: isLoading ? 'not-allowed' : 'pointer'
@@ -378,6 +366,6 @@ export default function PlayerActionsModal({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 } 

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ESPN } from '../lib/utils';
 
 interface GameScoreRowProps {
 	game: {
@@ -44,13 +45,13 @@ function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 				alignItems: 'center',
 				marginBottom: 2,
 			}}>
-				<span style={{ fontSize: 14, fontWeight: awayWon ? 700 : 400, color: '#151617' }}>
+				<span style={{ fontSize: 14, fontWeight: awayWon ? 700 : 400, color: ESPN.black }}>
 					{game.away_team?.name || 'TBD'}
 				</span>
-				<span style={{ fontSize: 16, fontWeight: awayWon ? 700 : 400, color: '#151617', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+				<span style={{ fontSize: 16, fontWeight: awayWon ? 700 : 400, color: ESPN.black, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
 					{game.status !== 'scheduled' ? game.away_score : ''}
 				</span>
-				<span style={{ fontSize: 11, color: '#6C6D6F', fontWeight: 600, textAlign: 'right' }}>
+				<span style={{ fontSize: 11, color: ESPN.gray500, fontWeight: 600, textAlign: 'right' }}>
 					{game.status === 'completed' ? 'FINAL' : game.status === 'in_progress' ? 'LIVE' : 'TBD'}
 				</span>
 			</div>
@@ -60,13 +61,13 @@ function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 				gridTemplateColumns: '1fr 36px 60px',
 				alignItems: 'center',
 			}}>
-				<span style={{ fontSize: 14, fontWeight: homeWon ? 700 : 400, color: '#151617' }}>
+				<span style={{ fontSize: 14, fontWeight: homeWon ? 700 : 400, color: ESPN.black }}>
 					{game.home_team?.name || 'TBD'}
 				</span>
-				<span style={{ fontSize: 16, fontWeight: homeWon ? 700 : 400, color: '#151617', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+				<span style={{ fontSize: 16, fontWeight: homeWon ? 700 : 400, color: ESPN.black, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
 					{game.status !== 'scheduled' ? game.home_score : ''}
 				</span>
-				<span style={{ fontSize: 10, color: '#A5A6A7', textTransform: 'uppercase', textAlign: 'right' }}>
+				<span style={{ fontSize: 10, color: ESPN.gray400, textTransform: 'uppercase', textAlign: 'right' }}>
 					{formatGameType(game.game_type)}
 				</span>
 			</div>

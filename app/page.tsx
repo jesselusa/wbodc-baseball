@@ -9,6 +9,7 @@ import {
 	getTournamentStandings,
 } from "../lib/api";
 import { TournamentRecord } from "../lib/types";
+import { ESPN } from "../lib/utils";
 
 interface Standing {
 	id: string;
@@ -75,7 +76,7 @@ export default function Page() {
 	if (loading) {
 		return (
 			<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-				<span style={{ color: '#6C6D6F', fontSize: 14 }}>Loading...</span>
+				<span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading...</span>
 			</div>
 		);
 	}
@@ -86,19 +87,19 @@ export default function Page() {
 			<div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
 				{/* Active tournament header */}
 				<div style={{
-					backgroundColor: '#2B2C2D',
-					color: '#FFFFFF',
+					backgroundColor: ESPN.gray900,
+					color: ESPN.white,
 					padding: '20px 24px',
 					borderRadius: 10,
 					marginBottom: 24,
 				}}>
-					<div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: '#A5A6A7', marginBottom: 4 }}>
+					<div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: ESPN.gray400, marginBottom: 4 }}>
 						Live Tournament
 					</div>
 					<h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>
 						{activeTournament.name}
 					</h1>
-					<div style={{ fontSize: 14, color: '#A5A6A7', marginTop: 4 }}>
+					<div style={{ fontSize: 14, color: ESPN.gray400, marginTop: 4 }}>
 						{activeTournament.location}
 					</div>
 				</div>
@@ -110,8 +111,8 @@ export default function Page() {
 							display: 'inline-flex',
 							alignItems: 'center',
 							gap: 8,
-							backgroundColor: '#CC0000',
-							color: '#FFFFFF',
+							backgroundColor: ESPN.red,
+							color: ESPN.white,
 							padding: '12px 24px',
 							borderRadius: 4,
 							fontSize: 14,
@@ -128,8 +129,8 @@ export default function Page() {
 							display: 'inline-flex',
 							alignItems: 'center',
 							gap: 8,
-							backgroundColor: '#2B2C2D',
-							color: '#FFFFFF',
+							backgroundColor: ESPN.gray900,
+							color: ESPN.white,
 							padding: '12px 24px',
 							borderRadius: 4,
 							fontSize: 14,
@@ -157,7 +158,7 @@ export default function Page() {
 				padding: '48px 24px',
 				textAlign: 'center',
 				borderBottom: '1px solid #D0D0D0',
-				backgroundColor: '#FFFFFF',
+				backgroundColor: ESPN.white,
 				borderRadius: 10,
 				marginTop: 24,
 			}}>
@@ -166,7 +167,7 @@ export default function Page() {
 					fontWeight: 700,
 					textTransform: 'uppercase',
 					letterSpacing: '0.1em',
-					color: '#CC0000',
+					color: ESPN.red,
 					marginBottom: 8,
 				}}>
 					Coming Soon
@@ -174,16 +175,16 @@ export default function Page() {
 				<h1 style={{
 					fontSize: 42,
 					fontWeight: 900,
-					color: '#151617',
+					color: ESPN.black,
 					margin: '0 0 8px 0',
 					fontStyle: 'italic',
 				}}>
 					{nextName}
 				</h1>
-				<div style={{ fontSize: 16, color: '#6C6D6F', marginBottom: 4 }}>
+				<div style={{ fontSize: 16, color: ESPN.gray500, marginBottom: 4 }}>
 					{upcoming?.location || 'Location TBD'}
 				</div>
-				<div style={{ fontSize: 14, color: '#A5A6A7' }}>
+				<div style={{ fontSize: 14, color: ESPN.gray400 }}>
 					{upcoming?.start_date
 						? new Date(upcoming.start_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 						: 'Date TBD'
@@ -196,8 +197,8 @@ export default function Page() {
 				<div style={{ padding: '32px 0' }}>
 					{/* Section header */}
 					<div style={{
-						backgroundColor: '#2B2C2D',
-						color: '#FFFFFF',
+						backgroundColor: ESPN.gray900,
+						color: ESPN.white,
 						fontSize: 12,
 						fontWeight: 700,
 						textTransform: 'uppercase',
@@ -212,7 +213,7 @@ export default function Page() {
 					{/* Champion banner */}
 					{lastCompleted.winner && (
 						<div style={{
-							backgroundColor: '#FFFFFF',
+							backgroundColor: ESPN.white,
 							border: '1px solid #D0D0D0',
 							borderTop: 'none',
 							padding: '20px 16px',
@@ -222,14 +223,14 @@ export default function Page() {
 						}}>
 							<span style={{ fontSize: 24 }}>🏆</span>
 							<div>
-								<div style={{ fontSize: 12, color: '#6C6D6F', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+								<div style={{ fontSize: 12, color: ESPN.gray500, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
 									Champion
 								</div>
-								<div style={{ fontSize: 20, fontWeight: 700, color: '#151617' }}>
+								<div style={{ fontSize: 20, fontWeight: 700, color: ESPN.black }}>
 									{lastCompleted.winner}
 								</div>
 							</div>
-							<div style={{ marginLeft: 'auto', fontSize: 13, color: '#6C6D6F' }}>
+							<div style={{ marginLeft: 'auto', fontSize: 13, color: ESPN.gray500 }}>
 								{lastCompleted.location} &middot; {lastCompleted.start_date && new Date(lastCompleted.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
 							</div>
 						</div>
@@ -243,11 +244,11 @@ export default function Page() {
 								display: 'grid',
 								gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
 								padding: '8px 16px',
-								backgroundColor: '#F9F9F9',
+								backgroundColor: ESPN.gray50,
 								borderBottom: '1px solid #E5E5E5',
 								fontSize: 12,
 								fontWeight: 600,
-								color: '#2B2C2D',
+								color: ESPN.gray900,
 								textTransform: 'uppercase',
 							}}>
 								<span>RK</span>
@@ -272,26 +273,26 @@ export default function Page() {
 											gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
 											padding: '10px 16px',
 											borderBottom: i < standings.length - 1 ? '1px solid #E5E5E5' : 'none',
-											backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF',
+											backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
 											fontSize: 13,
 											fontVariantNumeric: 'tabular-nums',
 										}}
 									>
-										<span style={{ fontWeight: 600, color: '#2B2C2D' }}>{i + 1}</span>
+										<span style={{ fontWeight: 600, color: ESPN.gray900 }}>{i + 1}</span>
 										<span style={{
 											fontWeight: 600,
-											color: '#151617',
+											color: ESPN.black,
 										}}>
 											{s.team?.name || 'Unknown'}
 											{lastCompleted.winner === s.team?.name && (
-												<span style={{ marginLeft: 6, fontSize: 11, color: '#CC0000', fontWeight: 700 }}>CHAMP</span>
+												<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>CHAMP</span>
 											)}
 										</span>
-										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{s.wins}</span>
-										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{s.losses}</span>
+										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.wins}</span>
+										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.losses}</span>
 										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{pct}</span>
-										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{s.runs_scored}</span>
-										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{s.runs_allowed}</span>
+										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_scored}</span>
+										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_allowed}</span>
 									</div>
 								);
 							})}
@@ -301,7 +302,7 @@ export default function Page() {
 					{/* Link to full history */}
 					<div style={{
 						padding: '12px 16px',
-						backgroundColor: '#FFFFFF',
+						backgroundColor: ESPN.white,
 						border: '1px solid #D0D0D0',
 						borderTop: 'none',
 						borderRadius: '0 0 10px 10px',
@@ -309,7 +310,7 @@ export default function Page() {
 						<Link
 							href="/games"
 							style={{
-								color: '#0066CC',
+								color: ESPN.blue,
 								fontSize: 14,
 								fontWeight: 600,
 								textDecoration: 'none',

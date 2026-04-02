@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData, TeamDragDrop } from '../../lib/types';
+import { ESPN } from '../../lib/utils';
 import { 
   fetchPlayers, 
   savePlayer, 
@@ -25,6 +26,7 @@ import PlayerActionsModal from '../../components/PlayerActionsModal';
 import BaseballCard from '../../components/BaseballCard';
 import AvatarInitial from '../../components/AvatarInitial';
 import SettingsSelect from '../../components/SettingsSelect';
+import TabBar from '../../components/TabBar';
 
 
 interface ValidationError {
@@ -696,7 +698,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#6C6D6F', fontSize: 14 }}>Loading admin...</span>
+        <span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading admin...</span>
       </div>
     );
   }
@@ -706,8 +708,8 @@ export default function AdminPage() {
 
       {/* Section header */}
       <div style={{
-        backgroundColor: '#2B2C2D',
-        color: '#FFFFFF',
+        backgroundColor: ESPN.gray900,
+        color: ESPN.white,
         padding: '16px 20px',
         marginTop: 24,
         borderRadius: '10px 10px 0 0',
@@ -718,13 +720,13 @@ export default function AdminPage() {
         <span style={{ fontSize: 16, fontWeight: 700 }}>Tournament Admin</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: hasUnsavedChanges ? '#f59e0b' : '#22c55e' }} />
-          <span style={{ fontSize: 12, color: '#A5A6A7' }}>{hasUnsavedChanges ? 'Unsaved' : 'Saved'}</span>
+          <span style={{ fontSize: 12, color: ESPN.gray400 }}>{hasUnsavedChanges ? 'Unsaved' : 'Saved'}</span>
         </div>
       </div>
 
       {/* Action bar */}
       <div style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: ESPN.white,
         border: '1px solid #D0D0D0',
         borderTop: 'none',
         padding: '12px 20px',
@@ -739,8 +741,8 @@ export default function AdminPage() {
             disabled={startingTournament || currentTeams.length === 0}
             style={{
               padding: '8px 16px',
-              backgroundColor: currentTeams.length === 0 ? '#A5A6A7' : '#059669',
-              color: '#FFFFFF',
+              backgroundColor: currentTeams.length === 0 ? ESPN.gray400 : '#059669',
+              color: ESPN.white,
               border: 'none',
               borderRadius: 4,
               fontSize: 13,
@@ -759,7 +761,7 @@ export default function AdminPage() {
         <button
           onClick={handleResetTournament}
           disabled={startingTournament}
-          style={{ padding: '8px 16px', backgroundColor: '#CC0000', color: '#FFFFFF', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '8px 16px', backgroundColor: ESPN.red, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
         >
           Reset
         </button>
@@ -768,8 +770,8 @@ export default function AdminPage() {
           disabled={saving || validationErrors.length > 0}
           style={{
             padding: '8px 16px',
-            backgroundColor: saving ? '#A5A6A7' : '#2B2C2D',
-            color: '#FFFFFF',
+            backgroundColor: saving ? ESPN.gray400 : ESPN.gray900,
+            color: ESPN.white,
             border: 'none',
             borderRadius: 4,
             fontSize: 13,
@@ -782,38 +784,11 @@ export default function AdminPage() {
       </div>
 
       {/* Tab bar */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        borderLeft: '1px solid #D0D0D0',
-        borderRight: '1px solid #D0D0D0',
-        display: 'flex',
-        borderBottom: '1px solid #D0D0D0',
-        padding: '0 20px',
-      }}>
-        {(['players', 'settings', 'teams'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '12px 16px',
-              fontSize: 14,
-              fontWeight: activeTab === tab ? 700 : 400,
-              color: activeTab === tab ? '#151617' : '#6C6D6F',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === tab ? '2px solid #CC0000' : '2px solid transparent',
-              cursor: 'pointer',
-              textTransform: 'capitalize',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={[{key:'players',label:'Players'},{key:'settings',label:'Settings'},{key:'teams',label:'Teams'}]} activeKey={activeTab} onTabChange={(key) => setActiveTab(key as any)} />
 
       {/* Tab content */}
       <div style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: ESPN.white,
         border: '1px solid #D0D0D0',
         borderTop: 'none',
         borderRadius: '0 0 10px 10px',
@@ -841,8 +816,8 @@ export default function AdminPage() {
                 onClick={handleAddPlayer}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#2B2C2D',
-                  color: '#FFFFFF',
+                  backgroundColor: ESPN.gray900,
+                  color: ESPN.white,
                   border: 'none',
                   borderRadius: 4,
                   fontSize: 13,
@@ -861,45 +836,45 @@ export default function AdminPage() {
                   <tr style={{ borderBottom: '2px solid #E5E5E5' }}>
                     <th
                       onClick={() => handleSort('name')}
-                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', textAlign: 'left', cursor: 'pointer' }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left', cursor: 'pointer' }}
                     >
                       Player {sortBy === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', textAlign: 'left' }}>Location</th>
-                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', textAlign: 'left' }}>Hometown</th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Location</th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Hometown</th>
                     <th
                       onClick={() => handleSort('championships_won')}
-                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', textAlign: 'center', cursor: 'pointer' }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'center', cursor: 'pointer' }}
                     >
                       Titles {sortBy === 'championships_won' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#2B2C2D', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPlayers.map((player, i) => (
-                    <tr key={player.id} style={{ borderBottom: '1px solid #E5E5E5', backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}>
+                    <tr key={player.id} style={{ borderBottom: '1px solid #E5E5E5', backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white }}>
                       <td style={{ padding: '10px 12px', fontSize: 13 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
                           <div>
                             <span
                               onClick={() => handleShowCard(player)}
-                              style={{ fontWeight: 600, color: '#0066CC', cursor: 'pointer' }}
+                              style={{ fontWeight: 600, color: ESPN.blue, cursor: 'pointer' }}
                             >
                               {player.name}
                             </span>
-                            {player.nickname && <span style={{ marginLeft: 6, fontSize: 11, color: '#A5A6A7' }}>"{player.nickname}"</span>}
+                            {player.nickname && <span style={{ marginLeft: 6, fontSize: 11, color: ESPN.gray400 }}>"{player.nickname}"</span>}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: 13, color: '#484A4A' }}>{player.current_town || '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: 13, color: '#484A4A' }}>{player.hometown || '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: 13, color: '#2B2C2D', textAlign: 'center', fontWeight: 600 }}>{player.championships_won || 0}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.current_town || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.hometown || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray900, textAlign: 'center', fontWeight: 600 }}>{player.championships_won || 0}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                         <button
                           onClick={() => handleEditPlayer(player)}
-                          style={{ background: 'none', border: 'none', color: '#0066CC', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
+                          style={{ background: 'none', border: 'none', color: ESPN.blue, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
                         >
                           Edit
                         </button>
@@ -908,7 +883,7 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
-              <div style={{ padding: '8px 12px', fontSize: 12, color: '#A5A6A7' }}>
+              <div style={{ padding: '8px 12px', fontSize: 12, color: ESPN.gray400 }}>
                 {filteredPlayers.length} of {players.length} players
               </div>
             </div>
@@ -919,22 +894,22 @@ export default function AdminPage() {
           <div style={{ padding: '20px' }}>
             {/* Action bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 14, color: '#6C6D6F' }}>{currentTeams.length} teams · {players.length} players</span>
+              <span style={{ fontSize: 14, color: ESPN.gray500 }}>{currentTeams.length} teams · {players.length} players</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleClearTeams} style={{ padding: '8px 16px', backgroundColor: '#F1F2F3', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#484A4A' }}>Clear Teams</button>
-                <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2B2C2D', color: '#FFFFFF', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
+                <button onClick={handleClearTeams} style={{ padding: '8px 16px', backgroundColor: ESPN.gray100, border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: ESPN.gray700 }}>Clear Teams</button>
+                <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '8px 16px', backgroundColor: ESPN.gray900, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
               </div>
             </div>
 
             {currentTeams.length === 0 ? (
-              <div style={{ padding: 32, textAlign: 'center', color: '#A5A6A7', fontSize: 14, border: '1px dashed #D0D0D0', borderRadius: 10 }}>
+              <div style={{ padding: 32, textAlign: 'center', color: ESPN.gray400, fontSize: 14, border: '1px dashed #D0D0D0', borderRadius: 10 }}>
                 No teams configured. Go to Settings tab to set number of teams, then come back here.
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 0 }}>
                 {/* Left: Player assignment list */}
                 <div style={{ padding: '0 16px 0 0' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 8 }}>
                     Assign Players
                   </div>
                   {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((player, i) => {
@@ -948,11 +923,11 @@ export default function AdminPage() {
                         padding: '6px 8px',
                         borderBottom: '1px solid #F1F2F3',
                         gap: 8,
-                        backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF',
+                        backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <AvatarInitial name={player.name} size={24} imageUrl={player.avatar_url} />
-                          <span onClick={() => { setCardPlayer(player); setShowCard(true); }} style={{ fontSize: 13, color: '#0066CC', fontWeight: 500, cursor: 'pointer' }}>{player.name}</span>
+                          <span onClick={() => { setCardPlayer(player); setShowCard(true); }} style={{ fontSize: 13, color: ESPN.blue, fontWeight: 500, cursor: 'pointer' }}>{player.name}</span>
                         </div>
                         <select
                           value={assignedTeam?.id || ''}
@@ -975,8 +950,8 @@ export default function AdminPage() {
                             border: '1px solid #D0D0D0',
                             borderRadius: 4,
                             fontSize: 12,
-                            backgroundColor: '#FFFFFF',
-                            color: assignedTeam ? '#151617' : '#A5A6A7',
+                            backgroundColor: ESPN.white,
+                            color: assignedTeam ? ESPN.black : ESPN.gray400,
                           }}
                         >
                           <option value="">Unassigned</option>
@@ -990,29 +965,29 @@ export default function AdminPage() {
                 </div>
 
                 {/* Vertical divider */}
-                <div style={{ backgroundColor: '#D0D0D0' }} />
+                <div style={{ backgroundColor: ESPN.gray200 }} />
 
                 {/* Right: Team viewer */}
                 <div style={{ padding: '0 0 0 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 12 }}>
                     Teams
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {[...currentTeams].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(team => (
                       <div key={team.id} style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
-                        <div style={{ backgroundColor: '#2B2C2D', color: '#FFFFFF', padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ backgroundColor: ESPN.gray900, color: ESPN.white, padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span>{team.name}</span>
-                          <span style={{ fontSize: 11, color: '#A5A6A7', fontWeight: 400 }}>{team.players.length}</span>
+                          <span style={{ fontSize: 11, color: ESPN.gray400, fontWeight: 400 }}>{team.players.length}</span>
                         </div>
-                        <div style={{ backgroundColor: '#FFFFFF' }}>
+                        <div style={{ backgroundColor: ESPN.white }}>
                           {team.players.length === 0 ? (
-                            <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>Empty</div>
+                            <div style={{ padding: '12px', textAlign: 'center', color: ESPN.gray400, fontSize: 12 }}>Empty</div>
                           ) : (
                             [...team.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
                               <div
                                 key={p.id}
                                 onClick={() => { setCardPlayer(p); setShowCard(true); }}
-                                style={{ padding: '5px 12px', fontSize: 12, color: '#0066CC', cursor: 'pointer', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}
+                                style={{ padding: '5px 12px', fontSize: 12, color: ESPN.blue, cursor: 'pointer', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? ESPN.gray50 : ESPN.white }}
                               >
                                 {p.name}
                               </div>
@@ -1028,19 +1003,19 @@ export default function AdminPage() {
                       const unassigned = players.filter(p => !assignedIds.has(p.id)).sort((a, b) => a.name.localeCompare(b.name));
                       return (
                         <div style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
-                          <div style={{ backgroundColor: '#6C6D6F', color: '#FFFFFF', padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ backgroundColor: ESPN.gray500, color: ESPN.white, padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>Unassigned</span>
-                            <span style={{ fontSize: 11, color: '#D0D0D0', fontWeight: 400 }}>{unassigned.length}</span>
+                            <span style={{ fontSize: 11, color: ESPN.gray200, fontWeight: 400 }}>{unassigned.length}</span>
                           </div>
-                          <div style={{ backgroundColor: '#FFFFFF' }}>
+                          <div style={{ backgroundColor: ESPN.white }}>
                             {unassigned.length === 0 ? (
-                              <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>All players assigned</div>
+                              <div style={{ padding: '12px', textAlign: 'center', color: ESPN.gray400, fontSize: 12 }}>All players assigned</div>
                             ) : (
                               unassigned.map((p, pi) => (
                                 <div
                                   key={p.id}
                                   onClick={() => { setCardPlayer(p); setShowCard(true); }}
-                                  style={{ padding: '5px 12px', fontSize: 12, color: '#0066CC', cursor: 'pointer', borderBottom: pi < unassigned.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}
+                                  style={{ padding: '5px 12px', fontSize: 12, color: ESPN.blue, cursor: 'pointer', borderBottom: pi < unassigned.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? ESPN.gray50 : ESPN.white }}
                                 >
                                   {p.name}
                                 </div>
@@ -1061,7 +1036,7 @@ export default function AdminPage() {
           <div style={{ padding: '20px' }}>
             {/* Teams Section */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Teams
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1084,7 +1059,7 @@ export default function AdminPage() {
 
             {/* Pool Play Section */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Pool Play
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1107,7 +1082,7 @@ export default function AdminPage() {
 
             {/* Bracket Play Section */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#2B2C2D', textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Bracket Play
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
@@ -1141,8 +1116,8 @@ export default function AdminPage() {
                 disabled={saving || settingsLocked}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: saving || settingsLocked ? '#A5A6A7' : '#2B2C2D',
-                  color: '#FFFFFF',
+                  backgroundColor: saving || settingsLocked ? ESPN.gray400 : ESPN.gray900,
+                  color: ESPN.white,
                   border: 'none',
                   borderRadius: 4,
                   fontSize: 13,
@@ -1155,7 +1130,7 @@ export default function AdminPage() {
             </div>
 
             {settingsLocked && (
-              <div style={{ padding: '12px 16px', backgroundColor: '#F9F9F9', borderRadius: 4, fontSize: 13, color: '#6C6D6F', border: '1px solid #E5E5E5' }}>
+              <div style={{ padding: '12px 16px', backgroundColor: ESPN.gray50, borderRadius: 4, fontSize: 13, color: ESPN.gray500, border: '1px solid #E5E5E5' }}>
                 Settings are locked while the tournament is active.
               </div>
             )}
@@ -1168,15 +1143,15 @@ export default function AdminPage() {
         <div style={{
           marginTop: 12,
           padding: '16px 20px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: ESPN.white,
           border: '1px solid #D0D0D0',
           borderRadius: 10,
         }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#CC0000', marginBottom: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: ESPN.red, marginBottom: 8 }}>
             Validation Errors ({validationErrors.length})
           </div>
           {validationErrors.map((err, i) => (
-            <div key={i} style={{ fontSize: 13, color: '#484A4A', padding: '4px 0' }}>
+            <div key={i} style={{ fontSize: 13, color: ESPN.gray700, padding: '4px 0' }}>
               <strong style={{ textTransform: 'capitalize' }}>{err.field}:</strong> {err.message}
             </div>
           ))}

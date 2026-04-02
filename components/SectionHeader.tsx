@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ESPN } from '../lib/utils';
 
 interface SectionHeaderProps {
 	title: string;
@@ -11,8 +12,8 @@ interface SectionHeaderProps {
 function SectionHeader({ title, rightText, style }: SectionHeaderProps) {
 	return (
 		<div style={{
-			backgroundColor: '#2B2C2D',
-			color: '#FFFFFF',
+			backgroundColor: ESPN.gray900,
+			color: ESPN.white,
 			fontSize: 12,
 			fontWeight: 700,
 			textTransform: 'uppercase',
@@ -26,7 +27,7 @@ function SectionHeader({ title, rightText, style }: SectionHeaderProps) {
 		}}>
 			<span>{title}</span>
 			{rightText && (
-				<span style={{ fontWeight: 400, color: '#A5A6A7', textTransform: 'none', fontSize: 12 }}>
+				<span style={{ fontWeight: 400, color: ESPN.gray400, textTransform: 'none', fontSize: 12 }}>
 					{rightText}
 				</span>
 			)}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/api';
 import { Player } from '../../lib/types';
+import { ESPN } from '../../lib/utils';
 import BaseballCard from '../../components/BaseballCard';
 import SectionHeader from '../../components/SectionHeader';
 
@@ -129,7 +130,7 @@ export default function TeamsPage() {
   if (standings.length === 0) {
     return (
       <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 16px', textAlign: 'center', color: '#6c6c6c' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#2B2C2D' }}>No standings available</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: 600, color: ESPN.gray900 }}>No standings available</h2>
         <p style={{ marginTop: '8px', fontSize: '14px' }}>Teams and standings will appear once a tournament is configured.</p>
       </div>
     );
@@ -140,7 +141,7 @@ export default function TeamsPage() {
     fontSize: '12px',
     fontWeight: 600,
     textTransform: 'uppercase',
-    color: '#2B2C2D',
+    color: ESPN.gray900,
     letterSpacing: '0.3px',
     textAlign: 'right',
   };
@@ -148,7 +149,7 @@ export default function TeamsPage() {
   const dataCell: React.CSSProperties = {
     padding: '10px 12px',
     fontSize: '13px',
-    color: '#2B2C2D',
+    color: ESPN.gray900,
     textAlign: 'right',
   };
 
@@ -160,7 +161,7 @@ export default function TeamsPage() {
       <div style={{ overflow: 'hidden', borderRadius: '0 0 10px 10px', border: '1px solid #E5E5E5', borderTop: 'none' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
           <thead>
-            <tr style={{ background: '#F9F9F9', borderBottom: '2px solid #E5E5E5' }}>
+            <tr style={{ background: ESPN.gray50, borderBottom: '2px solid #E5E5E5' }}>
               <th style={{ ...headerCell, textAlign: 'center', width: '40px' }}>RK</th>
               <th style={{ ...headerCell, textAlign: 'left' }}>Team</th>
               <th style={{ ...headerCell, textAlign: 'left' }}>Players</th>
@@ -174,28 +175,28 @@ export default function TeamsPage() {
           </thead>
           <tbody>
             {standings.map((row, i) => {
-              const rowBg = i % 2 === 0 ? '#ffffff' : '#F9F9F9';
+              const rowBg = i % 2 === 0 ? ESPN.white : ESPN.gray50;
               return (
                 <tr key={row.teamId}>
                   <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{i + 1}</td>
                   <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5', whiteSpace: 'nowrap' }}>
                     {row.teamName}
                   </td>
-                  <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: '#6C6D6F' }}>
+                  <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: ESPN.gray500 }}>
                     {row.players.length === 0 ? (
-                      <span style={{ fontStyle: 'italic', color: '#A5A6A7' }}>—</span>
+                      <span style={{ fontStyle: 'italic', color: ESPN.gray400 }}>—</span>
                     ) : (
                       [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
                         <span key={p.id}>
                           <span
                             onClick={() => { setCardPlayer(p); setShowCard(true); }}
-                            style={{ cursor: 'pointer', textDecoration: 'none', color: '#0066CC' }}
+                            style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
                             onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
                           >
                             {p.name}
                           </span>
-                          {j < row.players.length - 1 && <span style={{ color: '#A5A6A7' }}>, </span>}
+                          {j < row.players.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
                         </span>
                       ))
                     )}
@@ -208,7 +209,7 @@ export default function TeamsPage() {
                   <td style={{
                     ...dataCell,
                     fontWeight: 600,
-                    color: row.runDiff > 0 ? '#2e7d32' : row.runDiff < 0 ? '#c62828' : '#2B2C2D',
+                    color: row.runDiff > 0 ? '#2e7d32' : row.runDiff < 0 ? '#c62828' : ESPN.gray900,
                     background: rowBg,
                     borderBottom: '1px solid #E5E5E5',
                   }}>
