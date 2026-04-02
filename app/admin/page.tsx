@@ -894,8 +894,8 @@ export default function AdminPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <span style={{ fontSize: 14, color: '#6C6D6F' }}>{currentTeams.length} teams · {players.length} players</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={handleClearTeams} style={{ padding: '6px 12px', backgroundColor: '#F1F2F3', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 12, cursor: 'pointer', color: '#484A4A' }}>Clear Teams</button>
-                <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '6px 12px', backgroundColor: '#2B2C2D', color: '#FFFFFF', border: 'none', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
+                <button onClick={handleClearTeams} style={{ padding: '8px 16px', backgroundColor: '#F1F2F3', border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#484A4A' }}>Clear Teams</button>
+                <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '8px 16px', backgroundColor: '#2B2C2D', color: '#FFFFFF', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
               </div>
             </div>
 
