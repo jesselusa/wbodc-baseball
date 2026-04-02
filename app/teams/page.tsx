@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/api';
 import { Player } from '../../lib/types';
 import BaseballCard from '../../components/BaseballCard';
+import SectionHeader from '../../components/SectionHeader';
 
 interface StandingRow {
   teamId: string;
@@ -153,19 +154,7 @@ export default function TeamsPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 48px' }}>
-      {/* ESPN dark section header */}
-      <div style={{
-        background: '#1a1a1a',
-        color: '#ffffff',
-        padding: '14px 16px',
-        borderRadius: '10px 10px 0 0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <span style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.3px' }}>Standings</span>
-        <span style={{ fontSize: '12px', color: '#a0a0a0', fontWeight: 500 }}>{tournamentName}</span>
-      </div>
+      <SectionHeader title="Standings" rightText={tournamentName} />
 
       {/* Table */}
       <div style={{ overflow: 'hidden', borderRadius: '0 0 10px 10px', border: '1px solid #E5E5E5', borderTop: 'none' }}>

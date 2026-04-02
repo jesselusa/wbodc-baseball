@@ -78,7 +78,7 @@ export default function PlayersPage() {
 				fontWeight: 700,
 				textTransform: 'uppercase',
 				letterSpacing: '0.05em',
-				padding: '8px 16px',
+				padding: '10px 16px',
 				marginTop: 24,
 				display: 'flex',
 				justifyContent: 'space-between',

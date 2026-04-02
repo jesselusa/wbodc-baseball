@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/api';
+import SectionHeader from '../../components/SectionHeader';
 import { TournamentRecord } from '../../lib/types';
 
 interface GameResult {
@@ -79,20 +80,7 @@ function ResultsContent() {
 
 	return (
 		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
-			{/* Section header */}
-			<div style={{
-				backgroundColor: '#2B2C2D',
-				color: '#FFFFFF',
-				fontSize: 12,
-				fontWeight: 700,
-				textTransform: 'uppercase',
-				letterSpacing: '0.05em',
-				padding: '8px 16px',
-				marginTop: 24,
-				borderRadius: '10px 10px 0 0',
-			}}>
-				Tournament History
-			</div>
+			<SectionHeader title="Tournament History" style={{ marginTop: 24 }} />
 
 			{/* Tournament selector */}
 			<div style={{
@@ -156,19 +144,7 @@ function ResultsContent() {
 			{/* Games list */}
 			{selectedId && (
 				<>
-					<div style={{
-						backgroundColor: '#2B2C2D',
-						color: '#FFFFFF',
-						fontSize: 12,
-						fontWeight: 700,
-						textTransform: 'uppercase',
-						letterSpacing: '0.05em',
-						padding: '8px 16px',
-						marginTop: 24,
-						borderRadius: '10px 10px 0 0',
-					}}>
-						Games
-					</div>
+					<SectionHeader title="Games" style={{ marginTop: 24 }} />
 
 					{loadingGames ? (
 						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/api';
+import SectionHeader from '../../components/SectionHeader';
 
 interface GameData {
 	id: string;
@@ -89,28 +90,7 @@ function GamesContent() {
 
 	return (
 		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
-			{/* Section header */}
-			<div style={{
-				backgroundColor: '#2B2C2D',
-				color: '#FFFFFF',
-				fontSize: 12,
-				fontWeight: 700,
-				textTransform: 'uppercase',
-				letterSpacing: '0.05em',
-				padding: '8px 16px',
-				marginTop: 24,
-				display: 'flex',
-				justifyContent: 'space-between',
-				alignItems: 'center',
-				borderRadius: '10px 10px 0 0',
-			}}>
-				<span>Scoreboard</span>
-				{tournamentName && (
-					<span style={{ fontWeight: 400, color: '#A5A6A7', textTransform: 'none', fontSize: 12 }}>
-						{tournamentName}
-					</span>
-				)}
-			</div>
+			<SectionHeader title="Scoreboard" rightText={tournamentName} style={{ marginTop: 24 }} />
 
 			{/* Tab bar */}
 			<div style={{
