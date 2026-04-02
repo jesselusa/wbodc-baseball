@@ -280,7 +280,6 @@ export default function GamePage({ params }: GamePageProps) {
   const awayWon = awayScore > homeScore;
   const homeWon = homeScore > awayScore;
   const statusText = initialGame.status === 'completed' ? 'Final' : initialGame.status === 'in_progress' ? 'Live' : 'Scheduled';
-  const gameType = initialGame.game_type === 'round_robin' ? 'Pool Play' : 'Bracket';
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>

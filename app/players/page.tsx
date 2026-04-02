@@ -1,22 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/api';
 import BaseballCard from '../../components/BaseballCard';
-
-interface Player {
-	id: string;
-	name: string;
-	nickname: string | null;
-	avatar_url: string | null;
-	current_town: string | null;
-	hometown: string | null;
-	championships_won: number | null;
-	is_active: boolean | null;
-	email?: string | null;
-	created_at: string;
-	updated_at: string;
-}
+import { Player } from '../../lib/types';
 
 type SortKey = 'name' | 'current_town' | 'championships_won';
 
@@ -46,13 +33,13 @@ export default function PlayersPage() {
 		load();
 	}, [showInactive]);
 
-	const sorted = [...players].sort((a, b) => {
+	const sorted = useMemo(() => [...players].sort((a, b) => {
 		let cmp = 0;
 		if (sortBy === 'name') cmp = (a.name || '').localeCompare(b.name || '');
 		else if (sortBy === 'current_town') cmp = (a.current_town || '').localeCompare(b.current_town || '');
 		else if (sortBy === 'championships_won') cmp = (a.championships_won || 0) - (b.championships_won || 0);
 		return sortAsc ? cmp : -cmp;
-	});
+	}), [players, sortBy, sortAsc]);
 
 	const handleSort = (key: SortKey) => {
 		if (sortBy === key) {

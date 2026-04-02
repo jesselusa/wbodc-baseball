@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/api';
+import { normalizeJoin } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import { TournamentRecord } from '../../lib/types';
 
@@ -25,6 +26,8 @@ function ResultsContent() {
 	const [loading, setLoading] = useState(true);
 	const [loadingGames, setLoadingGames] = useState(false);
 
+	const yearParam = searchParams.get('year');
+
 	// Load all tournaments
 	useEffect(() => {
 		async function loadTournaments() {
@@ -37,7 +40,6 @@ function ResultsContent() {
 			setLoading(false);
 
 			// Auto-select from URL param or most recent
-			const yearParam = searchParams.get('year');
 			if (yearParam && data) {
 				const match = data.find((t: any) =>
 					t.start_date && new Date(t.start_date).getFullYear().toString() === yearParam
@@ -48,7 +50,7 @@ function ResultsContent() {
 			}
 		}
 		loadTournaments();
-	}, [searchParams]);
+	}, [yearParam]);
 
 	// Load games when tournament changes
 	useEffect(() => {
@@ -67,8 +69,8 @@ function ResultsContent() {
 
 			const normalized = (data || []).map((g: any) => ({
 				...g,
-				home_team: Array.isArray(g.home_team) ? g.home_team[0] : g.home_team,
-				away_team: Array.isArray(g.away_team) ? g.away_team[0] : g.away_team,
+				home_team: normalizeJoin(g.home_team),
+				away_team: normalizeJoin(g.away_team),
 			}));
 			setGames(normalized);
 			setLoadingGames(false);

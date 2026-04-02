@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData, TeamDragDrop } from '../../lib/types';
 import { 
@@ -116,7 +116,7 @@ export default function AdminPage() {
       setCurrentTeams(currentTeams.slice(0, desired));
       setHasUnsavedChanges(true);
     }
-  }, [tournamentSettings.num_teams]);
+  }, [tournamentSettings.num_teams, loading]);
 
   // Auto-save status timer
   useEffect(() => {
@@ -691,13 +691,13 @@ export default function AdminPage() {
   }
 
   // Filter and sort players
-  const filteredPlayers = players
+  const filteredPlayers = useMemo(() => players
     .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.nickname && p.nickname.toLowerCase().includes(searchQuery.toLowerCase())))
     .sort((a, b) => {
       const multiplier = sortOrder === 'asc' ? 1 : -1;
       if (sortBy === 'name') return multiplier * a.name.localeCompare(b.name);
       return multiplier * ((a.championships_won || 0) - (b.championships_won || 0));
-    });
+    }), [players, searchQuery, sortBy, sortOrder]);
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>

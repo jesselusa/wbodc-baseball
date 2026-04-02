@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/api';
+import { normalizeJoin } from '../../../lib/utils';
 
 interface GameData {
 	id: string;
@@ -58,8 +59,8 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 
 			const normalized = {
 				...data,
-				home_team: Array.isArray(data.home_team) ? data.home_team[0] : data.home_team,
-				away_team: Array.isArray(data.away_team) ? data.away_team[0] : data.away_team,
+				home_team: normalizeJoin(data.home_team),
+				away_team: normalizeJoin(data.away_team),
 			};
 			setGame(normalized);
 			setHomeScore(normalized.home_score || 0);

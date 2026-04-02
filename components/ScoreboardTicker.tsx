@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/api';
+import { normalizeJoin } from '../lib/utils';
 
 interface TickerGame {
 	id: string;
@@ -55,8 +56,8 @@ export default function ScoreboardTicker() {
 
 				if (gamesData && gamesData.length > 0) {
 					const tickerGames: TickerGame[] = gamesData.map((g: any) => {
-						const homeTeam = Array.isArray(g.home_team) ? g.home_team[0] : g.home_team;
-						const awayTeam = Array.isArray(g.away_team) ? g.away_team[0] : g.away_team;
+						const homeTeam = normalizeJoin(g.home_team);
+						const awayTeam = normalizeJoin(g.away_team);
 						return {
 							id: g.id,
 							homeTeam: abbreviateTeam(homeTeam?.name || 'HME'),

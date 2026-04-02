@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/api';
+import { normalizeJoin } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 
 interface GameData {
@@ -59,8 +60,8 @@ function GamesContent() {
 				// Supabase joins return arrays for FK relations, normalize to single objects
 			const normalized = (gamesData || []).map((g: any) => ({
 				...g,
-				home_team: Array.isArray(g.home_team) ? g.home_team[0] : g.home_team,
-				away_team: Array.isArray(g.away_team) ? g.away_team[0] : g.away_team,
+				home_team: normalizeJoin(g.home_team),
+				away_team: normalizeJoin(g.away_team),
 			}));
 			setGames(normalized);
 			} catch (err) {
