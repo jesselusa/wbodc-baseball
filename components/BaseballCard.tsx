@@ -32,7 +32,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
       style={{
         position: 'fixed',
         inset: '0',
-        background: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -44,14 +44,13 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
     >
       <div 
         style={{
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          borderRadius: isMobile ? '16px' : '20px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 10,
           padding: '0',
           width: isMobile ? '100%' : '400px',
           maxWidth: '90vw',
           maxHeight: isMobile ? '90vh' : '80vh',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-          border: '1px solid #e4e2e8',
+          border: '1px solid #D0D0D0',
           overflow: 'hidden',
           position: 'relative',
           transform: 'scale(0.95)',
@@ -63,8 +62,8 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
       >
         {/* Header with gradient background */}
         <div style={{
-          background: 'linear-gradient(135deg, #1c1b20 0%, #2d2c32 50%, #3d3c42 100%)',
-          color: 'white',
+          backgroundColor: '#2B2C2D',
+          color: '#FFFFFF',
           padding: isMobile ? '24px 20px 20px' : '32px 32px 24px',
           position: 'relative',
           overflow: 'hidden',
@@ -152,7 +151,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               width: isMobile ? '64px' : '80px',
               height: isMobile ? '64px' : '80px',
               borderRadius: '50%',
-              background: player.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)',
+              background: player.avatar_url ? `url(${player.avatar_url})` : 'rgba(255, 255, 255, 0.15)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               border: '3px solid rgba(255, 255, 255, 0.3)',
@@ -202,7 +201,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               position: 'absolute',
               top: isMobile ? '12px' : '16px',
               left: isMobile ? '12px' : '16px',
-              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+              background: '#FFD700',
               color: '#8B4513',
               padding: isMobile ? '6px 10px' : '8px 12px',
               borderRadius: '20px',
@@ -245,12 +244,12 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               background: 'rgba(139, 138, 148, 0.05)',
               padding: isMobile ? '12px' : '16px',
               borderRadius: '12px',
-              border: '1px solid #e4e2e8'
+              border: '1px solid #D0D0D0'
             }}>
               <div style={{
                 fontSize: isMobile ? '11px' : '12px',
                 fontWeight: '600',
-                color: '#696775',
+                color: '#6C6D6F',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: '8px'
@@ -260,7 +259,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               <div style={{
                 fontSize: isMobile ? '14px' : '16px',
                 fontWeight: '600',
-                color: '#1c1b20'
+                color: '#151617'
               }}>
                 {player.current_town || 'N/A'}
               </div>
@@ -270,12 +269,12 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               background: 'rgba(139, 138, 148, 0.05)',
               padding: isMobile ? '12px' : '16px',
               borderRadius: '12px',
-              border: '1px solid #e4e2e8'
+              border: '1px solid #D0D0D0'
             }}>
               <div style={{
                 fontSize: isMobile ? '11px' : '12px',
                 fontWeight: '600',
-                color: '#696775',
+                color: '#6C6D6F',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 marginBottom: '8px'
@@ -285,7 +284,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
               <div style={{
                 fontSize: isMobile ? '14px' : '16px',
                 fontWeight: '600',
-                color: '#1c1b20'
+                color: '#151617'
               }}>
                 {player.hometown || 'N/A'}
               </div>
@@ -294,7 +293,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
 
           {/* Championships */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.05) 100%)',
+            background: 'rgba(255, 215, 0, 0.08)',
             padding: isMobile ? '16px' : '20px',
             borderRadius: '16px',
             border: '1px solid rgba(255, 215, 0, 0.2)',
@@ -303,7 +302,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
             <div style={{
               fontSize: isMobile ? '12px' : '14px',
               fontWeight: '600',
-              color: '#696775',
+              color: '#6C6D6F',
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
               marginBottom: '8px'
@@ -313,7 +312,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
             <div style={{
               fontSize: isMobile ? '24px' : '32px',
               fontWeight: '700',
-              color: '#1c1b20',
+              color: '#151617',
               marginBottom: '4px'
             }}>
               {(player.championships_won || 0) > 0 
@@ -321,14 +320,14 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
                 : '-'
               }
               {(player.championships_won || 0) > (isMobile ? 5 : 10) && (
-                <span style={{ fontSize: isMobile ? '16px' : '20px', color: '#696775' }}>
+                <span style={{ fontSize: isMobile ? '16px' : '20px', color: '#6C6D6F' }}>
                   +{(player.championships_won || 0) - (isMobile ? 5 : 10)}
                 </span>
               )}
             </div>
             <div style={{
               fontSize: isMobile ? '11px' : '12px',
-              color: '#696775',
+              color: '#6C6D6F',
               fontStyle: 'italic'
             }}>
               {(player.championships_won || 0) === 0 ? 'Ready to win their first!' : 

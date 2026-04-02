@@ -984,7 +984,7 @@ export default function AdminPage() {
                             <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>Empty</div>
                           ) : (
                             team.players.sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
-                              <div key={p.id} style={{ padding: '5px 12px', fontSize: 12, color: '#484A4A', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none' }}>
+                              <div key={p.id} style={{ padding: '5px 12px', fontSize: 12, color: '#484A4A', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}>
                                 {p.name}
                               </div>
                             ))
@@ -1069,6 +1069,25 @@ export default function AdminPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #E5E5E5', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleSaveAll}
+                disabled={saving || settingsLocked}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: saving || settingsLocked ? '#A5A6A7' : '#2B2C2D',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: saving || settingsLocked ? 'default' : 'pointer',
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
             </div>
 
             {settingsLocked && (

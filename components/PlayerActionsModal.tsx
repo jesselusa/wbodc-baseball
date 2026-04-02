@@ -124,20 +124,20 @@ export default function PlayerActionsModal({
       backdropFilter: 'blur(4px)'
     }}>
       <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
         padding: '0',
         width: '600px',
         maxWidth: '90vw',
         maxHeight: '90vh',
         overflow: 'hidden',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        border: '1px solid #e4e2e8'
+        border: '1px solid #D0D0D0'
       }}>
         {/* Header */}
         <div style={{
-          padding: '24px 32px',
-          borderBottom: '1px solid #e4e2e8',
+          backgroundColor: '#2B2C2D',
+          color: '#FFFFFF',
+          padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -151,7 +151,7 @@ export default function PlayerActionsModal({
               width: '48px',
               height: '48px',
               borderRadius: '12px',
-              background: player?.avatar_url ? `url(${player.avatar_url})` : 'linear-gradient(135deg, #8b8a94 0%, #696775 100%)',
+              background: player?.avatar_url ? `url(${player.avatar_url})` : '#6C6D6F',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               display: 'flex',
@@ -160,16 +160,16 @@ export default function PlayerActionsModal({
               fontSize: '18px',
               fontWeight: '600',
               color: 'white',
-              border: '2px solid #e4e2e8'
+              border: '2px solid #D0D0D0'
             }}>
               {!player?.avatar_url && (player?.name || 'New Player').charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 style={{
                 margin: '0',
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#1c1b20'
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#FFFFFF'
               }}>
                 {player?.name || 'New Player'}
               </h2>
@@ -177,7 +177,7 @@ export default function PlayerActionsModal({
                 <p style={{
                   margin: '4px 0 0 0',
                   fontSize: '14px',
-                  color: '#696775'
+                  color: 'rgba(255, 255, 255, 0.7)'
                 }}>
                   "{player.nickname}"
                 </p>
@@ -189,19 +189,19 @@ export default function PlayerActionsModal({
             style={{
               background: 'none',
               border: 'none',
-              color: '#696775',
+              color: 'rgba(255, 255, 255, 0.7)',
               cursor: 'pointer',
               padding: '8px',
               borderRadius: '8px',
               transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(139, 138, 148, 0.1)';
-              e.currentTarget.style.color = '#1c1b20';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.color = '#FFFFFF';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = '#696775';
+              e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -253,7 +253,7 @@ export default function PlayerActionsModal({
               <p style={{
                 margin: '0',
                 fontSize: '14px',
-                color: '#696775',
+                color: '#6C6D6F',
                 lineHeight: '1.5'
               }}>
                 Are you sure you want to delete <strong>{player.name}</strong>? This action cannot be undone.
@@ -270,9 +270,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Name *
@@ -284,22 +285,21 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: validationErrors.name ? '2px solid #dc2626' : '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: validationErrors.name ? '2px solid #dc2626' : '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
                 onFocus={(e) => {
                   if (!validationErrors.name) {
-                    e.currentTarget.style.borderColor = '#1c1b20';
+                    e.currentTarget.style.borderColor = '#151617';
                   }
                 }}
                 onBlur={(e) => {
                   if (!validationErrors.name) {
-                    e.currentTarget.style.borderColor = '#e4e2e8';
+                    e.currentTarget.style.borderColor = '#D0D0D0';
                   }
                 }}
               />
@@ -319,9 +319,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Nickname
@@ -333,16 +334,15 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#1c1b20'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e4e2e8'}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#151617'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D0D0D0'}
               />
             </div>
 
@@ -350,9 +350,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Email
@@ -364,22 +365,21 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: validationErrors.email ? '2px solid #dc2626' : '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: validationErrors.email ? '2px solid #dc2626' : '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
                 onFocus={(e) => {
                   if (!validationErrors.email) {
-                    e.currentTarget.style.borderColor = '#1c1b20';
+                    e.currentTarget.style.borderColor = '#151617';
                   }
                 }}
                 onBlur={(e) => {
                   if (!validationErrors.email) {
-                    e.currentTarget.style.borderColor = '#e4e2e8';
+                    e.currentTarget.style.borderColor = '#D0D0D0';
                   }
                 }}
               />
@@ -399,9 +399,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Current Location
@@ -413,16 +414,15 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#1c1b20'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e4e2e8'}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#151617'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D0D0D0'}
               />
             </div>
 
@@ -430,9 +430,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Hometown
@@ -444,16 +445,15 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#1c1b20'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e4e2e8'}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#151617'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D0D0D0'}
               />
             </div>
 
@@ -461,9 +461,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Championships Won
@@ -476,16 +477,15 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#1c1b20'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e4e2e8'}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#151617'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D0D0D0'}
               />
             </div>
 
@@ -493,9 +493,10 @@ export default function PlayerActionsModal({
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1c1b20',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#6C6D6F',
+                textTransform: 'uppercase' as const,
                 marginBottom: '8px'
               }}>
                 Profile Picture URL
@@ -507,16 +508,15 @@ export default function PlayerActionsModal({
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  border: '2px solid #e4e2e8',
-                  borderRadius: '8px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
                   fontSize: '14px',
                   background: 'white',
                   transition: 'all 0.2s ease',
-                  outline: 'none',
-                  fontFamily: 'inherit'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#1c1b20'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e4e2e8'}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#151617'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#D0D0D0'}
               />
             </div>
           </div>
@@ -525,34 +525,33 @@ export default function PlayerActionsModal({
         {/* Footer */}
         <div style={{
           padding: '24px 32px',
-          borderTop: '1px solid #e4e2e8',
+          borderTop: '1px solid #D0D0D0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'rgba(139, 138, 148, 0.02)'
+          background: '#FFFFFF'
         }}>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
               onClick={onClose}
               style={{
                 padding: '12px 24px',
-                border: '2px solid #e4e2e8',
-                borderRadius: '8px',
+                border: '1px solid #D0D0D0',
+                borderRadius: 4,
                 background: 'white',
-                color: '#696775',
+                color: '#6C6D6F',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontFamily: 'inherit'
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#1c1b20';
-                e.currentTarget.style.color = '#1c1b20';
+                e.currentTarget.style.borderColor = '#151617';
+                e.currentTarget.style.color = '#151617';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e4e2e8';
-                e.currentTarget.style.color = '#696775';
+                e.currentTarget.style.borderColor = '#D0D0D0';
+                e.currentTarget.style.color = '#6C6D6F';
               }}
             >
               Cancel
@@ -565,8 +564,8 @@ export default function PlayerActionsModal({
                 style={{
                   padding: '12px 24px',
                   border: 'none',
-                  borderRadius: '8px',
-                  background: isLoading ? '#8b8a94' : (showDeleteConfirmation ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'),
+                  borderRadius: 4,
+                  background: isLoading ? '#A5A6A7' : '#CC0000',
                   color: 'white',
                   fontSize: '14px',
                   fontWeight: '600',
@@ -574,8 +573,7 @@ export default function PlayerActionsModal({
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  fontFamily: 'inherit'
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   if (!isLoading) {
@@ -627,8 +625,8 @@ export default function PlayerActionsModal({
             style={{
               padding: '12px 24px',
               border: 'none',
-              borderRadius: '8px',
-              background: isLoading ? '#8b8a94' : 'linear-gradient(135deg, #1c1b20 0%, #2d2c32 100%)',
+              borderRadius: 4,
+              background: isLoading ? '#A5A6A7' : '#2B2C2D',
               color: 'white',
               fontSize: '14px',
               fontWeight: '600',
@@ -636,8 +634,7 @@ export default function PlayerActionsModal({
               transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              fontFamily: 'inherit'
+              gap: '8px'
             }}
             onMouseEnter={(e) => {
               if (!isLoading) {
