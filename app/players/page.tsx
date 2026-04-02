@@ -1,202 +1,192 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Player } from '../../lib/types';
-import { fetchPlayers, getPlayerTeamAssignments } from '../../lib/api';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/api';
 import BaseballCard from '../../components/BaseballCard';
-import PlayersTable from '../../components/PlayersTable';
+
+interface Player {
+	id: string;
+	name: string;
+	nickname: string | null;
+	avatar_url: string | null;
+	current_town: string | null;
+	hometown: string | null;
+	championships_won: number | null;
+	is_active: boolean | null;
+	email?: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+type SortKey = 'name' | 'current_town' | 'championships_won';
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'championships_won'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
-  const [showCard, setShowCard] = useState(false);
-  const [playerTeamAssignments, setPlayerTeamAssignments] = useState<Map<string, string>>(new Map());
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
+	const [players, setPlayers] = useState<Player[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [sortBy, setSortBy] = useState<SortKey>('name');
+	const [sortAsc, setSortAsc] = useState(true);
+	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+	const [showInactive, setShowInactive] = useState(false);
 
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+	useEffect(() => {
+		async function load() {
+			let query = supabase
+				.from('players')
+				.select('*')
+				.order('name');
 
-  useEffect(() => {
-    loadPlayers();
-  }, [showInactive]);
+			if (!showInactive) {
+				query = query.eq('is_active', true);
+			}
 
-  const loadPlayers = async () => {
-    try {
-      setLoading(true);
-      const [playersResponse, teamAssignmentsResponse] = await Promise.all([
-        fetchPlayers(showInactive),
-        getPlayerTeamAssignments()
-      ]);
-      
-      if (playersResponse.success) {
-        setPlayers(playersResponse.data);
-      }
-      
-      if (teamAssignmentsResponse.success) {
-        setPlayerTeamAssignments(teamAssignmentsResponse.data);
-      }
-    } catch (error) {
-      console.error('Error loading players:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+			const { data } = await query;
+			setPlayers(data || []);
+			setLoading(false);
+		}
+		load();
+	}, [showInactive]);
 
-  const handleShowCard = (player: Player) => {
-    setCardPlayer(player);
-    setShowCard(true);
-  };
+	const sorted = [...players].sort((a, b) => {
+		let cmp = 0;
+		if (sortBy === 'name') cmp = (a.name || '').localeCompare(b.name || '');
+		else if (sortBy === 'current_town') cmp = (a.current_town || '').localeCompare(b.current_town || '');
+		else if (sortBy === 'championships_won') cmp = (a.championships_won || 0) - (b.championships_won || 0);
+		return sortAsc ? cmp : -cmp;
+	});
 
-  const handleCloseCard = () => {
-    setShowCard(false);
-    setCardPlayer(null);
-  };
+	const handleSort = (key: SortKey) => {
+		if (sortBy === key) {
+			setSortAsc(!sortAsc);
+		} else {
+			setSortBy(key);
+			setSortAsc(key === 'name');
+		}
+	};
 
-  const handleSort = (field: 'name' | 'championships_won') => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
+	const sortArrow = (key: SortKey) => {
+		if (sortBy !== key) return '';
+		return sortAsc ? ' ▲' : ' ▼';
+	};
 
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: isMobile ? '56px' : '64px' // Reduced top padding for mobile
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '20px 16px' : '32px 24px' // Reduced padding for mobile
-      }}>
-        {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: isMobile ? 'flex-start' : 'center',
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '16px' : '0'
-          }}>
-            <div>
-              <h1 style={{
-                fontSize: isMobile ? '28px' : '36px',
-                fontWeight: '700',
-                color: '#1c1b20',
-                margin: '0 0 8px 0',
-                lineHeight: isMobile ? '1.2' : '1.1'
-              }}>
-                Players
-              </h1>
-              <p style={{
-                fontSize: isMobile ? '14px' : '16px',
-                color: '#696775',
-                margin: '0',
-                fontWeight: '500',
-                lineHeight: isMobile ? '1.4' : '1.5'
-              }}>
-                Manage and view all registered players
-              </p>
-            </div>
-            
-            {/* Show Inactive Toggle */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 16px',
-              background: 'white',
-              borderRadius: '12px',
-              border: '1px solid #e5e3eb',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-            }}>
-              <label style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#696775',
-                cursor: 'pointer',
-                userSelect: 'none'
-              }} htmlFor="show-inactive-toggle">
-                Show Inactive Players
-              </label>
-              <button
-                id="show-inactive-toggle"
-                onClick={() => setShowInactive(!showInactive)}
-                style={{
-                  width: '44px',
-                  height: '24px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: showInactive ? '#4f46e5' : '#d1d0d6',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s ease',
-                  padding: '0'
-                }}
-                aria-label={showInactive ? 'Hide inactive players' : 'Show inactive players'}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '10px',
-                  background: 'white',
-                  position: 'absolute',
-                  top: '2px',
-                  left: showInactive ? '22px' : '2px',
-                  transition: 'left 0.2s ease',
-                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
-                }} />
-              </button>
-            </div>
-          </div>
-        </div>
+	return (
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+			{/* Section header */}
+			<div style={{
+				backgroundColor: '#2B2C2D',
+				color: '#FFFFFF',
+				fontSize: 12,
+				fontWeight: 700,
+				textTransform: 'uppercase',
+				letterSpacing: '0.05em',
+				padding: '8px 16px',
+				marginTop: 24,
+				display: 'flex',
+				justifyContent: 'space-between',
+				alignItems: 'center',
+			}}>
+				<span>Players</span>
+				<label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 400, textTransform: 'none', cursor: 'pointer' }}>
+					<input
+						type="checkbox"
+						checked={showInactive}
+						onChange={(e) => setShowInactive(e.target.checked)}
+						style={{ cursor: 'pointer' }}
+					/>
+					Show inactive
+				</label>
+			</div>
 
-        {/* Players Table */}
-        <PlayersTable
-          players={players}
-          loading={loading}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          onPlayerClick={handleShowCard}
-          showAddButton={false}
-          showEditColumn={false}
-          showResultsCount={true}
-          isReadOnly={true}
-          playerTeamAssignments={playerTeamAssignments}
-        />
+			{loading ? (
+				<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F', fontSize: 14 }}>Loading players...</div>
+			) : (
+				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none', overflowX: 'auto' }}>
+					{/* Table header */}
+					<div style={{
+						display: 'grid',
+						gridTemplateColumns: '1fr 140px 140px 60px',
+						padding: '8px 16px',
+						backgroundColor: '#F9F9F9',
+						borderBottom: '1px solid #E5E5E5',
+						fontSize: 12,
+						fontWeight: 600,
+						color: '#2B2C2D',
+						textTransform: 'uppercase',
+						minWidth: 500,
+					}}>
+						<span onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Name{sortArrow('name')}</span>
+						<span onClick={() => handleSort('current_town')} style={{ cursor: 'pointer' }}>City{sortArrow('current_town')}</span>
+						<span>Hometown</span>
+						<span onClick={() => handleSort('championships_won')} style={{ cursor: 'pointer', textAlign: 'center' }}>Titles{sortArrow('championships_won')}</span>
+					</div>
 
-        {/* Baseball Card */}
-        {cardPlayer && (
-          <BaseballCard
-            player={cardPlayer}
-            isOpen={showCard}
-            onClose={handleCloseCard}
-          />
-        )}
-      </div>
-    </div>
-  );
-} 
+					{/* Rows */}
+					{sorted.map((player, i) => (
+						<div
+							key={player.id}
+							onClick={() => setSelectedPlayer(player)}
+							style={{
+								display: 'grid',
+								gridTemplateColumns: '1fr 140px 140px 60px',
+								padding: '10px 16px',
+								borderBottom: i < sorted.length - 1 ? '1px solid #E5E5E5' : 'none',
+								backgroundColor: i % 2 === 1 ? '#F9F9F9' : '#FFFFFF',
+								fontSize: 13,
+								cursor: 'pointer',
+								transition: 'background-color 0.1s',
+								minWidth: 500,
+							}}
+						>
+							<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+								{player.avatar_url && !player.avatar_url.includes('placeholder') ? (
+									<img
+										src={player.avatar_url}
+										alt=""
+										style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+									/>
+								) : (
+									<div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#6C6D6F' }}>
+										{player.name.charAt(0)}
+									</div>
+								)}
+								<div>
+									<span style={{ fontWeight: 600, color: '#151617' }}>{player.name}</span>
+									{player.nickname && (
+										<span style={{ marginLeft: 6, fontSize: 11, color: '#A5A6A7' }}>"{player.nickname}"</span>
+									)}
+									{!player.is_active && (
+										<span style={{ marginLeft: 6, fontSize: 10, color: '#A5A6A7', fontStyle: 'italic' }}>inactive</span>
+									)}
+								</div>
+							</div>
+							<span style={{ color: '#484A4A', display: 'flex', alignItems: 'center' }}>{player.current_town || '—'}</span>
+							<span style={{ color: '#484A4A', display: 'flex', alignItems: 'center' }}>{player.hometown || '—'}</span>
+							<span style={{ textAlign: 'center', fontWeight: 600, color: '#2B2C2D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+								{player.championships_won || 0}
+							</span>
+						</div>
+					))}
+
+					{sorted.length === 0 && (
+						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14 }}>
+							No players found
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Player count */}
+			<div style={{ padding: '8px 0', fontSize: 12, color: '#A5A6A7' }}>
+				{sorted.length} player{sorted.length !== 1 ? 's' : ''}
+			</div>
+
+			{/* Baseball card modal */}
+			{selectedPlayer && (
+				<BaseballCard
+					player={selectedPlayer}
+					isOpen={true}
+					onClose={() => setSelectedPlayer(null)}
+				/>
+			)}
+		</div>
+	);
+}

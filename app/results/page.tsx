@@ -2,186 +2,251 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import YearSelector from '../../components/YearSelector';
-import GameResultsList from '../../components/GameResultsList';
-import { useHistoricalGames } from '../../hooks/useHistoricalGames';
+import Link from 'next/link';
+import { supabase } from '../../lib/api';
+import { TournamentRecord } from '../../lib/types';
 
-function ResultsContent() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const searchParams = useSearchParams();
-  
-  // Historical games state management
-  const {
-    selectedYear,
-    years,
-    tournament,
-    games,
-    loadingYears,
-    loadingGames,
-    error,
-    setSelectedYear,
-    refetch
-  } = useHistoricalGames();
-
-  // Handle URL parameters
-  useEffect(() => {
-    const yearParam = searchParams.get('year');
-    if (yearParam && !loadingYears && years.length > 0) {
-      // Only set if it's a valid year and different from current selection
-      if (years.includes(yearParam) && yearParam !== selectedYear) {
-        setSelectedYear(yearParam);
-      }
-    }
-  }, [searchParams, years, loadingYears, selectedYear, setSelectedYear]);
-
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '16px 12px' : '32px 24px'
-      }}>
-        {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: '700',
-            color: '#1c1b20',
-            margin: '0 0 8px 0',
-            lineHeight: isMobile ? '1.2' : '1.1'
-          }}>
-            Historical Results
-          </h1>
-          <p style={{
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#696775',
-            margin: '0',
-            fontWeight: '500',
-            lineHeight: isMobile ? '1.4' : '1.5'
-          }}>
-            View results and game history from past tournaments
-          </p>
-        </div>
-
-      {/* Year Selector */}
-      {!loadingYears && years.length > 0 && (
-        <YearSelector
-          selectedYear={selectedYear}
-          years={years}
-          tournament={tournament}
-          onYearChange={setSelectedYear}
-          loading={loadingYears}
-          className="mb-8"
-        />
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-          <div className="flex items-start">
-            <div className="text-red-400 text-lg mr-3">⚠️</div>
-            <div>
-              <h3 className="text-sm font-medium text-red-800 mb-1">
-                Error Loading Data
-              </h3>
-              <p className="text-sm text-red-700">
-                {error}
-              </p>
-              <button
-                onClick={refetch}
-                className="mt-2 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200 transition-colors duration-200"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loadingYears && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-          <span className="text-lg font-medium" style={{ color: '#312f36' }}>
-            Loading tournaments...
-          </span>
-        </div>
-      )}
-
-      {/* Game Results */}
-      {selectedYear && tournament && (
-        <GameResultsList
-          games={games}
-          loading={loadingGames}
-          className="mb-8"
-        />
-      )}
-
-      {/* Instructions when no selection made */}
-      {!loadingYears && !selectedYear && years.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <div className="text-blue-600 text-4xl mb-4">📅</div>
-          <h3 className="text-lg font-medium text-blue-900 mb-2">
-            Select a Year to View Results
-          </h3>
-          <p className="text-blue-700">
-            Choose a year from the filter above to see tournament results and game history.
-          </p>
-        </div>
-      )}
-      </div>
-    </div>
-  );
+interface GameResult {
+	id: string;
+	status: string;
+	home_score: number;
+	away_score: number;
+	game_type: string;
+	home_team: { name: string } | null;
+	away_team: { name: string } | null;
 }
 
-function LoadingFallback() {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: '32px 24px'
-      }}>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-          <span className="text-lg font-medium" style={{ color: '#312f36' }}>
-            Loading results...
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+function ResultsContent() {
+	const searchParams = useSearchParams();
+	const [tournaments, setTournaments] = useState<TournamentRecord[]>([]);
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [games, setGames] = useState<GameResult[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadingGames, setLoadingGames] = useState(false);
+
+	// Load all tournaments
+	useEffect(() => {
+		async function loadTournaments() {
+			const { data } = await supabase
+				.from('tournaments')
+				.select('*')
+				.order('tournament_number', { ascending: false });
+			setTournaments(data || []);
+			setLoading(false);
+
+			// Auto-select from URL param or most recent
+			const yearParam = searchParams.get('year');
+			if (yearParam && data) {
+				const match = data.find((t: any) =>
+					t.start_date && new Date(t.start_date).getFullYear().toString() === yearParam
+				);
+				if (match) setSelectedId(match.id);
+			} else if (data && data.length > 0) {
+				setSelectedId(data[0].id);
+			}
+		}
+		loadTournaments();
+	}, [searchParams]);
+
+	// Load games when tournament changes
+	useEffect(() => {
+		if (!selectedId) return;
+		async function loadGames() {
+			setLoadingGames(true);
+			const { data } = await supabase
+				.from('games')
+				.select(`
+					id, status, home_score, away_score, game_type,
+					home_team:teams!games_home_team_id_fkey(name),
+					away_team:teams!games_away_team_id_fkey(name)
+				`)
+				.eq('tournament_id', selectedId)
+				.order('started_at', { ascending: true });
+
+			const normalized = (data || []).map((g: any) => ({
+				...g,
+				home_team: Array.isArray(g.home_team) ? g.home_team[0] : g.home_team,
+				away_team: Array.isArray(g.away_team) ? g.away_team[0] : g.away_team,
+			}));
+			setGames(normalized);
+			setLoadingGames(false);
+		}
+		loadGames();
+	}, [selectedId]);
+
+	const selected = tournaments.find(t => t.id === selectedId);
+
+	return (
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+			{/* Section header */}
+			<div style={{
+				backgroundColor: '#2B2C2D',
+				color: '#FFFFFF',
+				fontSize: 12,
+				fontWeight: 700,
+				textTransform: 'uppercase',
+				letterSpacing: '0.05em',
+				padding: '8px 16px',
+				marginTop: 24,
+			}}>
+				Tournament History
+			</div>
+
+			{/* Tournament selector */}
+			<div style={{
+				backgroundColor: '#FFFFFF',
+				border: '1px solid #D0D0D0',
+				borderTop: 'none',
+				padding: '12px 16px',
+				display: 'flex',
+				flexWrap: 'wrap',
+				gap: 8,
+			}}>
+				{loading ? (
+					<span style={{ color: '#6C6D6F', fontSize: 13 }}>Loading...</span>
+				) : (
+					tournaments.map(t => (
+						<button
+							key={t.id}
+							onClick={() => setSelectedId(t.id)}
+							style={{
+								padding: '6px 12px',
+								fontSize: 13,
+								fontWeight: selectedId === t.id ? 700 : 400,
+								color: selectedId === t.id ? '#FFFFFF' : '#2B2C2D',
+								backgroundColor: selectedId === t.id ? '#CC0000' : '#F1F2F3',
+								border: 'none',
+								borderRadius: 4,
+								cursor: 'pointer',
+								transition: 'all 0.15s',
+							}}
+						>
+							{t.name}
+						</button>
+					))
+				)}
+			</div>
+
+			{/* Selected tournament info */}
+			{selected && (
+				<div style={{
+					backgroundColor: '#FFFFFF',
+					border: '1px solid #D0D0D0',
+					borderTop: 'none',
+					padding: '16px',
+				}}>
+					<h2 style={{ fontSize: 20, fontWeight: 700, color: '#151617', margin: '0 0 4px 0' }}>
+						{selected.name}
+					</h2>
+					<div style={{ fontSize: 13, color: '#6C6D6F' }}>
+						{selected.location}
+						{selected.start_date && ` · ${new Date(selected.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+						{selected.winner && (
+							<span style={{ marginLeft: 12, color: '#CC0000', fontWeight: 600 }}>
+								🏆 Champion: {selected.winner}
+							</span>
+						)}
+					</div>
+				</div>
+			)}
+
+			{/* Games list */}
+			{selectedId && (
+				<>
+					<div style={{
+						backgroundColor: '#2B2C2D',
+						color: '#FFFFFF',
+						fontSize: 12,
+						fontWeight: 700,
+						textTransform: 'uppercase',
+						letterSpacing: '0.05em',
+						padding: '8px 16px',
+						marginTop: 24,
+					}}>
+						Games
+					</div>
+
+					{loadingGames ? (
+						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+							Loading games...
+						</div>
+					) : games.length === 0 ? (
+						<div style={{ padding: 32, textAlign: 'center', color: '#6C6D6F', fontSize: 14, backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+							No games recorded for this tournament
+						</div>
+					) : (
+						<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+							{games.map((game, i) => (
+								<Link
+									key={game.id}
+									href={`/game/${game.id}`}
+									style={{
+										display: 'block',
+										textDecoration: 'none',
+										borderBottom: i < games.length - 1 ? '1px solid #E5E5E5' : 'none',
+										padding: '12px 16px',
+									}}
+								>
+									<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+										<div style={{ flex: 1 }}>
+											<div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+												<span style={{
+													fontSize: 14,
+													fontWeight: game.away_score > game.home_score ? 700 : 400,
+													color: '#151617',
+												}}>
+													{game.away_team?.name || 'TBD'}
+												</span>
+												<span style={{
+													fontSize: 16,
+													fontWeight: game.away_score > game.home_score ? 700 : 400,
+													color: '#151617',
+													fontVariantNumeric: 'tabular-nums',
+												}}>
+													{game.away_score}
+												</span>
+											</div>
+											<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+												<span style={{
+													fontSize: 14,
+													fontWeight: game.home_score > game.away_score ? 700 : 400,
+													color: '#151617',
+												}}>
+													{game.home_team?.name || 'TBD'}
+												</span>
+												<span style={{
+													fontSize: 16,
+													fontWeight: game.home_score > game.away_score ? 700 : 400,
+													color: '#151617',
+													fontVariantNumeric: 'tabular-nums',
+												}}>
+													{game.home_score}
+												</span>
+											</div>
+										</div>
+										<div style={{ marginLeft: 16, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+											<span style={{ fontSize: 11, color: '#6C6D6F', fontWeight: 600 }}>FINAL</span>
+											<span style={{ fontSize: 10, color: '#A5A6A7', textTransform: 'uppercase' }}>
+												{game.game_type === 'round_robin' ? 'Pool' : 'Bracket'}
+											</span>
+										</div>
+									</div>
+								</Link>
+							))}
+						</div>
+					)}
+				</>
+			)}
+		</div>
+	);
 }
 
 export default function ResultsPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ResultsContent />
-    </Suspense>
-  );
-} 
+	return (
+		<Suspense fallback={
+			<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F' }}>Loading...</div>
+		}>
+			<ResultsContent />
+		</Suspense>
+	);
+}
