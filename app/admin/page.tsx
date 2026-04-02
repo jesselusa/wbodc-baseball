@@ -1006,7 +1006,11 @@ export default function AdminPage() {
                             <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>Empty</div>
                           ) : (
                             team.players.sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
-                              <div key={p.id} style={{ padding: '5px 12px', fontSize: 12, color: '#484A4A', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}>
+                              <div
+                                key={p.id}
+                                onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                style={{ padding: '5px 12px', fontSize: 12, color: '#0066CC', cursor: 'pointer', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}
+                              >
                                 {p.name}
                               </div>
                             ))
@@ -1014,6 +1018,35 @@ export default function AdminPage() {
                         </div>
                       </div>
                     ))}
+
+                    {/* Unassigned box */}
+                    {(() => {
+                      const assignedIds = new Set(currentTeams.flatMap(t => t.players.map(p => p.id)));
+                      const unassigned = players.filter(p => !assignedIds.has(p.id)).sort((a, b) => a.name.localeCompare(b.name));
+                      return (
+                        <div style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
+                          <div style={{ backgroundColor: '#6C6D6F', color: '#FFFFFF', padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Unassigned</span>
+                            <span style={{ fontSize: 11, color: '#D0D0D0', fontWeight: 400 }}>{unassigned.length}</span>
+                          </div>
+                          <div style={{ backgroundColor: '#FFFFFF' }}>
+                            {unassigned.length === 0 ? (
+                              <div style={{ padding: '12px', textAlign: 'center', color: '#A5A6A7', fontSize: 12 }}>All players assigned</div>
+                            ) : (
+                              unassigned.map((p, pi) => (
+                                <div
+                                  key={p.id}
+                                  onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                  style={{ padding: '5px 12px', fontSize: 12, color: '#0066CC', cursor: 'pointer', borderBottom: pi < unassigned.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? '#F9F9F9' : '#FFFFFF' }}
+                                >
+                                  {p.name}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
