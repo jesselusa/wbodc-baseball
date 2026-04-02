@@ -1,354 +1,275 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import GameResultsList from '../../components/GameResultsList';
-import { useCurrentTournament } from '../../hooks/useCurrentTournament';
+import Link from 'next/link';
+import { supabase } from '../../lib/api';
 
-function GamesContent() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  
-  // Use the current tournament hook for live games
-  const {
-    tournament,
-    games,
-    loading,
-    error,
-    refetch
-  } = useCurrentTournament();
-
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // No year selection needed for current tournament
-
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: isMobile ? '56px' : '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '20px 16px' : '32px 24px'
-      }}>
-        {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: '700',
-            color: '#1c1b20',
-            margin: '0 0 8px 0',
-            lineHeight: isMobile ? '1.2' : '1.1'
-          }}>
-            Current Tournament Games
-          </h1>
-          <p style={{
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#696775',
-            margin: '0',
-            fontWeight: '500',
-            lineHeight: isMobile ? '1.4' : '1.5'
-          }}>
-            Live and upcoming games for the 2025 tournament
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {!isClient || loading ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '64px 24px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              border: '3px solid #e4e2e8',
-              borderTop: '3px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              marginBottom: '16px'
-            }}></div>
-            <div style={{
-              fontSize: '16px',
-              color: '#696775',
-              fontWeight: '500'
-            }}>
-              Loading current tournament games...
-            </div>
-            <style jsx>{`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}</style>
-          </div>
-        ) : error ? (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.05)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '8px',
-            padding: '16px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: '14px',
-              color: '#dc2626',
-              fontWeight: '500'
-            }}>
-              Error loading games: {error}
-            </div>
-          </div>
-        ) : !tournament ? (
-          <div style={{
-            background: 'rgba(245, 158, 11, 0.05)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '8px',
-            padding: '24px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '16px'
-            }}>
-              🏟️
-            </div>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#f59e0b',
-              margin: '0 0 8px 0'
-            }}>
-              Tournament Not Started
-            </h3>
-            <p style={{
-              fontSize: '14px',
-              color: '#6b7280',
-              margin: '0',
-              lineHeight: '1.5'
-            }}>
-              The 2025 tournament hasn't started yet. Check back soon for live games and updates.
-            </p>
-          </div>
-        ) : games.length === 0 ? (
-          <div style={{
-            background: 'rgba(139, 138, 148, 0.05)',
-            border: '1px solid rgba(139, 138, 148, 0.2)',
-            borderRadius: '8px',
-            padding: '24px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '16px'
-            }}>
-              ⚾
-            </div>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#696775',
-              margin: '0 0 8px 0'
-            }}>
-              No Games Scheduled
-            </h3>
-            <p style={{
-              fontSize: '14px',
-              color: '#8b8a94',
-              margin: '0',
-              lineHeight: '1.5'
-            }}>
-              No games have been scheduled for the current tournament yet.
-            </p>
-          </div>
-        ) : (
-          /* Tournament Info */
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            border: '1px solid #e4e2e8',
-            padding: isMobile ? '20px' : '24px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '16px'
-            }}>
-              <div>
-                <h2 style={{
-                  fontSize: isMobile ? '20px' : '24px',
-                  fontWeight: '700',
-                  color: '#1c1b20',
-                  margin: '0 0 4px 0'
-                }}>
-                  {tournament.name}
-                </h2>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#696775',
-                  margin: '0'
-                }}>
-                  {tournament.status === 'in_progress' ? 'Tournament in Progress' : 
-                   tournament.status === 'completed' ? 'Tournament Completed' : 
-                   'Tournament Scheduled'}
-                </p>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                background: tournament.status === 'in_progress' ? 'rgba(34, 197, 94, 0.1)' :
-                           tournament.status === 'completed' ? 'rgba(139, 138, 148, 0.1)' :
-                           'rgba(59, 130, 246, 0.1)',
-                color: tournament.status === 'in_progress' ? '#15803d' :
-                       tournament.status === 'completed' ? '#696775' :
-                       '#2563eb',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '600',
-                textTransform: 'uppercase'
-              }}>
-                {tournament.status === 'in_progress' ? '●' : 
-                 tournament.status === 'completed' ? '✓' : '⏰'}
-                {tournament.status}
-              </div>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
-              gap: '16px',
-              fontSize: '14px'
-            }}>
-              <div>
-                <div style={{
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  marginBottom: '4px'
-                }}>
-                  Total Games
-                </div>
-                <div style={{
-                  color: '#696775'
-                }}>
-                  {games.length}
-                </div>
-              </div>
-              <div>
-                <div style={{
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  marginBottom: '4px'
-                }}>
-                  Completed
-                </div>
-                <div style={{
-                  color: '#696775'
-                }}>
-                  {games.filter(g => g.status === 'completed').length}
-                </div>
-              </div>
-              <div>
-                <div style={{
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  marginBottom: '4px'
-                }}>
-                  Live/Upcoming
-                </div>
-                <div style={{
-                  color: '#696775'
-                }}>
-                  {games.filter(g => g.status !== 'completed').length}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Game Results */}
-        {tournament && games.length > 0 && (
-          <GameResultsList
-            games={games}
-            loading={loading}
-            className="mb-8"
-            groupByPhase={true}
-            showTournamentInfo={false}
-          />
-        )}
-      </div>
-    </div>
-  );
+interface GameData {
+	id: string;
+	status: string;
+	home_score: number;
+	away_score: number;
+	game_type: string;
+	started_at: string | null;
+	completed_at: string | null;
+	total_innings: number;
+	home_team: { id: string; name: string } | null;
+	away_team: { id: string; name: string } | null;
 }
 
-function LoadingFallback() {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '16px'
-      }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          border: '3px solid #e4e2e8',
-          borderTop: '3px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-        <div style={{
-          fontSize: '16px',
-          color: '#696775',
-          fontWeight: '500'
-        }}>
-          Loading games...
-        </div>
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    </div>
-  );
+type FilterTab = 'all' | 'final' | 'pool_play' | 'bracket';
+
+function GamesContent() {
+	const [games, setGames] = useState<GameData[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [tournamentName, setTournamentName] = useState('');
+	const [activeTab, setActiveTab] = useState<FilterTab>('all');
+
+	useEffect(() => {
+		async function loadGames() {
+			try {
+				// Get the most recent tournament with games
+				const { data: tournament } = await supabase
+					.from('tournaments')
+					.select('id, name, status, tournament_number')
+					.order('tournament_number', { ascending: false })
+					.limit(1)
+					.single();
+
+				if (!tournament) {
+					setLoading(false);
+					return;
+				}
+
+				setTournamentName(tournament.name);
+
+				const { data: gamesData } = await supabase
+					.from('games')
+					.select(`
+						id, status, home_score, away_score, game_type,
+						started_at, completed_at, total_innings,
+						home_team:teams!games_home_team_id_fkey(id, name),
+						away_team:teams!games_away_team_id_fkey(id, name)
+					`)
+					.eq('tournament_id', tournament.id)
+					.order('started_at', { ascending: true });
+
+				// Supabase joins return arrays for FK relations, normalize to single objects
+			const normalized = (gamesData || []).map((g: any) => ({
+				...g,
+				home_team: Array.isArray(g.home_team) ? g.home_team[0] : g.home_team,
+				away_team: Array.isArray(g.away_team) ? g.away_team[0] : g.away_team,
+			}));
+			setGames(normalized);
+			} catch (err) {
+				console.error('Failed to load games:', err);
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		loadGames();
+	}, []);
+
+	const filteredGames = games.filter(g => {
+		if (activeTab === 'all') return true;
+		if (activeTab === 'final') return g.status === 'completed';
+		if (activeTab === 'pool_play') return g.game_type === 'round_robin';
+		if (activeTab === 'bracket') return g.game_type === 'bracket' || g.game_type === 'single_elimination';
+		return true;
+	});
+
+	const tabs: { key: FilterTab; label: string }[] = [
+		{ key: 'all', label: 'All' },
+		{ key: 'final', label: 'Final' },
+		{ key: 'pool_play', label: 'Pool Play' },
+		{ key: 'bracket', label: 'Bracket' },
+	];
+
+	return (
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+			{/* Section header */}
+			<div style={{
+				backgroundColor: '#2B2C2D',
+				color: '#FFFFFF',
+				fontSize: 12,
+				fontWeight: 700,
+				textTransform: 'uppercase',
+				letterSpacing: '0.05em',
+				padding: '8px 16px',
+				marginTop: 24,
+				display: 'flex',
+				justifyContent: 'space-between',
+				alignItems: 'center',
+			}}>
+				<span>Scoreboard</span>
+				{tournamentName && (
+					<span style={{ fontWeight: 400, color: '#A5A6A7', textTransform: 'none', fontSize: 12 }}>
+						{tournamentName}
+					</span>
+				)}
+			</div>
+
+			{/* Tab bar */}
+			<div style={{
+				display: 'flex',
+				gap: 0,
+				borderBottom: '1px solid #D0D0D0',
+				backgroundColor: '#FFFFFF',
+			}}>
+				{tabs.map(tab => (
+					<button
+						key={tab.key}
+						onClick={() => setActiveTab(tab.key)}
+						style={{
+							padding: '10px 16px',
+							fontSize: 13,
+							fontWeight: activeTab === tab.key ? 700 : 400,
+							color: activeTab === tab.key ? '#151617' : '#6C6D6F',
+							backgroundColor: 'transparent',
+							border: 'none',
+							borderBottom: activeTab === tab.key ? '2px solid #CC0000' : '2px solid transparent',
+							cursor: 'pointer',
+							transition: 'color 0.15s',
+						}}
+					>
+						{tab.label}
+					</button>
+				))}
+			</div>
+
+			{/* Content */}
+			{loading ? (
+				<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F', fontSize: 14 }}>
+					Loading scores...
+				</div>
+			) : filteredGames.length === 0 ? (
+				<div style={{
+					padding: 48,
+					textAlign: 'center',
+					color: '#6C6D6F',
+					fontSize: 14,
+					backgroundColor: '#FFFFFF',
+					border: '1px solid #D0D0D0',
+					borderTop: 'none',
+				}}>
+					No games to show
+				</div>
+			) : (
+				<div style={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderTop: 'none' }}>
+					{filteredGames.map((game, i) => (
+						<Link
+							key={game.id}
+							href={`/game/${game.id}`}
+							style={{
+								display: 'block',
+								textDecoration: 'none',
+								borderBottom: i < filteredGames.length - 1 ? '1px solid #E5E5E5' : 'none',
+								padding: '12px 16px',
+								transition: 'background-color 0.1s',
+							}}
+						>
+							<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+								{/* Teams and scores */}
+								<div style={{ flex: 1 }}>
+									{/* Away team */}
+									<div style={{
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										marginBottom: 4,
+									}}>
+										<span style={{
+											fontSize: 14,
+											fontWeight: game.status === 'completed' && game.away_score > game.home_score ? 700 : 400,
+											color: '#151617',
+										}}>
+											{game.away_team?.name || 'TBD'}
+										</span>
+										<span style={{
+											fontSize: 16,
+											fontWeight: game.status === 'completed' && game.away_score > game.home_score ? 700 : 400,
+											color: '#151617',
+											fontVariantNumeric: 'tabular-nums',
+											minWidth: 24,
+											textAlign: 'right',
+										}}>
+											{game.status !== 'scheduled' ? game.away_score : ''}
+										</span>
+									</div>
+									{/* Home team */}
+									<div style={{
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+									}}>
+										<span style={{
+											fontSize: 14,
+											fontWeight: game.status === 'completed' && game.home_score > game.away_score ? 700 : 400,
+											color: '#151617',
+										}}>
+											{game.home_team?.name || 'TBD'}
+										</span>
+										<span style={{
+											fontSize: 16,
+											fontWeight: game.status === 'completed' && game.home_score > game.away_score ? 700 : 400,
+											color: '#151617',
+											fontVariantNumeric: 'tabular-nums',
+											minWidth: 24,
+											textAlign: 'right',
+										}}>
+											{game.status !== 'scheduled' ? game.home_score : ''}
+										</span>
+									</div>
+								</div>
+
+								{/* Status + type */}
+								<div style={{
+									marginLeft: 16,
+									display: 'flex',
+									flexDirection: 'column',
+									alignItems: 'flex-end',
+									gap: 4,
+								}}>
+									{game.status === 'completed' ? (
+										<span style={{ fontSize: 11, color: '#6C6D6F', fontWeight: 600 }}>FINAL</span>
+									) : game.status === 'in_progress' ? (
+										<span style={{
+											fontSize: 10,
+											fontWeight: 700,
+											color: '#FFFFFF',
+											backgroundColor: '#CC0000',
+											padding: '2px 6px',
+											borderRadius: 2,
+										}}>LIVE</span>
+									) : (
+										<span style={{ fontSize: 11, color: '#A5A6A7' }}>
+											{game.started_at ? new Date(game.started_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'TBD'}
+										</span>
+									)}
+									<span style={{
+										fontSize: 10,
+										color: '#A5A6A7',
+										textTransform: 'uppercase',
+									}}>
+										{game.game_type === 'round_robin' ? 'Pool' : game.game_type === 'bracket' || game.game_type === 'single_elimination' ? 'Bracket' : game.game_type}
+									</span>
+								</div>
+							</div>
+						</Link>
+					))}
+				</div>
+			)}
+		</div>
+	);
 }
 
 export default function GamesPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <GamesContent />
-    </Suspense>
-  );
-} 
+	return (
+		<Suspense fallback={
+			<div style={{ padding: 48, textAlign: 'center', color: '#6C6D6F' }}>Loading...</div>
+		}>
+			<GamesContent />
+		</Suspense>
+	);
+}
