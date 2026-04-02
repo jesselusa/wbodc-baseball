@@ -949,7 +949,7 @@ export default function AdminPage() {
                           <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#6C6D6F', flexShrink: 0 }}>
                             {player.name.charAt(0)}
                           </div>
-                          <span style={{ fontSize: 13, color: '#151617', fontWeight: 500 }}>{player.name}</span>
+                          <span onClick={() => { setCardPlayer(player); setShowCard(true); }} style={{ fontSize: 13, color: '#0066CC', fontWeight: 500, cursor: 'pointer' }}>{player.name}</span>
                         </div>
                         <select
                           value={assignedTeam?.id || ''}
