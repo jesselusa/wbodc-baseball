@@ -237,7 +237,7 @@ export default function Page() {
 
 					{/* Standings table */}
 					{standings.length > 0 && (
-						<div style={{ border: '1px solid #D0D0D0', borderTop: lastCompleted.winner ? 'none' : '1px solid #D0D0D0', borderRadius: '0 0 10px 10px' }}>
+						<div style={{ border: '1px solid #D0D0D0', borderTop: lastCompleted.winner ? 'none' : '1px solid #D0D0D0' }}>
 							{/* Table header */}
 							<div style={{
 								display: 'grid',
@@ -299,7 +299,13 @@ export default function Page() {
 					)}
 
 					{/* Link to full history */}
-					<div style={{ padding: '16px 0' }}>
+					<div style={{
+						padding: '12px 16px',
+						backgroundColor: '#FFFFFF',
+						border: '1px solid #D0D0D0',
+						borderTop: 'none',
+						borderRadius: '0 0 10px 10px',
+					}}>
 						<Link
 							href="/results"
 							style={{

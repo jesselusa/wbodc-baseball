@@ -12,6 +12,13 @@ interface TickerGame {
 	status: string;
 }
 
+function abbreviateTeam(name: string): string {
+	// Handle "Team N" pattern
+	if (name.startsWith('Team ')) return `TM${name.slice(5)}`;
+	// Otherwise use first 3 chars uppercase
+	return name.slice(0, 3).toUpperCase();
+}
+
 export default function ScoreboardTicker() {
 	const [games, setGames] = useState<TickerGame[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -51,8 +58,8 @@ export default function ScoreboardTicker() {
 						const awayTeam = Array.isArray(g.away_team) ? g.away_team[0] : g.away_team;
 						return {
 							id: g.id,
-							homeTeam: homeTeam?.name?.slice(0, 3)?.toUpperCase() || 'HME',
-							awayTeam: awayTeam?.name?.slice(0, 3)?.toUpperCase() || 'AWY',
+							homeTeam: abbreviateTeam(homeTeam?.name || 'HME'),
+							awayTeam: abbreviateTeam(awayTeam?.name || 'AWY'),
 							homeScore: g.home_score || 0,
 							awayScore: g.away_score || 0,
 							status: g.status === 'in_progress' ? 'LIVE' : 'FINAL',
@@ -78,7 +85,7 @@ export default function ScoreboardTicker() {
 				left: 0,
 				right: 0,
 				zIndex: 101,
-				height: 40,
+				height: 56,
 				backgroundColor: '#FFFFFF',
 				borderBottom: '1px solid #D0D0D0',
 				display: 'flex',
@@ -107,47 +114,49 @@ export default function ScoreboardTicker() {
 				) : (
 					games.map((game, i) => (
 						<div key={game.id} style={{ display: 'flex', alignItems: 'center', height: '100%', flexShrink: 0 }}>
-							{i > 0 && <div style={{ width: 1, height: 20, backgroundColor: '#D0D0D0', margin: '0 4px' }} />}
+							{i > 0 && <div style={{ width: 1, height: 36, backgroundColor: '#D0D0D0', margin: '0 8px' }} />}
 							<a
 								href={`/game/${game.id}`}
 								style={{
 									display: 'flex',
 									alignItems: 'center',
-									gap: 8,
-									padding: '4px 8px',
+									gap: 12,
+									padding: '6px 12px',
 									textDecoration: 'none',
 									height: '100%',
 									borderRadius: 4,
 								}}
 							>
-								<div style={{ display: 'flex', flexDirection: 'column', fontSize: 11, lineHeight: '13px', fontVariantNumeric: 'tabular-nums' }}>
-									<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-										<span style={{ fontWeight: 600, color: '#151617', width: 28 }}>{game.awayTeam}</span>
+								<div style={{ display: 'flex', flexDirection: 'column', fontSize: 12, lineHeight: '18px', fontVariantNumeric: 'tabular-nums', gap: 2 }}>
+									<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+										<span style={{ fontWeight: 600, color: game.awayScore > game.homeScore ? '#151617' : '#6C6D6F', width: 32, fontSize: 12 }}>{game.awayTeam}</span>
 										<span style={{
-											width: 16,
+											width: 20,
 											textAlign: 'right' as const,
-											fontWeight: game.awayScore > game.homeScore ? 700 : 400,
-											color: game.awayScore > game.homeScore ? '#151617' : '#484A4A',
+											fontWeight: 700,
+											fontSize: 13,
+											color: game.awayScore > game.homeScore ? '#151617' : '#6C6D6F',
 										}}>
 											{game.awayScore}
 										</span>
 									</div>
-									<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-										<span style={{ fontWeight: 600, color: '#151617', width: 28 }}>{game.homeTeam}</span>
+									<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+										<span style={{ fontWeight: 600, color: game.homeScore > game.awayScore ? '#151617' : '#6C6D6F', width: 32, fontSize: 12 }}>{game.homeTeam}</span>
 										<span style={{
-											width: 16,
+											width: 20,
 											textAlign: 'right' as const,
-											fontWeight: game.homeScore > game.awayScore ? 700 : 400,
-											color: game.homeScore > game.awayScore ? '#151617' : '#484A4A',
+											fontWeight: 700,
+											fontSize: 13,
+											color: game.homeScore > game.awayScore ? '#151617' : '#6C6D6F',
 										}}>
 											{game.homeScore}
 										</span>
 									</div>
 								</div>
 								{game.status === 'LIVE' ? (
-									<span style={{ fontSize: 9, fontWeight: 700, color: '#FFFFFF', backgroundColor: '#CC0000', padding: '2px 4px', borderRadius: 2 }}>LIVE</span>
+									<span style={{ fontSize: 10, fontWeight: 700, color: '#FFFFFF', backgroundColor: '#CC0000', padding: '2px 6px', borderRadius: 2 }}>LIVE</span>
 								) : (
-									<span style={{ fontSize: 9, color: '#6C6D6F' }}>{game.status}</span>
+									<span style={{ fontSize: 10, color: '#6C6D6F', fontWeight: 500 }}>F</span>
 								)}
 							</a>
 						</div>

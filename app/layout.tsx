@@ -30,7 +30,7 @@ export default function RootLayout({
 			<body
 				className="antialiased"
 				style={{
-					paddingTop: 88,
+					paddingTop: 104,
 					backgroundColor: '#F1F2F3',
 					color: '#484A4A',
 					fontFamily: '-apple-system, system-ui, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif',

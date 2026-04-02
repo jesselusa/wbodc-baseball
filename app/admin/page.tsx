@@ -294,6 +294,11 @@ export default function AdminPage() {
   };
 
   const handleSaveAll = async () => {
+    // Prevent modifying completed tournaments
+    if (tournamentLive) {
+      setSaveStatus({ type: 'error', message: 'Cannot modify a completed tournament', timestamp: Date.now() });
+      return;
+    }
     try {
       setSaving(true);
       setValidationErrors([]);
