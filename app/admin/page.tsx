@@ -668,9 +668,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e4e2e8',
+        backgroundColor: '#F1F2F3',
+        borderRadius: '10px',
+        border: '1px solid #D0D0D0',
         padding: '64px 32px',
         textAlign: 'center',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
@@ -689,7 +689,7 @@ export default function AdminPage() {
           <div style={{
             width: '24px',
             height: '24px',
-            border: '3px solid #e4e2e8',
+            border: '3px solid #D0D0D0',
             borderTop: '3px solid #8b8a94',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
@@ -702,14 +702,14 @@ export default function AdminPage() {
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
+      backgroundColor: '#F1F2F3',
       minHeight: '100vh',
       paddingTop: '64px'
     }}>
       <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e4e2e8',
+        backgroundColor: '#F1F2F3',
+        borderRadius: '10px',
+        border: '1px solid #D0D0D0',
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         maxWidth: '1200px',
@@ -717,7 +717,7 @@ export default function AdminPage() {
       }}>
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #1c1b20 0%, #2d2c32 100%)',
+          backgroundColor: '#2B2C2D',
           color: 'white',
           padding: isMobile ? '24px' : '32px',
           position: 'relative',
@@ -745,10 +745,10 @@ export default function AdminPage() {
 
           <div style={{ position: 'relative', zIndex: 5 }}>
             <h1 style={{
-              fontSize: '32px',
-              fontWeight: '700',
+              fontSize: '24px',
+              fontWeight: 700,
               margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+              color: '#FFFFFF'
             }}>
               Tournament Administration
             </h1>
@@ -769,7 +769,7 @@ export default function AdminPage() {
             background: saveStatus.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 
                         saveStatus.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 
                         'rgba(245, 158, 11, 0.1)',
-            borderBottom: '1px solid #e4e2e8',
+            borderBottom: '1px solid #D0D0D0',
             display: 'flex',
             alignItems: 'center',
             gap: '12px'
@@ -809,13 +809,13 @@ export default function AdminPage() {
         {/* Action Bar */}
         <div style={{
           padding: isMobile ? '16px 20px' : '24px 32px',
-          borderBottom: '1px solid #e4e2e8',
+          borderBottom: '1px solid #D0D0D0',
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
           alignItems: isMobile ? 'stretch' : 'center',
           gap: isMobile ? '12px' : '16px',
-          background: 'rgba(248, 250, 252, 0.5)'
+          backgroundColor: 'white'
         }}>
           <div style={{
             display: 'flex',
@@ -939,7 +939,7 @@ export default function AdminPage() {
             <div style={{
               width: '1px',
               height: '40px',
-              background: '#e4e2e8',
+              background: '#D0D0D0',
               margin: '0 8px'
             }}></div>
 
@@ -967,9 +967,9 @@ export default function AdminPage() {
               disabled={saving || validationErrors.length > 0}
               style={{
                 padding: '12px 24px',
-                background: saving ? '#8b8a94' : 
+                background: saving ? '#8b8a94' :
                            validationErrors.length > 0 ? '#d1d5db' :
-                           'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                           '#CC0000',
                 border: 'none',
                 borderRadius: '8px',
                 color: 'white',
@@ -1000,24 +1000,24 @@ export default function AdminPage() {
         {/* Navigation Tabs */}
         <div style={{
           display: 'flex',
-          borderBottom: '1px solid #e4e2e8',
-          background: 'white',
+          borderBottom: 'none',
+          backgroundColor: '#2B2C2D',
           overflowX: isMobile ? 'auto' : 'visible'
         }}>
           {(['players', 'settings', 'teams'] as const).map((tab) => {
             const isActive = activeTab === tab;
             const errorCount = getTabErrors(tab);
-            
+
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 style={{
                   padding: isMobile ? '12px 16px' : '16px 24px',
-                  background: isActive ? 'white' : 'transparent',
+                  background: 'transparent',
                   border: 'none',
-                  borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
-                  color: isActive ? '#3b82f6' : '#696775',
+                  borderBottom: isActive ? '3px solid #CC0000' : '3px solid transparent',
+                  color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
                   fontSize: isMobile ? '12px' : '14px',
                   fontWeight: '600',
                   textTransform: 'capitalize',
@@ -1055,15 +1055,15 @@ export default function AdminPage() {
         </div>
 
         {/* Tab Content */}
-        <div style={{ padding: isMobile ? '20px' : '32px' }}>
+        <div style={{ padding: isMobile ? '20px' : '32px', backgroundColor: 'white' }}>
           {activeTab === 'players' && (
             <div>
               {/* Players Tab Header */}
               <div style={{ marginBottom: '24px' }}>
                 <h2 style={{
                   fontSize: '24px',
-                  fontWeight: '600',
-                  color: '#1c1b20',
+                  fontWeight: 700,
+                  color: '#151617',
                   margin: '0 0 8px 0'
                 }}>
                   Player Management
@@ -1134,7 +1134,7 @@ export default function AdminPage() {
             padding: isMobile ? '16px' : '20px',
             background: 'rgba(239, 68, 68, 0.05)',
             border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '8px'
+            borderRadius: '10px'
           }}>
             <h3 style={{
               margin: '0 0 12px 0',

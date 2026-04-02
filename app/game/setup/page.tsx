@@ -138,10 +138,9 @@ export default function GameSetupPage() {
   if (error) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
+        style={{
+          backgroundColor: '#F1F2F3',
+          color: '#151617'
         }}
       >
         <div className="text-center max-w-md">
@@ -151,7 +150,7 @@ export default function GameSetupPage() {
           <div className="space-y-2">
             <button
               onClick={() => setError(undefined)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: '#CC0000' }}
             >
               Try Again
             </button>
@@ -170,14 +169,13 @@ export default function GameSetupPage() {
   if (creatingGame) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
+        style={{
+          backgroundColor: '#F1F2F3',
+          color: '#151617'
         }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#CC0000' }}></div>
           <p className="mt-4 text-gray-600">Creating your game...</p>
         </div>
       </main>
@@ -186,10 +184,9 @@ export default function GameSetupPage() {
 
   return (
     <main className="min-h-screen"
-      style={{ 
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#1c1b20',
+      style={{
+        backgroundColor: '#F1F2F3',
+        color: '#151617',
         paddingTop: '64px' // Account for fixed navbar
       }}
     >
