@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/api';
 import { normalizeJoin, ESPN } from '../lib/utils';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile, TICKER_HEIGHT_MOBILE, TICKER_HEIGHT_DESKTOP } from '../hooks/useIsMobile';
 
 interface TickerGame {
 	id: string;
@@ -90,7 +90,7 @@ export default function ScoreboardTicker() {
 				left: 0,
 				right: 0,
 				zIndex: 101,
-				height: isMobile ? 44 : 56,
+				height: isMobile ? TICKER_HEIGHT_MOBILE : TICKER_HEIGHT_DESKTOP,
 				backgroundColor: ESPN.white,
 				borderBottom: '1px solid #D0D0D0',
 				display: 'flex',

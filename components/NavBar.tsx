@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Settings } from 'lucide-react';
 import { ESPN } from '../lib/utils';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile, TICKER_HEIGHT_MOBILE, TICKER_HEIGHT_DESKTOP, TOTAL_HEADER_MOBILE, TOTAL_HEADER_DESKTOP } from '../hooks/useIsMobile';
 
 const navLinks = [
 	{ href: '/games', label: 'Scores' },
@@ -29,7 +29,7 @@ export default function NavBar() {
 			<nav
 				style={{
 					position: 'fixed',
-					top: isMobile ? 44 : 56,
+					top: isMobile ? TICKER_HEIGHT_MOBILE : TICKER_HEIGHT_DESKTOP,
 					left: 0,
 					right: 0,
 					zIndex: 100,
@@ -157,7 +157,7 @@ export default function NavBar() {
 						style={{
 							position: 'fixed',
 							inset: 0,
-							top: isMobile ? 92 : 104,
+							top: isMobile ? TOTAL_HEADER_MOBILE : TOTAL_HEADER_DESKTOP,
 							backgroundColor: 'rgba(0,0,0,0.4)',
 							zIndex: 98,
 						}}
@@ -166,7 +166,7 @@ export default function NavBar() {
 					<div
 						style={{
 							position: 'fixed',
-							top: isMobile ? 92 : 104,
+							top: isMobile ? TOTAL_HEADER_MOBILE : TOTAL_HEADER_DESKTOP,
 							left: 0,
 							right: 0,
 							backgroundColor: ESPN.dark,
