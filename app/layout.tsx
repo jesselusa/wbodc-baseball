@@ -17,11 +17,13 @@ export const metadata: Metadata = {
 		description: "World Bunch of Dudes Championship — Annual reunion baseball tournament",
 		siteName: "WBoDC Baseball",
 		type: "website",
+		images: [{ url: '/og-image.png', width: 1476, height: 831 }],
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "WBoDC Baseball",
 		description: "World Bunch of Dudes Championship — Annual reunion baseball tournament",
+		images: ['/og-image.png'],
 	},
 };
 
