@@ -6,6 +6,7 @@ import BaseballCard from '../../components/BaseballCard';
 import { Player } from '../../lib/types';
 import AvatarInitial from '../../components/AvatarInitial';
 import { ESPN } from '../../lib/utils';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 type SortKey = 'name' | 'current_town' | 'championships_won';
 
@@ -16,6 +17,7 @@ export default function PlayersPage() {
 	const [sortAsc, setSortAsc] = useState(true);
 	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 	const [showInactive, setShowInactive] = useState(false);
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		async function load() {
@@ -93,7 +95,7 @@ export default function PlayersPage() {
 					{/* Table header */}
 					<div style={{
 						display: 'grid',
-						gridTemplateColumns: '1fr 140px 140px 60px',
+						gridTemplateColumns: isMobile ? '1fr 50px' : '1fr 140px 140px 60px',
 						padding: '8px 16px',
 						backgroundColor: ESPN.gray50,
 						borderBottom: '1px solid #E5E5E5',
@@ -101,11 +103,10 @@ export default function PlayersPage() {
 						fontWeight: 600,
 						color: ESPN.gray900,
 						textTransform: 'uppercase',
-						minWidth: 500,
 					}}>
 						<span onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Name{sortArrow('name')}</span>
-						<span onClick={() => handleSort('current_town')} style={{ cursor: 'pointer' }}>City{sortArrow('current_town')}</span>
-						<span>Hometown</span>
+						{!isMobile && <span onClick={() => handleSort('current_town')} style={{ cursor: 'pointer' }}>City{sortArrow('current_town')}</span>}
+						{!isMobile && <span>Hometown</span>}
 						<span onClick={() => handleSort('championships_won')} style={{ cursor: 'pointer', textAlign: 'center' }}>Titles{sortArrow('championships_won')}</span>
 					</div>
 
@@ -116,20 +117,19 @@ export default function PlayersPage() {
 							onClick={() => setSelectedPlayer(player)}
 							style={{
 								display: 'grid',
-								gridTemplateColumns: '1fr 140px 140px 60px',
+								gridTemplateColumns: isMobile ? '1fr 50px' : '1fr 140px 140px 60px',
 								padding: '10px 16px',
 								borderBottom: i < sorted.length - 1 ? '1px solid #E5E5E5' : 'none',
 								backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
 								fontSize: 13,
 								cursor: 'pointer',
 								transition: 'background-color 0.1s',
-								minWidth: 500,
 							}}
 						>
 							<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 								<AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
 								<div>
-									<span style={{ fontWeight: 600, color: ESPN.black }}>{player.name}</span>
+									<span style={{ fontWeight: 600, color: ESPN.blue, cursor: 'pointer' }}>{player.name}</span>
 									{player.nickname && (
 										<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.gray400 }}>"{player.nickname}"</span>
 									)}
@@ -138,8 +138,8 @@ export default function PlayersPage() {
 									)}
 								</div>
 							</div>
-							<span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.current_town || '—'}</span>
-							<span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.hometown || '—'}</span>
+							{!isMobile && <span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.current_town || '—'}</span>}
+							{!isMobile && <span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.hometown || '—'}</span>}
 							<span style={{ textAlign: 'center', fontWeight: 600, color: ESPN.gray900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 								{player.championships_won || 0}
 							</span>

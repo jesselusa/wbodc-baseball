@@ -7,9 +7,13 @@ import {
 	getLatestCompletedTournament,
 	getUpcomingTournament,
 	getTournamentStandings,
+	getBracketFinishOrder,
+	supabase,
 } from "../lib/api";
-import { TournamentRecord } from "../lib/types";
+import { TournamentRecord, Player } from "../lib/types";
 import { ESPN } from "../lib/utils";
+import { useIsMobile } from "../hooks/useIsMobile";
+import BaseballCard from "../components/BaseballCard";
 
 interface Standing {
 	id: string;
@@ -27,6 +31,9 @@ export default function Page() {
 	const [upcoming, setUpcoming] = useState<TournamentRecord | null>(null);
 	const [standings, setStandings] = useState<Standing[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [championPlayers, setChampionPlayers] = useState<Player[]>([]);
+	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		async function loadData() {
@@ -43,14 +50,40 @@ export default function Page() {
 
 				if (completedRes.success && completedRes.data) {
 					setLastCompleted(completedRes.data);
+
+					if (completedRes.data?.winner) {
+						// Get winning team's players
+						const { data: teams } = await supabase
+							.from('teams')
+							.select('id')
+							.eq('name', completedRes.data.winner)
+							.limit(1)
+							.maybeSingle();
+						if (teams) {
+							const { data: assignments } = await supabase
+								.from('tournament_player_assignments')
+								.select('players(*)')
+								.eq('team_id', teams.id)
+								.eq('tournament_id', completedRes.data.id);
+							if (assignments) {
+								setChampionPlayers(
+									assignments.map((a: any) => a.players).filter(Boolean).sort((a: Player, b: Player) => a.name.localeCompare(b.name))
+								);
+							}
+						}
+					}
+
 					// Load standings for completed tournament
 					const standingsRes = await getTournamentStandings(completedRes.data.id);
 					if (standingsRes.success) {
-						// Sort: champion first, then by win%, then by run differential
+						const finishOrder = await getBracketFinishOrder(completedRes.data.id);
+
+						// Sort by bracket finish position first, then by win%, then by run differential
 						const sorted = [...standingsRes.data].sort((a, b) => {
-							const winner = completedRes.data?.winner;
-							if (winner && a.team?.name === winner) return -1;
-							if (winner && b.team?.name === winner) return 1;
+							const aFinish = finishOrder.get(a.team_id) ?? 99;
+							const bFinish = finishOrder.get(b.team_id) ?? 99;
+							if (aFinish !== bFinish) return aFinish - bFinish;
+							// Tiebreak by win%
 							const aPct = a.wins + a.losses > 0 ? a.wins / (a.wins + a.losses) : 0;
 							const bPct = b.wins + b.losses > 0 ? b.wins / (b.wins + b.losses) : 0;
 							if (bPct !== aPct) return bPct - aPct;
@@ -73,7 +106,7 @@ export default function Page() {
 		loadData();
 	}, []);
 
-	if (loading) {
+if (loading) {
 		return (
 			<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 				<span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading...</span>
@@ -155,7 +188,7 @@ export default function Page() {
 
 			{/* Hero: Next Tournament Coming Soon */}
 			<div style={{
-				padding: '48px 24px',
+				padding: isMobile ? '32px 16px' : '48px 24px',
 				textAlign: 'center',
 				borderBottom: '1px solid #D0D0D0',
 				backgroundColor: ESPN.white,
@@ -173,7 +206,7 @@ export default function Page() {
 					Coming Soon
 				</div>
 				<h1 style={{
-					fontSize: 42,
+					fontSize: isMobile ? 28 : 42,
 					fontWeight: 900,
 					color: ESPN.black,
 					margin: '0 0 8px 0',
@@ -229,6 +262,16 @@ export default function Page() {
 								<div style={{ fontSize: 20, fontWeight: 700, color: ESPN.black }}>
 									{lastCompleted.winner}
 								</div>
+								{championPlayers.length > 0 && (
+									<div style={{ fontSize: 13, marginTop: 2 }}>
+										{championPlayers.map((player, i) => (
+											<span key={player.id}>
+												<span style={{ color: ESPN.blue, cursor: 'pointer' }} onClick={() => setSelectedPlayer(player)}>{player.name}</span>
+												{i < championPlayers.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
+											</span>
+										))}
+									</div>
+								)}
 							</div>
 							<div style={{ marginLeft: 'auto', fontSize: 13, color: ESPN.gray500 }}>
 								{lastCompleted.location} &middot; {lastCompleted.start_date && new Date(lastCompleted.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
@@ -242,7 +285,7 @@ export default function Page() {
 							{/* Table header */}
 							<div style={{
 								display: 'grid',
-								gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
+								gridTemplateColumns: isMobile ? '40px 1fr 50px 50px 60px' : '40px 1fr 50px 50px 60px 50px 50px',
 								padding: '8px 16px',
 								backgroundColor: ESPN.gray50,
 								borderBottom: '1px solid #E5E5E5',
@@ -256,8 +299,8 @@ export default function Page() {
 								<span style={{ textAlign: 'center' }}>W</span>
 								<span style={{ textAlign: 'center' }}>L</span>
 								<span style={{ textAlign: 'center' }}>PCT</span>
-								<span style={{ textAlign: 'center' }}>RS</span>
-								<span style={{ textAlign: 'center' }}>RA</span>
+								{!isMobile && <span style={{ textAlign: 'center' }}>RS</span>}
+								{!isMobile && <span style={{ textAlign: 'center' }}>RA</span>}
 							</div>
 
 							{/* Table rows */}
@@ -270,7 +313,7 @@ export default function Page() {
 										key={s.id}
 										style={{
 											display: 'grid',
-											gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
+											gridTemplateColumns: isMobile ? '40px 1fr 50px 50px 60px' : '40px 1fr 50px 50px 60px 50px 50px',
 											padding: '10px 16px',
 											borderBottom: i < standings.length - 1 ? '1px solid #E5E5E5' : 'none',
 											backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
@@ -285,14 +328,14 @@ export default function Page() {
 										}}>
 											{s.team?.name || 'Unknown'}
 											{lastCompleted.winner === s.team?.name && (
-												<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>CHAMP</span>
+												<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>🏆</span>
 											)}
 										</span>
 										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.wins}</span>
 										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.losses}</span>
 										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{pct}</span>
-										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_scored}</span>
-										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_allowed}</span>
+										{!isMobile && <span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_scored}</span>}
+										{!isMobile && <span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_allowed}</span>}
 									</div>
 								);
 							})}
@@ -323,8 +366,16 @@ export default function Page() {
 			)}
 
 			{/* Bottom spacing */}
-			<div style={{ padding: '16px 0' }}>
-			</div>
+			<div style={{ padding: '16px 0' }} />
+
+			{/* Player card modal */}
+			{selectedPlayer && (
+				<BaseballCard
+					player={selectedPlayer}
+					isOpen={true}
+					onClose={() => setSelectedPlayer(null)}
+				/>
+			)}
 		</div>
 	);
 }

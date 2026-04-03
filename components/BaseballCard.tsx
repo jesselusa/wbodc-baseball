@@ -3,6 +3,7 @@
 import { Player } from '../lib/types';
 import { ESPN } from '../lib/utils';
 import ModalOverlay from './ModalOverlay';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface BaseballCardProps {
   player: Player;
@@ -11,6 +12,8 @@ interface BaseballCardProps {
 }
 
 export default function BaseballCard({ player, isOpen, onClose }: BaseballCardProps) {
+  const isMobile = useIsMobile();
+
   if (!isOpen) return null;
 
   const statLabelStyle: React.CSSProperties = {
@@ -70,8 +73,8 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
 
           {/* Avatar */}
           <div style={{
-            width: 80,
-            height: 80,
+            width: isMobile ? 60 : 80,
+            height: isMobile ? 60 : 80,
             borderRadius: '50%',
             backgroundColor: player.avatar_url ? undefined : ESPN.gray700,
             backgroundImage: player.avatar_url ? `url(${player.avatar_url})` : undefined,
@@ -91,7 +94,7 @@ export default function BaseballCard({ player, isOpen, onClose }: BaseballCardPr
           {/* Name */}
           <h2 style={{
             margin: 0,
-            fontSize: 20,
+            fontSize: isMobile ? 18 : 20,
             fontWeight: 700,
             color: ESPN.white,
             textAlign: 'center'

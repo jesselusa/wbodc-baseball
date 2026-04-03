@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/api';
-import { normalizeJoin, ESPN } from '../../lib/utils';
+import { normalizeJoin, extractBracketRoundName, ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
 import { TournamentRecord } from '../../lib/types';
@@ -16,6 +16,7 @@ interface GameResult {
 	game_type: string;
 	home_team: { name: string } | null;
 	away_team: { name: string } | null;
+	bracketRoundName?: string;
 }
 
 function ResultsContent() {
@@ -62,15 +63,17 @@ function ResultsContent() {
 				.select(`
 					id, status, home_score, away_score, game_type,
 					home_team:teams!games_home_team_id_fkey(name),
-					away_team:teams!games_away_team_id_fkey(name)
+					away_team:teams!games_away_team_id_fkey(name),
+					brackets!brackets_game_id_fkey(round_name)
 				`)
 				.eq('tournament_id', selectedId)
-				.order('started_at', { ascending: true });
+				.order('started_at', { ascending: false });
 
 			const normalized = (data || []).map((g: any) => ({
 				...g,
 				home_team: normalizeJoin(g.home_team),
 				away_team: normalizeJoin(g.away_team),
+				bracketRoundName: extractBracketRoundName(g.brackets),
 			}));
 			setGames(normalized);
 			setLoadingGames(false);
@@ -134,12 +137,12 @@ function ResultsContent() {
 					<div style={{ fontSize: 13, color: ESPN.gray500 }}>
 						{selected.location}
 						{selected.start_date && ` · ${new Date(selected.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
-						{selected.winner && (
-							<span style={{ marginLeft: 12, color: ESPN.red, fontWeight: 600 }}>
-								🏆 Champion: {selected.winner}
-							</span>
-						)}
 					</div>
+					{selected.winner && (
+						<div style={{ fontSize: 13, color: ESPN.red, fontWeight: 600, marginTop: 4 }}>
+							🏆 Champion: {selected.winner}
+						</div>
+					)}
 				</div>
 			)}
 

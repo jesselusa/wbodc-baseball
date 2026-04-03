@@ -2814,3 +2814,28 @@ export async function getPlayerTeamAssignments(): Promise<ApiResponse<Map<string
     };
   }
 }
+
+export async function getBracketFinishOrder(tournamentId: string): Promise<Map<string, number>> {
+	const { data } = await supabase
+		.from('brackets')
+		.select('round_name, game_id, games!brackets_game_id_fkey(home_score, away_score, home_team_id, away_team_id)')
+		.eq('tournament_id', tournamentId)
+		.order('round_number', { ascending: false });
+	const finishOrder = new Map<string, number>();
+	if (data) {
+		for (const bracket of data) {
+			const game = (bracket as any).games;
+			if (!game) continue;
+			const homeWon = game.home_score > game.away_score;
+			const winnerId = homeWon ? game.home_team_id : game.away_team_id;
+			const loserId = homeWon ? game.away_team_id : game.home_team_id;
+			if (bracket.round_name === 'Finals') {
+				finishOrder.set(winnerId, 1);
+				finishOrder.set(loserId, 2);
+			} else if (bracket.round_name === 'Semifinals') {
+				if (!finishOrder.has(loserId)) finishOrder.set(loserId, 3);
+			}
+		}
+	}
+	return finishOrder;
+}

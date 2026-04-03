@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/api';
-import { normalizeJoin, ESPN } from '../../lib/utils';
+import { normalizeJoin, extractBracketRoundName, ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
 import TabBar from '../../components/TabBar';
@@ -18,6 +18,7 @@ interface GameData {
 	total_innings: number;
 	home_team: { id: string; name: string } | null;
 	away_team: { id: string; name: string } | null;
+	bracketRoundName?: string;
 }
 
 type FilterTab = 'all' | 'final' | 'pool_play' | 'bracket';
@@ -60,16 +61,18 @@ export default function GamesPage() {
 						id, status, home_score, away_score, game_type,
 						started_at, completed_at, total_innings,
 						home_team:teams!games_home_team_id_fkey(id, name),
-						away_team:teams!games_away_team_id_fkey(id, name)
+						away_team:teams!games_away_team_id_fkey(id, name),
+						brackets!brackets_game_id_fkey(round_name)
 					`)
 					.eq('tournament_id', tournament.id)
-					.order('started_at', { ascending: true });
+					.order('started_at', { ascending: false });
 
 				// Supabase joins return arrays for FK relations, normalize to single objects
 			const normalized = (gamesData || []).map((g: any) => ({
 				...g,
 				home_team: normalizeJoin(g.home_team),
 				away_team: normalizeJoin(g.away_team),
+				bracketRoundName: extractBracketRoundName(g.brackets),
 			}));
 			setGames(normalized);
 			} catch (err) {

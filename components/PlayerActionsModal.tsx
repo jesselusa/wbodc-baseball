@@ -119,7 +119,7 @@ export default function PlayerActionsModal({
     padding: '8px 12px',
     border: hasError ? '2px solid #dc2626' : '1px solid #D0D0D0',
     borderRadius: 4,
-    fontSize: 14,
+    fontSize: 16,
     background: 'white',
     outline: 'none',
     boxSizing: 'border-box'

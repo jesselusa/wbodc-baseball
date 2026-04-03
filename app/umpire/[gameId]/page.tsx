@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/api';
 import { normalizeJoin, ESPN } from '../../../lib/utils';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 
 interface GameData {
 	id: string;
@@ -31,6 +32,7 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 	const [awayScore, setAwayScore] = useState(0);
 	const [mode, setMode] = useState<'quick' | 'inning'>('quick');
 	const [inningScores, setInningScores] = useState<{ home: number; away: number }[]>([]);
+	const isMobile = useIsMobile();
 
 	// Resolve params
 	useEffect(() => {
@@ -264,15 +266,16 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 					</div>
 				) : (
 					<div>
+					<div style={{ overflowX: 'auto' }}>
 						{/* Inning header */}
-						<div style={{ display: 'grid', gridTemplateColumns: '80px repeat(auto-fill, 48px)', gap: 4, marginBottom: 8, fontSize: 11, fontWeight: 600, color: '#6C6D6F', textTransform: 'uppercase' }}>
+						<div style={{ display: 'grid', gridTemplateColumns: `${isMobile ? '60px' : '80px'} repeat(${inningScores.length}, ${isMobile ? '40px' : '48px'})`, gap: 4, marginBottom: 8, fontSize: 11, fontWeight: 600, color: '#6C6D6F', textTransform: 'uppercase' }}>
 							<span></span>
 							{inningScores.map((_, i) => (
 								<span key={i} style={{ textAlign: 'center' }}>{i + 1}</span>
 							))}
 						</div>
 						{/* Away innings */}
-						<div style={{ display: 'grid', gridTemplateColumns: '80px repeat(auto-fill, 48px)', gap: 4, marginBottom: 8, alignItems: 'center' }}>
+						<div style={{ display: 'grid', gridTemplateColumns: `${isMobile ? '60px' : '80px'} repeat(${inningScores.length}, ${isMobile ? '40px' : '48px'})`, gap: 4, marginBottom: 8, alignItems: 'center' }}>
 							<span style={{ fontSize: 13, fontWeight: 600, color: '#151617' }}>{game.away_team?.name?.slice(0, 8)}</span>
 							{inningScores.map((inn, i) => (
 								<input
@@ -281,12 +284,12 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 									min={0}
 									value={inn.away}
 									onChange={(e) => updateInning(i, 'away', parseInt(e.target.value) || 0)}
-									style={{ width: 48, height: 36, textAlign: 'center', fontSize: 16, fontWeight: 600, border: '1px solid #D0D0D0', borderRadius: 4, fontVariantNumeric: 'tabular-nums' }}
+									style={{ width: isMobile ? 40 : 48, height: 36, textAlign: 'center', fontSize: 16, fontWeight: 600, border: '1px solid #D0D0D0', borderRadius: 4, fontVariantNumeric: 'tabular-nums' }}
 								/>
 							))}
 						</div>
 						{/* Home innings */}
-						<div style={{ display: 'grid', gridTemplateColumns: '80px repeat(auto-fill, 48px)', gap: 4, alignItems: 'center' }}>
+						<div style={{ display: 'grid', gridTemplateColumns: `${isMobile ? '60px' : '80px'} repeat(${inningScores.length}, ${isMobile ? '40px' : '48px'})`, gap: 4, alignItems: 'center' }}>
 							<span style={{ fontSize: 13, fontWeight: 600, color: '#151617' }}>{game.home_team?.name?.slice(0, 8)}</span>
 							{inningScores.map((inn, i) => (
 								<input
@@ -295,10 +298,11 @@ export default function UmpirePage({ params }: { params: Promise<{ gameId: strin
 									min={0}
 									value={inn.home}
 									onChange={(e) => updateInning(i, 'home', parseInt(e.target.value) || 0)}
-									style={{ width: 48, height: 36, textAlign: 'center', fontSize: 16, fontWeight: 600, border: '1px solid #D0D0D0', borderRadius: 4, fontVariantNumeric: 'tabular-nums' }}
+									style={{ width: isMobile ? 40 : 48, height: 36, textAlign: 'center', fontSize: 16, fontWeight: 600, border: '1px solid #D0D0D0', borderRadius: 4, fontVariantNumeric: 'tabular-nums' }}
 								/>
 							))}
 						</div>
+					</div>
 						{/* Running total */}
 						<div style={{ marginTop: 16, padding: '12px 0', borderTop: '1px solid #E5E5E5', display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
 							<span style={{ color: '#6C6D6F' }}>Total</span>

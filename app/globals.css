@@ -122,3 +122,9 @@ body {
 	}
 }
 
+@media (max-width: 767px) {
+	body {
+		padding-top: 92px !important;
+	}
+}
+

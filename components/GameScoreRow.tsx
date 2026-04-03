@@ -11,6 +11,7 @@ interface GameScoreRowProps {
 		home_score: number;
 		away_score: number;
 		game_type: string;
+		bracketRoundName?: string;
 		started_at?: string | null;
 		home_team: { name: string } | null;
 		away_team: { name: string } | null;
@@ -18,7 +19,10 @@ interface GameScoreRowProps {
 	showBorder?: boolean;
 }
 
-function formatGameType(type: string): string {
+function formatGameType(type: string, bracketRoundName?: string): string {
+	if (bracketRoundName === 'Semifinals') return 'Semis';
+	if (bracketRoundName === 'Finals') return 'Finals';
+	if (bracketRoundName) return bracketRoundName;
 	if (type === 'round_robin') return 'Pool';
 	if (type === 'bracket' || type === 'single_elimination') return 'Bracket';
 	return type;
@@ -27,6 +31,7 @@ function formatGameType(type: string): string {
 function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 	const awayWon = game.status === 'completed' && game.away_score > game.home_score;
 	const homeWon = game.status === 'completed' && game.home_score > game.away_score;
+	const isFinals = game.bracketRoundName === 'Finals';
 
 	return (
 		<Link
@@ -47,6 +52,7 @@ function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 			}}>
 				<span style={{ fontSize: 14, fontWeight: awayWon ? 700 : 400, color: ESPN.black }}>
 					{game.away_team?.name || 'TBD'}
+					{isFinals && awayWon && <span style={{ marginLeft: 6, fontSize: 10, color: ESPN.red, fontWeight: 700 }}>🏆</span>}
 				</span>
 				<span style={{ fontSize: 16, fontWeight: awayWon ? 700 : 400, color: ESPN.black, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
 					{game.status !== 'scheduled' ? game.away_score : ''}
@@ -63,12 +69,13 @@ function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 			}}>
 				<span style={{ fontSize: 14, fontWeight: homeWon ? 700 : 400, color: ESPN.black }}>
 					{game.home_team?.name || 'TBD'}
+					{isFinals && homeWon && <span style={{ marginLeft: 6, fontSize: 10, color: ESPN.red, fontWeight: 700 }}>🏆</span>}
 				</span>
 				<span style={{ fontSize: 16, fontWeight: homeWon ? 700 : 400, color: ESPN.black, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
 					{game.status !== 'scheduled' ? game.home_score : ''}
 				</span>
 				<span style={{ fontSize: 10, color: ESPN.gray400, textTransform: 'uppercase', textAlign: 'right' }}>
-					{formatGameType(game.game_type)}
+					{formatGameType(game.game_type, game.bracketRoundName)}
 				</span>
 			</div>
 		</Link>
