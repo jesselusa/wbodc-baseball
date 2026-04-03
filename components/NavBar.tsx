@@ -84,7 +84,7 @@ export default function NavBar() {
 						>
 							{mobileOpen ? <X style={{ width: 22, height: 22 }} /> : <Menu style={{ width: 22, height: 22 }} />}
 						</button>
-						<Link href="/" style={{ position: 'relative', zIndex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+						<Link href="/" onClick={() => setMobileOpen(false)} style={{ position: 'relative', zIndex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
 							<img
 								src="/logo-white.svg"
 								alt="WBoDC"

@@ -349,7 +349,7 @@ export default function Page() {
 										}}>
 											{s.team?.name || 'Unknown'}
 											{lastCompleted.winner === s.team?.name && (
-												<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>CHAMP</span>
+												<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>🏆</span>
 											)}
 										</span>
 										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.wins}</span>

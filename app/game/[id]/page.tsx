@@ -285,14 +285,12 @@ export default function GamePage({ params }: GamePageProps) {
           {/* Away team name + record */}
           <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'right', paddingRight: isMobile ? 0 : 20 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: awayWon ? ESPN.black : ESPN.gray400 }}>
+              {bracketRoundName === 'Finals' && awayWon && <span style={{ marginRight: 4 }}>🏆</span>}
               {initialGame.away_team.name}
             </div>
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
               {(() => { const r = teamRecords.get(initialGame.away_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
             </div>
-            {bracketRoundName === 'Finals' && awayWon && (
-              <div style={{ fontSize: 12, color: ESPN.red, fontWeight: 700, marginTop: 4 }}>🏆 CHAMPION</div>
-            )}
           </div>
 
           {/* Away score with triangle */}
@@ -344,13 +342,11 @@ export default function GamePage({ params }: GamePageProps) {
           <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'left', paddingLeft: isMobile ? 0 : 20, marginTop: isMobile ? 8 : 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: homeWon ? ESPN.black : ESPN.gray400 }}>
               {initialGame.home_team.name}
+              {bracketRoundName === 'Finals' && homeWon && <span style={{ marginLeft: 4 }}>🏆</span>}
             </div>
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
               {(() => { const r = teamRecords.get(initialGame.home_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
             </div>
-            {bracketRoundName === 'Finals' && homeWon && (
-              <div style={{ fontSize: 12, color: ESPN.red, fontWeight: 700, marginTop: 4 }}>🏆 CHAMPION</div>
-            )}
           </div>
         </div>
       </div>

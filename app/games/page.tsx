@@ -65,7 +65,7 @@ export default function GamesPage() {
 						brackets!brackets_game_id_fkey(round_name)
 					`)
 					.eq('tournament_id', tournament.id)
-					.order('started_at', { ascending: true });
+					.order('started_at', { ascending: false });
 
 				// Supabase joins return arrays for FK relations, normalize to single objects
 			const normalized = (gamesData || []).map((g: any) => ({

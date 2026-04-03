@@ -22,6 +22,7 @@ interface StandingRow {
 export default function TeamsPage() {
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [tournamentName, setTournamentName] = useState('');
+  const [tournamentWinner, setTournamentWinner] = useState('');
   const [loading, setLoading] = useState(true);
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
@@ -37,7 +38,7 @@ export default function TeamsPage() {
       // 1. Get most recent tournament
       const { data: tournament } = await supabase
         .from('tournaments')
-        .select('id, name')
+        .select('id, name, winner')
         .neq('status', 'upcoming')
         .order('start_date', { ascending: false })
         .limit(1)
@@ -45,6 +46,7 @@ export default function TeamsPage() {
 
       if (!tournament) { setLoading(false); return; }
       setTournamentName(tournament.name);
+      setTournamentWinner(tournament.winner || '');
 
       // 2. Fetch teams, games, and player assignments in parallel
       const [teamsRes, gamesRes, assignRes] = await Promise.all([
@@ -220,6 +222,9 @@ export default function TeamsPage() {
                     <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{i + 1}</td>
                     <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5', whiteSpace: 'nowrap' }}>
                       {row.teamName}
+                      {tournamentWinner === row.teamName && (
+                        <span style={{ marginLeft: 6, fontSize: 11, color: ESPN.red, fontWeight: 700 }}>🏆</span>
+                      )}
                     </td>
                     {!isMobile && (
                       <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: ESPN.gray500 }}>
