@@ -71,11 +71,40 @@ export default function Page() {
 					// Load standings for completed tournament
 					const standingsRes = await getTournamentStandings(completedRes.data.id);
 					if (standingsRes.success) {
-						// Sort: champion first, then by win%, then by run differential
+						// Fetch bracket results to determine final placement
+						const { data: bracketData } = await supabase
+							.from('brackets')
+							.select('round_name, game_id, games!brackets_game_id_fkey(home_score, away_score, home_team_id, away_team_id)')
+							.eq('tournament_id', completedRes.data.id)
+							.order('round_number', { ascending: false });
+
+						const finishOrder = new Map<string, number>(); // teamId → finish position (1=champion, 2=runner-up, etc.)
+
+						if (bracketData) {
+							for (const bracket of bracketData) {
+								const game = bracket.games as any;
+								if (!game) continue;
+								const homeWon = game.home_score > game.away_score;
+								const winnerId = homeWon ? game.home_team_id : game.away_team_id;
+								const loserId = homeWon ? game.away_team_id : game.home_team_id;
+
+								if (bracket.round_name === 'Finals') {
+									finishOrder.set(winnerId, 1); // Champion
+									finishOrder.set(loserId, 2);  // Runner-up
+								} else if (bracket.round_name === 'Semifinals') {
+									if (!finishOrder.has(loserId)) {
+										finishOrder.set(loserId, 3); // Lost in semis
+									}
+								}
+							}
+						}
+
+						// Sort by bracket finish position first, then by win%, then by run differential
 						const sorted = [...standingsRes.data].sort((a, b) => {
-							const winner = completedRes.data?.winner;
-							if (winner && a.team?.name === winner) return -1;
-							if (winner && b.team?.name === winner) return 1;
+							const aFinish = finishOrder.get(a.team_id) ?? 99;
+							const bFinish = finishOrder.get(b.team_id) ?? 99;
+							if (aFinish !== bFinish) return aFinish - bFinish;
+							// Tiebreak by win%
 							const aPct = a.wins + a.losses > 0 ? a.wins / (a.wins + a.losses) : 0;
 							const bPct = b.wins + b.losses > 0 ? b.wins / (b.wins + b.losses) : 0;
 							if (bPct !== aPct) return bPct - aPct;
@@ -255,8 +284,13 @@ export default function Page() {
 									{lastCompleted.winner}
 								</div>
 								{championPlayers.length > 0 && (
-									<div style={{ fontSize: 13, color: ESPN.gray500, marginTop: 2 }}>
-										{championPlayers.join(', ')}
+									<div style={{ fontSize: 13, marginTop: 2 }}>
+										{championPlayers.map((name, i) => (
+											<span key={name}>
+												<span style={{ color: ESPN.blue }}>{name}</span>
+												{i < championPlayers.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
+											</span>
+										))}
 									</div>
 								)}
 							</div>
