@@ -67,7 +67,7 @@ function ResultsContent() {
 					brackets!brackets_game_id_fkey(round_name)
 				`)
 				.eq('tournament_id', selectedId)
-				.order('started_at', { ascending: true });
+				.order('started_at', { ascending: false });
 
 			const normalized = (data || []).map((g: any) => ({
 				...g,
