@@ -4,9 +4,11 @@ import {
 	getLatestCompletedTournament,
 	getUpcomingTournament,
 	getTournamentStandings,
-	getBracketFinishOrder,
+	cachedGetBracketFinishOrder,
 } from '../lib/api';
 import HomePageClient from '../components/HomePageClient';
+
+export const revalidate = 60;
 
 export default async function HomePage() {
 	const [currentRes, completedRes, upcomingRes] = await Promise.all([
@@ -26,7 +28,7 @@ export default async function HomePage() {
 		// Fetch standings, bracket order, and champion players in parallel
 		const [standingsRes, finishOrder, champResult] = await Promise.all([
 			getTournamentStandings(lastCompleted.id),
-			getBracketFinishOrder(lastCompleted.id),
+			cachedGetBracketFinishOrder(lastCompleted.id),
 			(async () => {
 				if (!lastCompleted.winner) return [];
 				const { data: teams } = await supabase

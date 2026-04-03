@@ -1,17 +1,13 @@
-import { supabase, getBracketFinishOrder } from '../../lib/api';
+import { supabase, getLatestTournament, cachedGetBracketFinishOrder } from '../../lib/api';
 import { Player } from '../../lib/types';
 import StandingsClient from '../../components/StandingsClient';
 import type { StandingRow } from '../../components/StandingsClient';
 
+export const revalidate = 60;
+
 export default async function TeamsPage() {
-	// 1. Get most recent non-upcoming tournament
-	const { data: tournament } = await supabase
-		.from('tournaments')
-		.select('id, name, winner')
-		.neq('status', 'upcoming')
-		.order('start_date', { ascending: false })
-		.limit(1)
-		.single();
+	// 1. Get most recent non-upcoming tournament (React.cache deduplicates)
+	const tournament = await getLatestTournament();
 
 	if (!tournament) {
 		return <StandingsClient standings={[]} tournamentName="" tournamentWinner="" />;
@@ -31,9 +27,9 @@ export default async function TeamsPage() {
 			.eq('status', 'completed'),
 		supabase
 			.from('tournament_player_assignments')
-			.select('team_id, players!inner(id, name, nickname, email, avatar_url, current_town, hometown, championships_won, is_active, created_at, updated_at)')
+			.select('team_id, players!inner(id, name, nickname, avatar_url, current_town, hometown, championships_won, is_active, created_at, updated_at)')
 			.eq('tournament_id', tournament.id),
-		getBracketFinishOrder(tournament.id),
+		cachedGetBracketFinishOrder(tournament.id),
 	]);
 
 	// 3. Build unique teams map

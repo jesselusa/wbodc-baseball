@@ -137,9 +137,6 @@ body {
 	.desktop-only {
 		display: none !important;
 	}
-}
-
-@media (max-width: 767px) {
 	body {
 		padding-top: 92px !important;
 	}

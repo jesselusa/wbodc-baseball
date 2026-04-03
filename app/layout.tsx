@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import NavBar from "../components/NavBar";
 import ScoreboardTicker from "../components/ScoreboardTicker";
 import ClientProviders from "../components/ClientProviders";
-import { fetchTournamentGames, supabase } from "../lib/api";
+import { getLatestTournament, cachedFetchTournamentGames } from "../lib/api";
 
 export const metadata: Metadata = {
 	title: "WBoDC Baseball",
@@ -30,16 +30,10 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	// Fetch ticker games server-side
-	const { data: tournament } = await supabase
-		.from('tournaments')
-		.select('id')
-		.neq('status', 'upcoming')
-		.order('tournament_number', { ascending: false })
-		.limit(1)
-		.single();
-
-	const tickerGames = tournament ? await fetchTournamentGames(tournament.id) : [];
+	// Fetch ticker games server-side (React.cache deduplicates across layout + pages)
+	const tournament = await getLatestTournament();
+	const allGames = tournament ? await cachedFetchTournamentGames(tournament.id) : [];
+	const tickerGames = allGames.filter((g: any) => g.status === 'completed' || g.status === 'in_progress').slice(0, 12);
 	return (
 		<html lang="en">
 			<body

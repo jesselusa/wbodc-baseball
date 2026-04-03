@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Game,
@@ -2865,3 +2866,18 @@ export async function getBracketFinishOrder(tournamentId: string): Promise<Map<s
 	}
 	return finishOrder;
 }
+
+// Cached versions for Server Components (deduplicated within a single request)
+export const getLatestTournament = cache(async () => {
+	const { data } = await supabase
+		.from('tournaments')
+		.select('id, name, winner, status, tournament_number')
+		.neq('status', 'upcoming')
+		.order('tournament_number', { ascending: false })
+		.limit(1)
+		.single();
+	return data;
+});
+
+export const cachedFetchTournamentGames = cache(fetchTournamentGames);
+export const cachedGetBracketFinishOrder = cache(getBracketFinishOrder);

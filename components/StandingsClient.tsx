@@ -26,7 +26,6 @@ interface StandingsClientProps {
 
 export default function StandingsClient({ standings, tournamentName, tournamentWinner }: StandingsClientProps) {
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
-  const [showCard, setShowCard] = useState(false);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
@@ -107,7 +106,7 @@ export default function StandingsClient({ standings, tournamentName, tournamentW
                           [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
                             <span key={p.id}>
                               <span
-                                onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                onClick={() => { setCardPlayer(p); }}
                                 style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
                                 onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
@@ -144,7 +143,7 @@ export default function StandingsClient({ standings, tournamentName, tournamentW
                           [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
                             <span key={p.id}>
                               <span
-                                onClick={(e) => { e.stopPropagation(); setCardPlayer(p); setShowCard(true); }}
+                                onClick={(e) => { e.stopPropagation(); setCardPlayer(p); }}
                                 style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
                               >
                                 {p.name}
@@ -167,8 +166,8 @@ export default function StandingsClient({ standings, tournamentName, tournamentW
       {cardPlayer && (
         <BaseballCard
           player={cardPlayer}
-          isOpen={showCard}
-          onClose={() => { setShowCard(false); setCardPlayer(null); }}
+          isOpen={!!cardPlayer}
+          onClose={() => setCardPlayer(null)}
         />
       )}
     </div>

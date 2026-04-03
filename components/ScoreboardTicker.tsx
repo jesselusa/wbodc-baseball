@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/api';
 import { normalizeJoin, ESPN } from '../lib/utils';
@@ -28,7 +28,7 @@ interface ScoreboardTickerProps {
 
 export default function ScoreboardTicker({ initialGames }: ScoreboardTickerProps) {
 	// Convert server-provided games to ticker format
-	const serverGames: TickerGame[] = (initialGames || [])
+	const serverGames = useMemo<TickerGame[]>(() => (initialGames || [])
 		.filter((g: any) => g.status === 'completed' || g.status === 'in_progress')
 		.slice(0, 12)
 		.map((g: any) => ({
@@ -38,7 +38,7 @@ export default function ScoreboardTicker({ initialGames }: ScoreboardTickerProps
 			homeScore: g.home_score || 0,
 			awayScore: g.away_score || 0,
 			status: g.status === 'in_progress' ? 'LIVE' : 'FINAL',
-		}));
+		})), [initialGames]);
 
 	const [games, setGames] = useState<TickerGame[]>(serverGames);
 	const [loading, setLoading] = useState(serverGames.length === 0);
