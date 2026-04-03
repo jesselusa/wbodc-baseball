@@ -36,3 +36,6 @@ next-env.d.ts
 *.png
 !public/favicon.png
 !public/apple-touch-icon.png
+
+# security audit
+.security-audit/
