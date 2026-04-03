@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import NavBar from "../components/NavBar";
 import ScoreboardTicker from "../components/ScoreboardTicker";
+import ClientProviders from "../components/ClientProviders";
 
 export const metadata: Metadata = {
 	title: "WBoDC Baseball",
@@ -43,9 +44,11 @@ export default function RootLayout({
 				}}
 				suppressHydrationWarning={true}
 			>
-				<ScoreboardTicker />
-				<NavBar />
-				{children}
+				<ClientProviders>
+					<ScoreboardTicker />
+					<NavBar />
+					{children}
+				</ClientProviders>
 			</body>
 		</html>
 	);

@@ -122,6 +122,23 @@ body {
 	}
 }
 
+/* Responsive display utilities */
+.mobile-only {
+	display: none !important;
+}
+.desktop-only {
+	display: flex !important;
+}
+
+@media (max-width: 767px) {
+	.mobile-only {
+		display: flex !important;
+	}
+	.desktop-only {
+		display: none !important;
+	}
+}
+
 @media (max-width: 767px) {
 	body {
 		padding-top: 92px !important;
