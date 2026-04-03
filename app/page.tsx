@@ -9,9 +9,10 @@ import {
 	getTournamentStandings,
 	supabase,
 } from "../lib/api";
-import { TournamentRecord } from "../lib/types";
+import { TournamentRecord, Player } from "../lib/types";
 import { ESPN } from "../lib/utils";
 import { useIsMobile } from "../hooks/useIsMobile";
+import BaseballCard from "../components/BaseballCard";
 
 interface Standing {
 	id: string;
@@ -30,6 +31,8 @@ export default function Page() {
 	const [standings, setStandings] = useState<Standing[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [championPlayers, setChampionPlayers] = useState<string[]>([]);
+	const [selectedChampion, setSelectedChampion] = useState<string | null>(null);
+	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 	const isMobile = useIsMobile();
 
 	useEffect(() => {
@@ -126,6 +129,22 @@ export default function Page() {
 
 		loadData();
 	}, []);
+
+	// Look up player by name when champion name is clicked
+	useEffect(() => {
+		if (!selectedChampion) return;
+		async function lookupPlayer() {
+			const { data } = await supabase
+				.from('players')
+				.select('*')
+				.eq('name', selectedChampion)
+				.limit(1)
+				.maybeSingle();
+			if (data) setSelectedPlayer(data);
+			setSelectedChampion(null);
+		}
+		lookupPlayer();
+	}, [selectedChampion]);
 
 	if (loading) {
 		return (
@@ -287,7 +306,7 @@ export default function Page() {
 									<div style={{ fontSize: 13, marginTop: 2 }}>
 										{championPlayers.map((name, i) => (
 											<span key={name}>
-												<span style={{ color: ESPN.blue }}>{name}</span>
+												<span style={{ color: ESPN.blue, cursor: 'pointer' }} onClick={() => setSelectedChampion(name)}>{name}</span>
 												{i < championPlayers.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
 											</span>
 										))}
@@ -387,8 +406,16 @@ export default function Page() {
 			)}
 
 			{/* Bottom spacing */}
-			<div style={{ padding: '16px 0' }}>
-			</div>
+			<div style={{ padding: '16px 0' }} />
+
+			{/* Player card modal */}
+			{selectedPlayer && (
+				<BaseballCard
+					player={selectedPlayer}
+					isOpen={true}
+					onClose={() => setSelectedPlayer(null)}
+				/>
+			)}
 		</div>
 	);
 }

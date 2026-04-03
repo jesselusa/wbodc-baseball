@@ -54,7 +54,7 @@ export default function ScoreboardTicker() {
 					`)
 					.eq('tournament_id', tournament.id)
 					.in('status', ['completed', 'in_progress'])
-					.order('started_at', { ascending: true })
+					.order('started_at', { ascending: false })
 					.limit(12);
 
 				if (gamesData && gamesData.length > 0) {
