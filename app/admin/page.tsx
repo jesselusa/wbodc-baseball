@@ -899,9 +899,9 @@ export default function AdminPage() {
         {activeTab === 'teams' && (
           <div style={{ padding: '20px' }}>
             {/* Action bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
               <span style={{ fontSize: 14, color: ESPN.gray500 }}>{currentTeams.length} teams · {players.length} players</span>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={handleClearTeams} style={{ padding: '8px 16px', backgroundColor: ESPN.gray100, border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: ESPN.gray700 }}>Clear Teams</button>
                 <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '8px 16px', backgroundColor: ESPN.gray900, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
               </div>
