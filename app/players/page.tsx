@@ -129,7 +129,7 @@ export default function PlayersPage() {
 							<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 								<AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
 								<div>
-									<span style={{ fontWeight: 600, color: ESPN.black }}>{player.name}</span>
+									<span style={{ fontWeight: 600, color: ESPN.blue, cursor: 'pointer' }}>{player.name}</span>
 									{player.nickname && (
 										<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.gray400 }}>"{player.nickname}"</span>
 									)}
