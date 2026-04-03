@@ -802,7 +802,7 @@ export default function AdminPage() {
         {activeTab === 'players' && (
           <div style={{ padding: '20px' }}>
             {/* Search + Add */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
               <input
                 type="text"
                 placeholder="Search players..."
@@ -813,7 +813,8 @@ export default function AdminPage() {
                   border: '1px solid #D0D0D0',
                   borderRadius: 4,
                   fontSize: 13,
-                  width: 240,
+                  flex: '1 1 200px',
+                  minWidth: 0,
                   outline: 'none',
                 }}
               />
