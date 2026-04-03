@@ -18,6 +18,7 @@ interface GameData {
 	total_innings: number;
 	home_team: { id: string; name: string } | null;
 	away_team: { id: string; name: string } | null;
+	bracketRoundName?: string;
 }
 
 type FilterTab = 'all' | 'final' | 'pool_play' | 'bracket';
@@ -60,7 +61,8 @@ export default function GamesPage() {
 						id, status, home_score, away_score, game_type,
 						started_at, completed_at, total_innings,
 						home_team:teams!games_home_team_id_fkey(id, name),
-						away_team:teams!games_away_team_id_fkey(id, name)
+						away_team:teams!games_away_team_id_fkey(id, name),
+						brackets!brackets_game_id_fkey(round_name)
 					`)
 					.eq('tournament_id', tournament.id)
 					.order('started_at', { ascending: true });
@@ -70,6 +72,7 @@ export default function GamesPage() {
 				...g,
 				home_team: normalizeJoin(g.home_team),
 				away_team: normalizeJoin(g.away_team),
+				bracketRoundName: Array.isArray(g.brackets) && g.brackets[0]?.round_name ? g.brackets[0].round_name : undefined,
 			}));
 			setGames(normalized);
 			} catch (err) {

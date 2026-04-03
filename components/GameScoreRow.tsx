@@ -11,6 +11,7 @@ interface GameScoreRowProps {
 		home_score: number;
 		away_score: number;
 		game_type: string;
+		bracketRoundName?: string;
 		started_at?: string | null;
 		home_team: { name: string } | null;
 		away_team: { name: string } | null;
@@ -18,7 +19,8 @@ interface GameScoreRowProps {
 	showBorder?: boolean;
 }
 
-function formatGameType(type: string): string {
+function formatGameType(type: string, bracketRoundName?: string): string {
+	if (bracketRoundName) return bracketRoundName;
 	if (type === 'round_robin') return 'Pool';
 	if (type === 'bracket' || type === 'single_elimination') return 'Bracket';
 	return type;
@@ -68,7 +70,7 @@ function GameScoreRow({ game, showBorder = true }: GameScoreRowProps) {
 					{game.status !== 'scheduled' ? game.home_score : ''}
 				</span>
 				<span style={{ fontSize: 10, color: ESPN.gray400, textTransform: 'uppercase', textAlign: 'right' }}>
-					{formatGameType(game.game_type)}
+					{formatGameType(game.game_type, game.bracketRoundName)}
 				</span>
 			</div>
 		</Link>

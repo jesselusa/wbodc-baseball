@@ -16,6 +16,7 @@ interface GameResult {
 	game_type: string;
 	home_team: { name: string } | null;
 	away_team: { name: string } | null;
+	bracketRoundName?: string;
 }
 
 function ResultsContent() {
@@ -62,7 +63,8 @@ function ResultsContent() {
 				.select(`
 					id, status, home_score, away_score, game_type,
 					home_team:teams!games_home_team_id_fkey(name),
-					away_team:teams!games_away_team_id_fkey(name)
+					away_team:teams!games_away_team_id_fkey(name),
+					brackets!brackets_game_id_fkey(round_name)
 				`)
 				.eq('tournament_id', selectedId)
 				.order('started_at', { ascending: true });
@@ -71,6 +73,7 @@ function ResultsContent() {
 				...g,
 				home_team: normalizeJoin(g.home_team),
 				away_team: normalizeJoin(g.away_team),
+				bracketRoundName: Array.isArray(g.brackets) && g.brackets[0]?.round_name ? g.brackets[0].round_name : undefined,
 			}));
 			setGames(normalized);
 			setLoadingGames(false);

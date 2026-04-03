@@ -27,6 +27,7 @@ export default function GamePage({ params }: GamePageProps) {
   const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [inningScores, setInningScores] = useState<any[]>([]);
   const [teamRecords, setTeamRecords] = useState<Map<string, { wins: number; losses: number }>>(new Map());
+  const [bracketRoundName, setBracketRoundName] = useState<string | null>(null);
 
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -144,12 +145,25 @@ export default function GamePage({ params }: GamePageProps) {
     loadGameData();
   }, [gameId]);
 
+  // Fetch bracket info
+  const fetchBracketInfo = async () => {
+    if (!initialGame) return;
+    const { data } = await supabase
+      .from('brackets')
+      .select('round_name')
+      .eq('game_id', initialGame.id)
+      .limit(1)
+      .maybeSingle();
+    if (data?.round_name) setBracketRoundName(data.round_name);
+  };
+
   // Fetch players and inning scores when game data is loaded
   useEffect(() => {
     if (initialGame) {
       fetchPlayersForGame();
       fetchInningScores();
       fetchTeamRecords();
+      fetchBracketInfo();
     }
   }, [initialGame]);
 
@@ -276,6 +290,9 @@ export default function GamePage({ params }: GamePageProps) {
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
               {(() => { const r = teamRecords.get(initialGame.away_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
             </div>
+            {bracketRoundName === 'Finals' && awayWon && (
+              <div style={{ fontSize: 12, color: ESPN.red, fontWeight: 700, marginTop: 4 }}>🏆 CHAMPION</div>
+            )}
           </div>
 
           {/* Away score with triangle */}
@@ -331,6 +348,9 @@ export default function GamePage({ params }: GamePageProps) {
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
               {(() => { const r = teamRecords.get(initialGame.home_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
             </div>
+            {bracketRoundName === 'Finals' && homeWon && (
+              <div style={{ fontSize: 12, color: ESPN.red, fontWeight: 700, marginTop: 4 }}>🏆 CHAMPION</div>
+            )}
           </div>
         </div>
       </div>

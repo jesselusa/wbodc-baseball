@@ -7,6 +7,7 @@ import {
 	getLatestCompletedTournament,
 	getUpcomingTournament,
 	getTournamentStandings,
+	supabase,
 } from "../lib/api";
 import { TournamentRecord } from "../lib/types";
 import { ESPN } from "../lib/utils";
@@ -28,6 +29,7 @@ export default function Page() {
 	const [upcoming, setUpcoming] = useState<TournamentRecord | null>(null);
 	const [standings, setStandings] = useState<Standing[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [championPlayers, setChampionPlayers] = useState<string[]>([]);
 	const isMobile = useIsMobile();
 
 	useEffect(() => {
@@ -45,6 +47,27 @@ export default function Page() {
 
 				if (completedRes.success && completedRes.data) {
 					setLastCompleted(completedRes.data);
+
+					if (completedRes.data?.winner) {
+						// Get winning team's players
+						const { data: teams } = await supabase
+							.from('teams')
+							.select('id')
+							.eq('name', completedRes.data.winner)
+							.limit(1)
+							.maybeSingle();
+						if (teams) {
+							const { data: assignments } = await supabase
+								.from('tournament_player_assignments')
+								.select('players(name)')
+								.eq('team_id', teams.id)
+								.eq('tournament_id', completedRes.data.id);
+							if (assignments) {
+								setChampionPlayers(assignments.map((a: any) => a.players?.name).filter(Boolean).sort());
+							}
+						}
+					}
+
 					// Load standings for completed tournament
 					const standingsRes = await getTournamentStandings(completedRes.data.id);
 					if (standingsRes.success) {
@@ -231,6 +254,11 @@ export default function Page() {
 								<div style={{ fontSize: 20, fontWeight: 700, color: ESPN.black }}>
 									{lastCompleted.winner}
 								</div>
+								{championPlayers.length > 0 && (
+									<div style={{ fontSize: 13, color: ESPN.gray500, marginTop: 2 }}>
+										{championPlayers.join(', ')}
+									</div>
+								)}
 							</div>
 							<div style={{ marginLeft: 'auto', fontSize: 13, color: ESPN.gray500 }}>
 								{lastCompleted.location} &middot; {lastCompleted.start_date && new Date(lastCompleted.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
