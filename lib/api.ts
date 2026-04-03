@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Game,
@@ -37,6 +38,8 @@ import {
   TeamDragDrop,
   BracketType
 } from './types';
+
+import { normalizeJoin, extractBracketRoundName } from './utils';
 
 // Import the state machine
 import { BaseballGameStateMachine, StateTransitionResult } from './state-machine';
@@ -1376,6 +1379,26 @@ export async function fetchGames(filters?: GameFilters): Promise<ApiResponse<Gam
   }
 }
 
+export async function fetchTournamentGames(tournamentId: string) {
+	const { data } = await supabase
+		.from('games')
+		.select(`
+			id, status, home_score, away_score, game_type, started_at, completed_at, total_innings,
+			home_team:teams!games_home_team_id_fkey(id, name),
+			away_team:teams!games_away_team_id_fkey(id, name),
+			brackets!brackets_game_id_fkey(round_name)
+		`)
+		.eq('tournament_id', tournamentId)
+		.order('started_at', { ascending: false });
+
+	return (data || []).map((g: any) => ({
+		...g,
+		home_team: normalizeJoin(g.home_team),
+		away_team: normalizeJoin(g.away_team),
+		bracketRoundName: extractBracketRoundName(g.brackets),
+	}));
+}
+
 export async function fetchGameById(gameId: string): Promise<ApiResponse<GameDisplayData | null>> {
   try {
     const { data: game, error } = await supabase
@@ -1384,7 +1407,8 @@ export async function fetchGameById(gameId: string): Promise<ApiResponse<GameDis
         *,
         home_team:teams!games_home_team_id_fkey(id, name, color),
         away_team:teams!games_away_team_id_fkey(id, name, color),
-        tournament:tournaments(id, name, status, start_date, end_date, created_at, updated_at)
+        tournament:tournaments(id, name, status, start_date, end_date, created_at, updated_at),
+        brackets!brackets_game_id_fkey(round_name)
       `)
       .eq('id', gameId)
       .single();
@@ -1448,8 +1472,11 @@ export async function fetchGameById(gameId: string): Promise<ApiResponse<GameDis
       updated_at: game.updated_at,
     };
 
+    const displayData = enhanceGameWithDisplayData(transformedGame);
+    displayData.bracketRoundName = extractBracketRoundName(game.brackets);
+
     return {
-      data: enhanceGameWithDisplayData(transformedGame),
+      data: displayData,
       success: true,
     };
   } catch (error) {
@@ -2839,3 +2866,18 @@ export async function getBracketFinishOrder(tournamentId: string): Promise<Map<s
 	}
 	return finishOrder;
 }
+
+// Cached versions for Server Components (deduplicated within a single request)
+export const getLatestTournament = cache(async () => {
+	const { data } = await supabase
+		.from('tournaments')
+		.select('id, name, winner, status, tournament_number')
+		.neq('status', 'upcoming')
+		.order('tournament_number', { ascending: false })
+		.limit(1)
+		.single();
+	return data;
+});
+
+export const cachedFetchTournamentGames = cache(fetchTournamentGames);
+export const cachedGetBracketFinishOrder = cache(getBracketFinishOrder);

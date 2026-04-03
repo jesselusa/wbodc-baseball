@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import NavBar from "../components/NavBar";
 import ScoreboardTicker from "../components/ScoreboardTicker";
+import ClientProviders from "../components/ClientProviders";
+import { getLatestTournament, cachedFetchTournamentGames } from "../lib/api";
 
 export const metadata: Metadata = {
 	title: "WBoDC Baseball",
@@ -23,11 +25,15 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	// Fetch ticker games server-side (React.cache deduplicates across layout + pages)
+	const tournament = await getLatestTournament();
+	const allGames = tournament ? await cachedFetchTournamentGames(tournament.id) : [];
+	const tickerGames = allGames.filter((g: any) => g.status === 'completed' || g.status === 'in_progress').slice(0, 12);
 	return (
 		<html lang="en">
 			<body
@@ -43,9 +49,11 @@ export default function RootLayout({
 				}}
 				suppressHydrationWarning={true}
 			>
-				<ScoreboardTicker />
-				<NavBar />
-				{children}
+				<ClientProviders>
+					<ScoreboardTicker initialGames={tickerGames} />
+					<NavBar />
+					{children}
+				</ClientProviders>
 			</body>
 		</html>
 	);

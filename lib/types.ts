@@ -417,6 +417,7 @@ export interface GameDisplayData extends Game {
   outs?: number;
   time_status?: string; // "Live", "Final", "7:30 PM", etc.
   is_live?: boolean;
+  bracketRoundName?: string;
 }
 
 export interface PlayerGameStats {

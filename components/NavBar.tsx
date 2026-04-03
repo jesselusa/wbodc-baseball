@@ -29,155 +29,6 @@ export default function NavBar() {
 	// Find current page label for mobile nav
 	const currentPageLabel = navLinks.find(l => isActive(l.href))?.label || 'Home';
 
-	// ── MOBILE NAV ──
-	if (isMobile) {
-		return (
-			<>
-				{/* Mobile nav bar — red parallelogram left, dark right */}
-				<nav style={{
-					position: 'fixed',
-					top: tickerTop,
-					left: 0,
-					right: 0,
-					zIndex: 100,
-					height: 48,
-					backgroundColor: ESPN.dark,
-					display: 'flex',
-					alignItems: 'center',
-					overflow: 'hidden',
-				}}>
-					{/* Red parallelogram area — hamburger + logo */}
-					<div style={{
-						position: 'relative',
-						display: 'flex',
-						alignItems: 'center',
-						gap: 10,
-						height: '100%',
-						padding: '0 24px 0 12px',
-						zIndex: 1,
-					}}>
-						{/* Red parallelogram bg */}
-						<div style={{
-							position: 'absolute',
-							top: 0,
-							left: -20,
-							right: -12,
-							bottom: 0,
-							backgroundColor: ESPN.red,
-							transform: 'skewX(-16deg)',
-							zIndex: 0,
-						}} />
-						<button
-							onClick={() => setMobileOpen(!mobileOpen)}
-							aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-							style={{
-								position: 'relative',
-								zIndex: 1,
-								background: 'none',
-								border: 'none',
-								color: ESPN.white,
-								padding: 4,
-								cursor: 'pointer',
-								display: 'flex',
-								alignItems: 'center',
-							}}
-						>
-							{mobileOpen ? <X style={{ width: 22, height: 22 }} /> : <Menu style={{ width: 22, height: 22 }} />}
-						</button>
-						<Link href="/" onClick={() => setMobileOpen(false)} style={{ position: 'relative', zIndex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-							<img
-								src="/logo-white.svg"
-								alt="WBoDC"
-								width={411}
-								height={94}
-								decoding="async"
-								style={{ display: 'block', height: 15, width: 'auto' }}
-							/>
-						</Link>
-					</div>
-
-					{/* Right side — dark area with current page label */}
-					<div style={{ flex: 1 }} />
-					<span style={{
-						color: ESPN.white,
-						fontSize: 14,
-						fontWeight: 600,
-						paddingRight: 14,
-					}}>
-						{currentPageLabel}
-					</span>
-				</nav>
-
-				{/* Mobile menu overlay */}
-				{mobileOpen && (
-					<>
-						{/* Backdrop */}
-						<div
-							style={{
-								position: 'fixed',
-								inset: 0,
-								top: tickerTop + 48,
-								backgroundColor: 'rgba(0,0,0,0.3)',
-								zIndex: 98,
-							}}
-							onClick={() => setMobileOpen(false)}
-						/>
-
-						{/* White menu panel */}
-						<div style={{
-							position: 'fixed',
-							top: tickerTop + 48,
-							left: 0,
-							right: 0,
-							bottom: 0,
-							backgroundColor: ESPN.white,
-							zIndex: 99,
-							overflowY: 'auto',
-						}}>
-							{navLinks.map((link) => (
-								<Link
-									key={link.href}
-									href={link.href}
-									onClick={() => setMobileOpen(false)}
-									style={{
-										display: 'block',
-										padding: '16px 20px',
-										fontSize: 16,
-										fontWeight: 600,
-										color: ESPN.black,
-										textDecoration: 'none',
-										borderBottom: '1px solid #E5E5E5',
-									}}
-								>
-									{link.label}
-								</Link>
-							))}
-							<Link
-								href="/admin"
-								onClick={() => setMobileOpen(false)}
-								style={{
-									display: 'flex',
-									alignItems: 'center',
-									gap: 8,
-									padding: '16px 20px',
-									fontSize: 16,
-									fontWeight: 600,
-									color: ESPN.gray500,
-									textDecoration: 'none',
-									borderBottom: '1px solid #E5E5E5',
-								}}
-							>
-								<Settings style={{ width: 18, height: 18 }} />
-								Admin
-							</Link>
-						</div>
-					</>
-				)}
-			</>
-		);
-	}
-
-	// ── DESKTOP NAV ──
 	return (
 		<>
 			<nav style={{
@@ -190,12 +41,41 @@ export default function NavBar() {
 				backgroundColor: ESPN.dark,
 				display: 'flex',
 				alignItems: 'center',
+				overflow: 'hidden',
 				padding: '0 16px',
 			}}>
-				<div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: 1400, margin: '0 auto', height: '100%' }}>
-					{/* Red polygon logo area */}
+				<div style={{
+					display: 'flex',
+					alignItems: 'center',
+					width: '100%',
+					maxWidth: 1400,
+					margin: '0 auto',
+					height: '100%',
+				}}>
+					{/* Mobile: hamburger button inside the red parallelogram area */}
+					<button
+						className="mobile-only"
+						onClick={() => setMobileOpen(!mobileOpen)}
+						aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+						style={{
+							position: 'relative',
+							zIndex: 2,
+							background: 'none',
+							border: 'none',
+							color: ESPN.white,
+							padding: 4,
+							cursor: 'pointer',
+							alignItems: 'center',
+							marginRight: 8,
+						}}
+					>
+						{mobileOpen ? <X style={{ width: 22, height: 22 }} /> : <Menu style={{ width: 22, height: 22 }} />}
+					</button>
+
+					{/* Red parallelogram + logo — always visible */}
 					<Link
 						href="/"
+						onClick={() => setMobileOpen(false)}
 						style={{
 							position: 'relative',
 							display: 'flex',
@@ -234,8 +114,8 @@ export default function NavBar() {
 						/>
 					</Link>
 
-					{/* Nav links */}
-					<div style={{ display: 'flex', alignItems: 'center', gap: 0, height: '100%', marginLeft: 8 }}>
+					{/* Desktop: nav links */}
+					<div className="desktop-only" style={{ alignItems: 'center', gap: 0, height: '100%', marginLeft: 8 }}>
 						{navLinks.map((link) => (
 							<Link
 								key={link.href}
@@ -262,13 +142,26 @@ export default function NavBar() {
 					{/* Spacer */}
 					<div style={{ flex: 1 }} />
 
-					{/* Admin gear */}
+					{/* Mobile: current page label */}
+					<span
+						className="mobile-only"
+						style={{
+							color: ESPN.white,
+							fontSize: 14,
+							fontWeight: 600,
+							paddingRight: 14,
+						}}
+					>
+						{currentPageLabel}
+					</span>
+
+					{/* Desktop: admin gear */}
 					<Link
+						className="desktop-only"
 						href="/admin"
 						style={{
 							color: ESPN.gray500,
 							textDecoration: 'none',
-							display: 'flex',
 							alignItems: 'center',
 						}}
 						aria-label="Admin"
@@ -277,6 +170,72 @@ export default function NavBar() {
 					</Link>
 				</div>
 			</nav>
+
+			{/* Mobile menu overlay — only renders when open */}
+			{mobileOpen && (
+				<>
+					{/* Backdrop */}
+					<div
+						style={{
+							position: 'fixed',
+							inset: 0,
+							top: tickerTop + 48,
+							backgroundColor: 'rgba(0,0,0,0.3)',
+							zIndex: 98,
+						}}
+						onClick={() => setMobileOpen(false)}
+					/>
+
+					{/* White menu panel */}
+					<div style={{
+						position: 'fixed',
+						top: tickerTop + 48,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						backgroundColor: ESPN.white,
+						zIndex: 99,
+						overflowY: 'auto',
+					}}>
+						{navLinks.map((link) => (
+							<Link
+								key={link.href}
+								href={link.href}
+								onClick={() => setMobileOpen(false)}
+								style={{
+									display: 'block',
+									padding: '16px 20px',
+									fontSize: 16,
+									fontWeight: 600,
+									color: ESPN.black,
+									textDecoration: 'none',
+									borderBottom: '1px solid #E5E5E5',
+								}}
+							>
+								{link.label}
+							</Link>
+						))}
+						<Link
+							href="/admin"
+							onClick={() => setMobileOpen(false)}
+							style={{
+								display: 'flex',
+								alignItems: 'center',
+								gap: 8,
+								padding: '16px 20px',
+								fontSize: 16,
+								fontWeight: 600,
+								color: ESPN.gray500,
+								textDecoration: 'none',
+								borderBottom: '1px solid #E5E5E5',
+							}}
+						>
+							<Settings style={{ width: 18, height: 18 }} />
+							Admin
+						</Link>
+					</div>
+				</>
+			)}
 
 			<style>{`
 				.desktop-nav-link:hover {
