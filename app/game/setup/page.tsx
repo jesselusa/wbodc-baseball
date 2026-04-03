@@ -185,21 +185,22 @@ export default function GameSetupPage() {
   }
 
   return (
-    <main className="min-h-screen"
-      style={{
-        backgroundColor: '#F1F2F3',
-        color: '#151617',
-        paddingTop: '64px' // Account for fixed navbar
-      }}
-    >
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
+      <SectionHeader title="Game Setup" style={{ marginTop: 24 }} />
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderTop: 'none',
+        borderRadius: '0 0 10px 10px',
+        padding: '20px',
+        overflow: 'hidden',
+      }}>
         <GameSetup
-          gameId={null} // No game ID yet - will be created when setup is complete
+          gameId={null}
           onGameStarted={handleGameStarted}
           onCancel={handleCancel}
         />
       </div>
-    </main>
+    </div>
   );
 } 

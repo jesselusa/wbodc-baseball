@@ -1,4 +1,5 @@
 import React from 'react';
+import { ESPN } from '../lib/utils';
 
 // Type for inning-by-inning scoring data
 export interface InningScore {
@@ -65,7 +66,7 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
     fontFamily: '"SF Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace',
     fontVariantNumeric: 'tabular-nums',
     fontSize: '13px',
-    color: '#151617',
+    color: ESPN.black,
     borderBottom: '1px solid #D0D0D0',
     borderRight: '1px solid #D0D0D0',
   };
@@ -76,7 +77,7 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
     fontSize: '11px',
     fontWeight: 700,
     color: 'white',
-    backgroundColor: '#2B2C2D',
+    backgroundColor: ESPN.gray900,
     borderBottom: '1px solid #D0D0D0',
     borderRight: '1px solid #444',
     whiteSpace: 'nowrap',
@@ -174,7 +175,7 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
                   paddingLeft: '12px',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   fontWeight: isAwayWinner ? 700 : 600,
-                  color: '#151617',
+                  color: ESPN.black,
                   position: 'sticky',
                   left: 0,
                   backgroundColor: 'white',
@@ -198,19 +199,19 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
                   ...cellBase,
                   fontWeight: isAwayWinner ? 700 : 600,
                   fontSize: '14px',
-                  color: '#151617',
+                  color: ESPN.black,
                   borderRight: showHits || showErrors ? cellBase.borderRight : 'none',
                 }}
               >
                 {away_team.total_runs}
               </td>
               {showHits && (
-                <td style={{ ...cellBase, color: '#6C6D6F', borderRight: showErrors ? cellBase.borderRight : 'none' }}>
+                <td style={{ ...cellBase, color: ESPN.gray500, borderRight: showErrors ? cellBase.borderRight : 'none' }}>
                   {away_team.total_hits ?? '-'}
                 </td>
               )}
               {showErrors && (
-                <td style={{ ...cellBase, color: '#6C6D6F', borderRight: 'none' }}>
+                <td style={{ ...cellBase, color: ESPN.gray500, borderRight: 'none' }}>
                   {away_team.errors ?? '-'}
                 </td>
               )}
@@ -225,7 +226,7 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
                   paddingLeft: '12px',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   fontWeight: isHomeWinner ? 700 : 600,
-                  color: '#151617',
+                  color: ESPN.black,
                   position: 'sticky',
                   left: 0,
                   backgroundColor: 'white',
@@ -250,7 +251,7 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
                   ...cellBase,
                   fontWeight: isHomeWinner ? 700 : 600,
                   fontSize: '14px',
-                  color: '#151617',
+                  color: ESPN.black,
                   borderBottom: 'none',
                   borderRight: showHits || showErrors ? cellBase.borderRight : 'none',
                 }}
@@ -258,12 +259,12 @@ export default function ScoreBoard({ data, className = '' }: ScoreBoardProps) {
                 {home_team.total_runs}
               </td>
               {showHits && (
-                <td style={{ ...cellBase, color: '#6C6D6F', borderBottom: 'none', borderRight: showErrors ? cellBase.borderRight : 'none' }}>
+                <td style={{ ...cellBase, color: ESPN.gray500, borderBottom: 'none', borderRight: showErrors ? cellBase.borderRight : 'none' }}>
                   {home_team.total_hits ?? '-'}
                 </td>
               )}
               {showErrors && (
-                <td style={{ ...cellBase, color: '#6C6D6F', borderBottom: 'none', borderRight: 'none' }}>
+                <td style={{ ...cellBase, color: ESPN.gray500, borderBottom: 'none', borderRight: 'none' }}>
                   {home_team.errors ?? '-'}
                 </td>
               )}
