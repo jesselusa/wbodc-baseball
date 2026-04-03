@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '../../lib/api';
-import { normalizeJoin, extractBracketRoundName, ESPN } from '../../lib/utils';
+import { supabase, fetchTournamentGames } from '../../lib/api';
+import { ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
 import { TournamentRecord } from '../../lib/types';
@@ -58,23 +58,7 @@ function ResultsContent() {
 		if (!selectedId) return;
 		async function loadGames() {
 			setLoadingGames(true);
-			const { data } = await supabase
-				.from('games')
-				.select(`
-					id, status, home_score, away_score, game_type,
-					home_team:teams!games_home_team_id_fkey(name),
-					away_team:teams!games_away_team_id_fkey(name),
-					brackets!brackets_game_id_fkey(round_name)
-				`)
-				.eq('tournament_id', selectedId)
-				.order('started_at', { ascending: false });
-
-			const normalized = (data || []).map((g: any) => ({
-				...g,
-				home_team: normalizeJoin(g.home_team),
-				away_team: normalizeJoin(g.away_team),
-				bracketRoundName: extractBracketRoundName(g.brackets),
-			}));
+			const normalized = await fetchTournamentGames(selectedId);
 			setGames(normalized);
 			setLoadingGames(false);
 		}

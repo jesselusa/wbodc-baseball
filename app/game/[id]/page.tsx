@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { fetchGameById, getLiveGameStatus, fetchTeamPlayers, calculateInningScores, supabase } from '../../../lib/api';
+import { fetchGameById, getLiveGameStatus, fetchTeamPlayers, calculateInningScores } from '../../../lib/api';
 import { GameDisplayData, LiveGameStatus, GameSnapshot, Player } from '../../../lib/types';
 import { useViewerGameUpdates } from '../../../hooks/useViewerGameUpdates';
 import ScoreBoard from '../../../components/ScoreBoard';
@@ -27,7 +27,6 @@ export default function GamePage({ params }: GamePageProps) {
   const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [inningScores, setInningScores] = useState<any[]>([]);
   const [teamRecords, setTeamRecords] = useState<Map<string, { wins: number; losses: number }>>(new Map());
-  const [bracketRoundName, setBracketRoundName] = useState<string | null>(null);
 
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -145,25 +144,12 @@ export default function GamePage({ params }: GamePageProps) {
     loadGameData();
   }, [gameId]);
 
-  // Fetch bracket info
-  const fetchBracketInfo = async () => {
-    if (!initialGame) return;
-    const { data } = await supabase
-      .from('brackets')
-      .select('round_name')
-      .eq('game_id', initialGame.id)
-      .limit(1)
-      .maybeSingle();
-    if (data?.round_name) setBracketRoundName(data.round_name);
-  };
-
   // Fetch players and inning scores when game data is loaded
   useEffect(() => {
     if (initialGame) {
       fetchPlayersForGame();
       fetchInningScores();
       fetchTeamRecords();
-      fetchBracketInfo();
     }
   }, [initialGame]);
 
@@ -285,7 +271,7 @@ export default function GamePage({ params }: GamePageProps) {
           {/* Away team name + record */}
           <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'right', paddingRight: isMobile ? 0 : 20 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: awayWon ? ESPN.black : ESPN.gray400 }}>
-              {bracketRoundName === 'Finals' && awayWon && <span style={{ marginRight: 4 }}>🏆</span>}
+              {initialGame.bracketRoundName === 'Finals' && awayWon && <span style={{ marginRight: 4 }}>🏆</span>}
               {initialGame.away_team.name}
             </div>
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
@@ -342,7 +328,7 @@ export default function GamePage({ params }: GamePageProps) {
           <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'left', paddingLeft: isMobile ? 0 : 20, marginTop: isMobile ? 8 : 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: homeWon ? ESPN.black : ESPN.gray400 }}>
               {initialGame.home_team.name}
-              {bracketRoundName === 'Finals' && homeWon && <span style={{ marginLeft: 4 }}>🏆</span>}
+              {initialGame.bracketRoundName === 'Finals' && homeWon && <span style={{ marginLeft: 4 }}>🏆</span>}
             </div>
             <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
               {(() => { const r = teamRecords.get(initialGame.home_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}

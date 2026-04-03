@@ -1,0 +1,152 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import BaseballCard from './BaseballCard';
+import { Player } from '../lib/types';
+import AvatarInitial from './AvatarInitial';
+import { ESPN } from '../lib/utils';
+import { useIsMobile } from '../hooks/useIsMobile';
+
+type SortKey = 'name' | 'current_town' | 'championships_won';
+
+export default function PlayersClient({ players }: { players: Player[] }) {
+	const [sortBy, setSortBy] = useState<SortKey>('name');
+	const [sortAsc, setSortAsc] = useState(true);
+	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+	const [showInactive, setShowInactive] = useState(false);
+	const isMobile = useIsMobile();
+
+	const filtered = useMemo(() => {
+		if (showInactive) return players;
+		return players.filter(p => p.is_active);
+	}, [players, showInactive]);
+
+	const sorted = useMemo(() => [...filtered].sort((a, b) => {
+		let cmp = 0;
+		if (sortBy === 'name') cmp = (a.name || '').localeCompare(b.name || '');
+		else if (sortBy === 'current_town') cmp = (a.current_town || '').localeCompare(b.current_town || '');
+		else if (sortBy === 'championships_won') cmp = (a.championships_won || 0) - (b.championships_won || 0);
+		return sortAsc ? cmp : -cmp;
+	}), [filtered, sortBy, sortAsc]);
+
+	const handleSort = (key: SortKey) => {
+		if (sortBy === key) {
+			setSortAsc(!sortAsc);
+		} else {
+			setSortBy(key);
+			setSortAsc(key === 'name');
+		}
+	};
+
+	const sortArrow = (key: SortKey) => {
+		if (sortBy !== key) return '';
+		return sortAsc ? ' ▲' : ' ▼';
+	};
+
+	return (
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+			{/* Section header */}
+			<div style={{
+				backgroundColor: ESPN.gray900,
+				color: ESPN.white,
+				fontSize: 12,
+				fontWeight: 700,
+				textTransform: 'uppercase',
+				letterSpacing: '0.05em',
+				padding: '10px 16px',
+				marginTop: 24,
+				display: 'flex',
+				justifyContent: 'space-between',
+				alignItems: 'center',
+				borderRadius: '10px 10px 0 0',
+			}}>
+				<span>Players</span>
+				<label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 400, textTransform: 'none', cursor: 'pointer' }}>
+					<input
+						type="checkbox"
+						checked={showInactive}
+						onChange={(e) => setShowInactive(e.target.checked)}
+						style={{ cursor: 'pointer' }}
+					/>
+					Show inactive
+				</label>
+			</div>
+
+			<div style={{ backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', overflowX: 'auto', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+				{/* Table header */}
+				<div style={{
+					display: 'grid',
+					gridTemplateColumns: isMobile ? '1fr 50px' : '1fr 140px 140px 60px',
+					padding: '8px 16px',
+					backgroundColor: ESPN.gray50,
+					borderBottom: '1px solid #E5E5E5',
+					fontSize: 12,
+					fontWeight: 600,
+					color: ESPN.gray900,
+					textTransform: 'uppercase',
+				}}>
+					<span onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Name{sortArrow('name')}</span>
+					{!isMobile && <span onClick={() => handleSort('current_town')} style={{ cursor: 'pointer' }}>City{sortArrow('current_town')}</span>}
+					{!isMobile && <span>Hometown</span>}
+					<span onClick={() => handleSort('championships_won')} style={{ cursor: 'pointer', textAlign: 'center' }}>Titles{sortArrow('championships_won')}</span>
+				</div>
+
+				{/* Rows */}
+				{sorted.map((player, i) => (
+					<div
+						key={player.id}
+						onClick={() => setSelectedPlayer(player)}
+						style={{
+							display: 'grid',
+							gridTemplateColumns: isMobile ? '1fr 50px' : '1fr 140px 140px 60px',
+							padding: '10px 16px',
+							borderBottom: i < sorted.length - 1 ? '1px solid #E5E5E5' : 'none',
+							backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
+							fontSize: 13,
+							cursor: 'pointer',
+							transition: 'background-color 0.1s',
+						}}
+					>
+						<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+							<AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
+							<div>
+								<span style={{ fontWeight: 600, color: ESPN.blue, cursor: 'pointer' }}>{player.name}</span>
+								{player.nickname && (
+									<span style={{ marginLeft: 6, fontSize: 11, color: ESPN.gray400 }}>"{player.nickname}"</span>
+								)}
+								{!player.is_active && (
+									<span style={{ marginLeft: 6, fontSize: 10, color: ESPN.gray400, fontStyle: 'italic' }}>inactive</span>
+								)}
+							</div>
+						</div>
+						{!isMobile && <span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.current_town || '—'}</span>}
+						{!isMobile && <span style={{ color: ESPN.gray700, display: 'flex', alignItems: 'center' }}>{player.hometown || '—'}</span>}
+						<span style={{ textAlign: 'center', fontWeight: 600, color: ESPN.gray900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+							{player.championships_won || 0}
+						</span>
+					</div>
+				))}
+
+				{sorted.length === 0 && (
+					<div style={{ padding: 32, textAlign: 'center', color: ESPN.gray500, fontSize: 14 }}>
+						No players found
+					</div>
+				)}
+			</div>
+
+			{/* Player count */}
+			<div style={{ padding: '8px 0', fontSize: 12, color: ESPN.gray400 }}>
+				{sorted.length} player{sorted.length !== 1 ? 's' : ''}
+			</div>
+
+			{/* Baseball card modal */}
+			{selectedPlayer && (
+				<BaseballCard
+					player={selectedPlayer}
+					isOpen={true}
+					onClose={() => setSelectedPlayer(null)}
+				/>
+			)}
+		</div>
+	);
+}
