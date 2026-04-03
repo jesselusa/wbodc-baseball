@@ -1,15 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { isServer }) => {
-    // Suppress punycode deprecation warnings
-    if (isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        punycode: 'punycode/',
-      };
-    }
-    return config;
-  },
+  turbopack: {},
 };
 
 // Suppress Node.js deprecation warnings for punycode (DEP0040)
