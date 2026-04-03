@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Settings } from 'lucide-react';
 import { ESPN } from '../lib/utils';
-import { useIsMobile, TICKER_HEIGHT_MOBILE, TICKER_HEIGHT_DESKTOP, TOTAL_HEADER_MOBILE, TOTAL_HEADER_DESKTOP } from '../hooks/useIsMobile';
+import { useIsMobile, TICKER_HEIGHT_MOBILE, TICKER_HEIGHT_DESKTOP } from '../hooks/useIsMobile';
 
 const navLinks = [
 	{ href: '/games', label: 'Scores' },

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/api';
+import { supabase, getBracketFinishOrder } from '../../lib/api';
 import { Player } from '../../lib/types';
 import { ESPN } from '../../lib/utils';
 import BaseballCard from '../../components/BaseballCard';
@@ -110,29 +110,7 @@ export default function TeamsPage() {
 
       rows.forEach(r => { r.runDiff = r.runsScored - r.runsAllowed; });
 
-      // Fetch bracket results for final placement
-      const { data: bracketData } = await supabase
-        .from('brackets')
-        .select('round_name, game_id, games!brackets_game_id_fkey(home_score, away_score, home_team_id, away_team_id)')
-        .eq('tournament_id', tournament.id)
-        .order('round_number', { ascending: false });
-
-      const finishOrder = new Map<string, number>();
-      if (bracketData) {
-        for (const bracket of bracketData) {
-          const game = bracket.games as any;
-          if (!game) continue;
-          const homeWon = game.home_score > game.away_score;
-          const winnerId = homeWon ? game.home_team_id : game.away_team_id;
-          const loserId = homeWon ? game.away_team_id : game.home_team_id;
-          if (bracket.round_name === 'Finals') {
-            finishOrder.set(winnerId, 1);
-            finishOrder.set(loserId, 2);
-          } else if (bracket.round_name === 'Semifinals') {
-            if (!finishOrder.has(loserId)) finishOrder.set(loserId, 3);
-          }
-        }
-      }
+      const finishOrder = await getBracketFinishOrder(tournament.id);
 
       rows.sort((a, b) => {
         const aFinish = finishOrder.get(a.teamId) ?? 99;

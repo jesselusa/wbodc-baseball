@@ -10,6 +10,10 @@ export function normalizeJoin<T>(val: T | T[]): T | undefined {
 	return val;
 }
 
+export function extractBracketRoundName(brackets: unknown): string | undefined {
+	return Array.isArray(brackets) && brackets[0]?.round_name ? brackets[0].round_name : undefined;
+}
+
 export const ESPN = {
 	black: '#151617',
 	dark: '#1D1E1F',

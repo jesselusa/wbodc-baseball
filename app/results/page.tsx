@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/api';
-import { normalizeJoin, ESPN } from '../../lib/utils';
+import { normalizeJoin, extractBracketRoundName, ESPN } from '../../lib/utils';
 import SectionHeader from '../../components/SectionHeader';
 import GameScoreRow from '../../components/GameScoreRow';
 import { TournamentRecord } from '../../lib/types';
@@ -73,7 +73,7 @@ function ResultsContent() {
 				...g,
 				home_team: normalizeJoin(g.home_team),
 				away_team: normalizeJoin(g.away_team),
-				bracketRoundName: Array.isArray(g.brackets) && g.brackets[0]?.round_name ? g.brackets[0].round_name : undefined,
+				bracketRoundName: extractBracketRoundName(g.brackets),
 			}));
 			setGames(normalized);
 			setLoadingGames(false);

@@ -7,6 +7,7 @@ import {
 	getLatestCompletedTournament,
 	getUpcomingTournament,
 	getTournamentStandings,
+	getBracketFinishOrder,
 	supabase,
 } from "../lib/api";
 import { TournamentRecord, Player } from "../lib/types";
@@ -30,8 +31,7 @@ export default function Page() {
 	const [upcoming, setUpcoming] = useState<TournamentRecord | null>(null);
 	const [standings, setStandings] = useState<Standing[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [championPlayers, setChampionPlayers] = useState<string[]>([]);
-	const [selectedChampion, setSelectedChampion] = useState<string | null>(null);
+	const [championPlayers, setChampionPlayers] = useState<Player[]>([]);
 	const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 	const isMobile = useIsMobile();
 
@@ -62,11 +62,13 @@ export default function Page() {
 						if (teams) {
 							const { data: assignments } = await supabase
 								.from('tournament_player_assignments')
-								.select('players(name)')
+								.select('players(*)')
 								.eq('team_id', teams.id)
 								.eq('tournament_id', completedRes.data.id);
 							if (assignments) {
-								setChampionPlayers(assignments.map((a: any) => a.players?.name).filter(Boolean).sort());
+								setChampionPlayers(
+									assignments.map((a: any) => a.players).filter(Boolean).sort((a: Player, b: Player) => a.name.localeCompare(b.name))
+								);
 							}
 						}
 					}
@@ -74,33 +76,7 @@ export default function Page() {
 					// Load standings for completed tournament
 					const standingsRes = await getTournamentStandings(completedRes.data.id);
 					if (standingsRes.success) {
-						// Fetch bracket results to determine final placement
-						const { data: bracketData } = await supabase
-							.from('brackets')
-							.select('round_name, game_id, games!brackets_game_id_fkey(home_score, away_score, home_team_id, away_team_id)')
-							.eq('tournament_id', completedRes.data.id)
-							.order('round_number', { ascending: false });
-
-						const finishOrder = new Map<string, number>(); // teamId → finish position (1=champion, 2=runner-up, etc.)
-
-						if (bracketData) {
-							for (const bracket of bracketData) {
-								const game = bracket.games as any;
-								if (!game) continue;
-								const homeWon = game.home_score > game.away_score;
-								const winnerId = homeWon ? game.home_team_id : game.away_team_id;
-								const loserId = homeWon ? game.away_team_id : game.home_team_id;
-
-								if (bracket.round_name === 'Finals') {
-									finishOrder.set(winnerId, 1); // Champion
-									finishOrder.set(loserId, 2);  // Runner-up
-								} else if (bracket.round_name === 'Semifinals') {
-									if (!finishOrder.has(loserId)) {
-										finishOrder.set(loserId, 3); // Lost in semis
-									}
-								}
-							}
-						}
+						const finishOrder = await getBracketFinishOrder(completedRes.data.id);
 
 						// Sort by bracket finish position first, then by win%, then by run differential
 						const sorted = [...standingsRes.data].sort((a, b) => {
@@ -130,23 +106,7 @@ export default function Page() {
 		loadData();
 	}, []);
 
-	// Look up player by name when champion name is clicked
-	useEffect(() => {
-		if (!selectedChampion) return;
-		async function lookupPlayer() {
-			const { data } = await supabase
-				.from('players')
-				.select('*')
-				.eq('name', selectedChampion)
-				.limit(1)
-				.maybeSingle();
-			if (data) setSelectedPlayer(data);
-			setSelectedChampion(null);
-		}
-		lookupPlayer();
-	}, [selectedChampion]);
-
-	if (loading) {
+if (loading) {
 		return (
 			<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 				<span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading...</span>
@@ -304,9 +264,9 @@ export default function Page() {
 								</div>
 								{championPlayers.length > 0 && (
 									<div style={{ fontSize: 13, marginTop: 2 }}>
-										{championPlayers.map((name, i) => (
-											<span key={name}>
-												<span style={{ color: ESPN.blue, cursor: 'pointer' }} onClick={() => setSelectedChampion(name)}>{name}</span>
+										{championPlayers.map((player, i) => (
+											<span key={player.id}>
+												<span style={{ color: ESPN.blue, cursor: 'pointer' }} onClick={() => setSelectedPlayer(player)}>{player.name}</span>
 												{i < championPlayers.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
 											</span>
 										))}
