@@ -26,11 +26,14 @@ export default function NavBar() {
 
 	const tickerTop = isMobile ? TICKER_HEIGHT_MOBILE : TICKER_HEIGHT_DESKTOP;
 
+	// Find current page label for mobile nav
+	const currentPageLabel = navLinks.find(l => isActive(l.href))?.label || 'Home';
+
 	// ── MOBILE NAV ──
 	if (isMobile) {
 		return (
 			<>
-				{/* Red mobile nav bar */}
+				{/* Mobile nav bar — red parallelogram left, dark right */}
 				<nav style={{
 					position: 'fixed',
 					top: tickerTop,
@@ -38,18 +41,38 @@ export default function NavBar() {
 					right: 0,
 					zIndex: 100,
 					height: 48,
-					backgroundColor: ESPN.red,
+					backgroundColor: ESPN.dark,
 					display: 'flex',
 					alignItems: 'center',
-					padding: '0 12px',
-					justifyContent: 'space-between',
+					overflow: 'hidden',
 				}}>
-					{/* Left: hamburger + logo */}
-					<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+					{/* Red parallelogram area — hamburger + logo */}
+					<div style={{
+						position: 'relative',
+						display: 'flex',
+						alignItems: 'center',
+						gap: 10,
+						height: '100%',
+						padding: '0 24px 0 12px',
+						zIndex: 1,
+					}}>
+						{/* Red parallelogram bg */}
+						<div style={{
+							position: 'absolute',
+							top: 0,
+							left: -20,
+							right: -12,
+							bottom: 0,
+							backgroundColor: ESPN.red,
+							transform: 'skewX(-16deg)',
+							zIndex: 0,
+						}} />
 						<button
 							onClick={() => setMobileOpen(!mobileOpen)}
 							aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
 							style={{
+								position: 'relative',
+								zIndex: 1,
 								background: 'none',
 								border: 'none',
 								color: ESPN.white,
@@ -59,32 +82,30 @@ export default function NavBar() {
 								alignItems: 'center',
 							}}
 						>
-							{mobileOpen ? <X style={{ width: 24, height: 24 }} /> : <Menu style={{ width: 24, height: 24 }} />}
+							{mobileOpen ? <X style={{ width: 22, height: 22 }} /> : <Menu style={{ width: 22, height: 22 }} />}
 						</button>
-						<Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+						<Link href="/" style={{ position: 'relative', zIndex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
 							<img
 								src="/logo-white.svg"
 								alt="WBoDC"
 								width={411}
 								height={94}
 								decoding="async"
-								style={{ display: 'block', height: 16, width: 'auto' }}
+								style={{ display: 'block', height: 15, width: 'auto' }}
 							/>
 						</Link>
 					</div>
 
-					{/* Right: Scores link */}
-					<Link
-						href="/games"
-						style={{
-							color: ESPN.white,
-							textDecoration: 'none',
-							fontSize: 14,
-							fontWeight: 600,
-						}}
-					>
-						Scores
-					</Link>
+					{/* Right side — dark area with current page label */}
+					<div style={{ flex: 1 }} />
+					<span style={{
+						color: ESPN.white,
+						fontSize: 14,
+						fontWeight: 600,
+						paddingRight: 14,
+					}}>
+						{currentPageLabel}
+					</span>
 				</nav>
 
 				{/* Mobile menu overlay */}

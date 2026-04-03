@@ -134,12 +134,12 @@ function ResultsContent() {
 					<div style={{ fontSize: 13, color: ESPN.gray500 }}>
 						{selected.location}
 						{selected.start_date && ` · ${new Date(selected.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
-						{selected.winner && (
-							<span style={{ marginLeft: 12, color: ESPN.red, fontWeight: 600 }}>
-								🏆 Champion: {selected.winner}
-							</span>
-						)}
 					</div>
+					{selected.winner && (
+						<div style={{ fontSize: 13, color: ESPN.red, fontWeight: 600, marginTop: 4 }}>
+							🏆 Champion: {selected.winner}
+						</div>
+					)}
 				</div>
 			)}
 
