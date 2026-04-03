@@ -154,9 +154,10 @@ export default function GamePage({ params }: GamePageProps) {
   }, [initialGame]);
 
   // Helper function to get current game state (real-time snapshot or fallback to initial data)
+  // For completed games, always use the games table scores (snapshots may be stale/incorrect)
   const getCurrentGameState = () => {
-    if (snapshot) {
-      // Use real-time snapshot data
+    if (snapshot && initialGame?.status !== 'completed') {
+      // Use real-time snapshot data only for non-completed games
       return {
         status: snapshot.status,
         score_home: snapshot.score_home,
