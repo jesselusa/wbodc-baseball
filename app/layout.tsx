@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import NavBar from "../components/NavBar";
 import ScoreboardTicker from "../components/ScoreboardTicker";
 import ClientProviders from "../components/ClientProviders";
+import { fetchTournamentGames, supabase } from "../lib/api";
 
 export const metadata: Metadata = {
 	title: "WBoDC Baseball",
@@ -24,11 +25,21 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	// Fetch ticker games server-side
+	const { data: tournament } = await supabase
+		.from('tournaments')
+		.select('id')
+		.neq('status', 'upcoming')
+		.order('tournament_number', { ascending: false })
+		.limit(1)
+		.single();
+
+	const tickerGames = tournament ? await fetchTournamentGames(tournament.id) : [];
 	return (
 		<html lang="en">
 			<body
@@ -45,7 +56,7 @@ export default function RootLayout({
 				suppressHydrationWarning={true}
 			>
 				<ClientProviders>
-					<ScoreboardTicker />
+					<ScoreboardTicker initialGames={tickerGames} />
 					<NavBar />
 					{children}
 				</ClientProviders>

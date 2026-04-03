@@ -22,12 +22,31 @@ function abbreviateTeam(name: string): string {
 	return name.slice(0, 3).toUpperCase();
 }
 
-export default function ScoreboardTicker() {
-	const [games, setGames] = useState<TickerGame[]>([]);
-	const [loading, setLoading] = useState(true);
+interface ScoreboardTickerProps {
+	initialGames?: any[];
+}
+
+export default function ScoreboardTicker({ initialGames }: ScoreboardTickerProps) {
+	// Convert server-provided games to ticker format
+	const serverGames: TickerGame[] = (initialGames || [])
+		.filter((g: any) => g.status === 'completed' || g.status === 'in_progress')
+		.slice(0, 12)
+		.map((g: any) => ({
+			id: g.id,
+			homeTeam: abbreviateTeam(g.home_team?.name || 'HME'),
+			awayTeam: abbreviateTeam(g.away_team?.name || 'AWY'),
+			homeScore: g.home_score || 0,
+			awayScore: g.away_score || 0,
+			status: g.status === 'in_progress' ? 'LIVE' : 'FINAL',
+		}));
+
+	const [games, setGames] = useState<TickerGame[]>(serverGames);
+	const [loading, setLoading] = useState(serverGames.length === 0);
 	const isMobile = useIsMobile();
 
+	// Only fetch client-side if no server data was provided
 	useEffect(() => {
+		if (serverGames.length > 0) return;
 		async function loadGames() {
 			try {
 				// Get most recent completed tournament (not upcoming)
