@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/api';
 import { normalizeJoin, ESPN } from '../lib/utils';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface TickerGame {
 	id: string;
@@ -24,6 +25,7 @@ function abbreviateTeam(name: string): string {
 export default function ScoreboardTicker() {
 	const [games, setGames] = useState<TickerGame[]>([]);
 	const [loading, setLoading] = useState(true);
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		async function loadGames() {
@@ -88,7 +90,7 @@ export default function ScoreboardTicker() {
 				left: 0,
 				right: 0,
 				zIndex: 101,
-				height: 56,
+				height: isMobile ? 44 : 56,
 				backgroundColor: ESPN.white,
 				borderBottom: '1px solid #D0D0D0',
 				display: 'flex',
@@ -102,7 +104,7 @@ export default function ScoreboardTicker() {
 					alignItems: 'center',
 					height: '100%',
 					overflowX: 'auto',
-					padding: '0 8px 0 116px',
+					padding: isMobile ? '0 8px' : '0 8px 0 116px',
 					maxWidth: 1400,
 					margin: '0 auto',
 					width: '100%',

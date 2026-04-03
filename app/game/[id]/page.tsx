@@ -10,6 +10,7 @@ import ScoreBoard from '../../../components/ScoreBoard';
 import { ConnectionStatus } from '../../../components/ConnectionStatus';
 import TeamRosterPanel from '../../../components/TeamRosterPanel';
 import { ESPN } from '../../../lib/utils';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 
 interface GamePageProps {
   params: Promise<{ id: string }>;
@@ -28,6 +29,7 @@ export default function GamePage({ params }: GamePageProps) {
   const [teamRecords, setTeamRecords] = useState<Map<string, { wins: number; losses: number }>>(new Map());
 
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   // Real-time game updates subscription (viewer-optimized)
   const {
@@ -244,7 +246,7 @@ export default function GamePage({ params }: GamePageProps) {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
 
       {/* Breadcrumb */}
-      <div style={{ padding: '16px 0 0', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ padding: isMobile ? '10px 0 0' : '16px 0 0', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
         <button onClick={() => router.back()} style={{ color: ESPN.blue, background: 'none', border: 'none', fontSize: 13, cursor: 'pointer', fontWeight: 500, padding: 0 }}>← Back</button>
         <span style={{ color: ESPN.gray400 }}>/</span>
         <span style={{ color: ESPN.gray500 }}>{initialGame.away_team.name} vs {initialGame.home_team.name}</span>
@@ -262,9 +264,11 @@ export default function GamePage({ params }: GamePageProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          textAlign: isMobile ? 'center' : undefined,
         }}>
           {/* Away team name + record */}
-          <div style={{ flex: 1, textAlign: 'right', paddingRight: 20 }}>
+          <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'right', paddingRight: isMobile ? 0 : 20 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: awayWon ? ESPN.black : ESPN.gray400 }}>
               {initialGame.away_team.name}
             </div>
@@ -274,9 +278,9 @@ export default function GamePage({ params }: GamePageProps) {
           </div>
 
           {/* Away score with triangle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: isMobile ? 8 : 0 }}>
             <div style={{
-              fontSize: 36,
+              fontSize: isMobile ? 32 : 36,
               fontWeight: 700,
               color: awayWon ? ESPN.black : ESPN.gray400,
               fontVariantNumeric: 'tabular-nums',
@@ -286,13 +290,13 @@ export default function GamePage({ params }: GamePageProps) {
             }}>
               {awayScore}
             </div>
-            {awayWon && initialGame.status === 'completed' && (
+            {awayWon && initialGame.status === 'completed' && !isMobile && (
               <span style={{ fontSize: 9, color: ESPN.black, lineHeight: 1 }}>◀</span>
             )}
           </div>
 
           {/* Center: Status */}
-          <div style={{ padding: '0 20px', textAlign: 'center', minWidth: 70 }}>
+          <div style={{ padding: isMobile ? '8px 0' : '0 20px', textAlign: 'center', minWidth: 70 }}>
             {initialGame.status === 'in_progress' ? (
               <span style={{ fontSize: 13, fontWeight: 700, color: ESPN.white, backgroundColor: ESPN.red, padding: '4px 12px', borderRadius: 3 }}>LIVE</span>
             ) : (
@@ -302,11 +306,11 @@ export default function GamePage({ params }: GamePageProps) {
 
           {/* Home score with triangle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {homeWon && initialGame.status === 'completed' && (
+            {homeWon && initialGame.status === 'completed' && !isMobile && (
               <span style={{ fontSize: 9, color: ESPN.black, lineHeight: 1 }}>▶</span>
             )}
             <div style={{
-              fontSize: 36,
+              fontSize: isMobile ? 32 : 36,
               fontWeight: 700,
               color: homeWon ? ESPN.black : ESPN.gray400,
               fontVariantNumeric: 'tabular-nums',
@@ -319,7 +323,7 @@ export default function GamePage({ params }: GamePageProps) {
           </div>
 
           {/* Home team name + record */}
-          <div style={{ flex: 1, textAlign: 'left', paddingLeft: 20 }}>
+          <div style={{ flex: isMobile ? undefined : 1, textAlign: isMobile ? 'center' : 'left', paddingLeft: isMobile ? 0 : 20, marginTop: isMobile ? 8 : 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: homeWon ? ESPN.black : ESPN.gray400 }}>
               {initialGame.home_team.name}
             </div>
@@ -356,7 +360,7 @@ export default function GamePage({ params }: GamePageProps) {
         backgroundColor: ESPN.white,
         border: '1px solid #D0D0D0',
         borderTop: '1px solid #D0D0D0',
-        padding: '20px 16px',
+        padding: isMobile ? '12px 16px' : '20px 16px',
         borderRadius: isGameInProgress ? '0' : '0 0 10px 10px',
       }}>
         <ScoreBoard
@@ -410,7 +414,7 @@ export default function GamePage({ params }: GamePageProps) {
         borderRadius: 10,
         marginTop: 12,
         display: 'grid',
-        gridTemplateColumns: '1fr 1px 1fr',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1px 1fr',
       }}>
         {/* Away roster */}
         <div style={{ padding: '16px 20px' }}>
@@ -418,7 +422,7 @@ export default function GamePage({ params }: GamePageProps) {
         </div>
 
         {/* Vertical divider */}
-        <div style={{ backgroundColor: ESPN.gray200 }} />
+        <div style={{ backgroundColor: ESPN.gray200, display: isMobile ? 'none' : 'block' }} />
 
         {/* Home roster */}
         <div style={{ padding: '16px 20px' }}>

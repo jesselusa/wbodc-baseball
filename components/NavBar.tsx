@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Settings } from 'lucide-react';
 import { ESPN } from '../lib/utils';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const navLinks = [
 	{ href: '/games', label: 'Scores' },
@@ -16,6 +17,7 @@ const navLinks = [
 export default function NavBar() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const pathname = usePathname();
+	const isMobile = useIsMobile();
 
 	const isActive = (href: string) => {
 		if (href === '/') return pathname === '/';
@@ -27,7 +29,7 @@ export default function NavBar() {
 			<nav
 				style={{
 					position: 'fixed',
-					top: 56,
+					top: isMobile ? 44 : 56,
 					left: 0,
 					right: 0,
 					zIndex: 100,
@@ -48,7 +50,7 @@ export default function NavBar() {
 							alignItems: 'center',
 							justifyContent: 'center',
 							height: '100%',
-							padding: '0 24px 0 16px',
+							padding: isMobile ? '0 16px 0 8px' : '0 24px 0 16px',
 							textDecoration: 'none',
 							marginRight: 8,
 							overflow: 'visible',
@@ -59,7 +61,7 @@ export default function NavBar() {
 							style={{
 								position: 'absolute',
 								top: 0,
-								left: -60,
+								left: isMobile ? -40 : -60,
 								right: 0,
 								bottom: 0,
 								backgroundColor: ESPN.red,
@@ -155,7 +157,7 @@ export default function NavBar() {
 						style={{
 							position: 'fixed',
 							inset: 0,
-							top: 88,
+							top: isMobile ? 92 : 104,
 							backgroundColor: 'rgba(0,0,0,0.4)',
 							zIndex: 98,
 						}}
@@ -164,7 +166,7 @@ export default function NavBar() {
 					<div
 						style={{
 							position: 'fixed',
-							top: 88,
+							top: isMobile ? 92 : 104,
 							left: 0,
 							right: 0,
 							backgroundColor: ESPN.dark,

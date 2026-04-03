@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface ModalOverlayProps {
 	onClose: () => void;
@@ -9,6 +10,8 @@ interface ModalOverlayProps {
 }
 
 function ModalOverlay({ onClose, children, maxWidth = 500 }: ModalOverlayProps) {
+	const isMobile = useIsMobile();
+
 	useEffect(() => {
 		document.body.style.overflow = 'hidden';
 		return () => { document.body.style.overflow = ''; };
@@ -27,7 +30,7 @@ function ModalOverlay({ onClose, children, maxWidth = 500 }: ModalOverlayProps) 
 				alignItems: 'center',
 				justifyContent: 'center',
 				zIndex: 1000,
-				padding: 16,
+				padding: isMobile ? 8 : 16,
 			}}
 		>
 			<div

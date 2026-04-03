@@ -10,6 +10,7 @@ import {
 } from "../lib/api";
 import { TournamentRecord } from "../lib/types";
 import { ESPN } from "../lib/utils";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 interface Standing {
 	id: string;
@@ -27,6 +28,7 @@ export default function Page() {
 	const [upcoming, setUpcoming] = useState<TournamentRecord | null>(null);
 	const [standings, setStandings] = useState<Standing[]>([]);
 	const [loading, setLoading] = useState(true);
+	const isMobile = useIsMobile();
 
 	useEffect(() => {
 		async function loadData() {
@@ -155,7 +157,7 @@ export default function Page() {
 
 			{/* Hero: Next Tournament Coming Soon */}
 			<div style={{
-				padding: '48px 24px',
+				padding: isMobile ? '32px 16px' : '48px 24px',
 				textAlign: 'center',
 				borderBottom: '1px solid #D0D0D0',
 				backgroundColor: ESPN.white,
@@ -173,7 +175,7 @@ export default function Page() {
 					Coming Soon
 				</div>
 				<h1 style={{
-					fontSize: 42,
+					fontSize: isMobile ? 28 : 42,
 					fontWeight: 900,
 					color: ESPN.black,
 					margin: '0 0 8px 0',
@@ -242,7 +244,7 @@ export default function Page() {
 							{/* Table header */}
 							<div style={{
 								display: 'grid',
-								gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
+								gridTemplateColumns: isMobile ? '40px 1fr 50px 50px 60px' : '40px 1fr 50px 50px 60px 50px 50px',
 								padding: '8px 16px',
 								backgroundColor: ESPN.gray50,
 								borderBottom: '1px solid #E5E5E5',
@@ -256,8 +258,8 @@ export default function Page() {
 								<span style={{ textAlign: 'center' }}>W</span>
 								<span style={{ textAlign: 'center' }}>L</span>
 								<span style={{ textAlign: 'center' }}>PCT</span>
-								<span style={{ textAlign: 'center' }}>RS</span>
-								<span style={{ textAlign: 'center' }}>RA</span>
+								{!isMobile && <span style={{ textAlign: 'center' }}>RS</span>}
+								{!isMobile && <span style={{ textAlign: 'center' }}>RA</span>}
 							</div>
 
 							{/* Table rows */}
@@ -270,7 +272,7 @@ export default function Page() {
 										key={s.id}
 										style={{
 											display: 'grid',
-											gridTemplateColumns: '40px 1fr 50px 50px 60px 50px 50px',
+											gridTemplateColumns: isMobile ? '40px 1fr 50px 50px 60px' : '40px 1fr 50px 50px 60px 50px 50px',
 											padding: '10px 16px',
 											borderBottom: i < standings.length - 1 ? '1px solid #E5E5E5' : 'none',
 											backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
@@ -291,8 +293,8 @@ export default function Page() {
 										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.wins}</span>
 										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.losses}</span>
 										<span style={{ textAlign: 'center', color: '#2B2C2D' }}>{pct}</span>
-										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_scored}</span>
-										<span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_allowed}</span>
+										{!isMobile && <span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_scored}</span>}
+										{!isMobile && <span style={{ textAlign: 'center', color: ESPN.gray900 }}>{s.runs_allowed}</span>}
 									</div>
 								);
 							})}

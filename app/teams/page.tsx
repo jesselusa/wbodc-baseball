@@ -6,6 +6,7 @@ import { Player } from '../../lib/types';
 import { ESPN } from '../../lib/utils';
 import BaseballCard from '../../components/BaseballCard';
 import SectionHeader from '../../components/SectionHeader';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface StandingRow {
   teamId: string;
@@ -24,6 +25,8 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true);
   const [cardPlayer, setCardPlayer] = useState<Player | null>(null);
   const [showCard, setShowCard] = useState(false);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     loadData();
@@ -164,58 +167,88 @@ export default function TeamsPage() {
             <tr style={{ background: ESPN.gray50, borderBottom: '2px solid #E5E5E5' }}>
               <th style={{ ...headerCell, textAlign: 'center', width: '40px' }}>RK</th>
               <th style={{ ...headerCell, textAlign: 'left' }}>Team</th>
-              <th style={{ ...headerCell, textAlign: 'left' }}>Players</th>
+              {!isMobile && <th style={{ ...headerCell, textAlign: 'left' }}>Players</th>}
               <th style={{ ...headerCell, width: '44px' }}>W</th>
               <th style={{ ...headerCell, width: '44px' }}>L</th>
               <th style={{ ...headerCell, width: '56px' }}>PCT</th>
-              <th style={{ ...headerCell, width: '44px' }}>RS</th>
-              <th style={{ ...headerCell, width: '44px' }}>RA</th>
+              {!isMobile && <th style={{ ...headerCell, width: '44px' }}>RS</th>}
+              {!isMobile && <th style={{ ...headerCell, width: '44px' }}>RA</th>}
               <th style={{ ...headerCell, width: '56px' }}>DIFF</th>
             </tr>
           </thead>
           <tbody>
             {standings.map((row, i) => {
               const rowBg = i % 2 === 0 ? ESPN.white : ESPN.gray50;
+              const isExpanded = isMobile && expandedTeam === row.teamId;
+              const colCount = isMobile ? 6 : 9;
               return (
-                <tr key={row.teamId}>
-                  <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{i + 1}</td>
-                  <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5', whiteSpace: 'nowrap' }}>
-                    {row.teamName}
-                  </td>
-                  <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: ESPN.gray500 }}>
-                    {row.players.length === 0 ? (
-                      <span style={{ fontStyle: 'italic', color: ESPN.gray400 }}>—</span>
-                    ) : (
-                      [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
-                        <span key={p.id}>
-                          <span
-                            onClick={() => { setCardPlayer(p); setShowCard(true); }}
-                            style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
-                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-                          >
-                            {p.name}
-                          </span>
-                          {j < row.players.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
-                        </span>
-                      ))
+                <React.Fragment key={row.teamId}>
+                  <tr
+                    onClick={isMobile ? () => setExpandedTeam(expandedTeam === row.teamId ? null : row.teamId) : undefined}
+                    style={{ cursor: isMobile ? 'pointer' : undefined }}
+                  >
+                    <td style={{ ...dataCell, textAlign: 'center', fontWeight: 700, color: '#6c6c6c', background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{i + 1}</td>
+                    <td style={{ ...dataCell, textAlign: 'left', fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5', whiteSpace: 'nowrap' }}>
+                      {row.teamName}
+                    </td>
+                    {!isMobile && (
+                      <td style={{ ...dataCell, textAlign: 'left', background: rowBg, borderBottom: '1px solid #E5E5E5', fontSize: '12px', color: ESPN.gray500 }}>
+                        {row.players.length === 0 ? (
+                          <span style={{ fontStyle: 'italic', color: ESPN.gray400 }}>—</span>
+                        ) : (
+                          [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
+                            <span key={p.id}>
+                              <span
+                                onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
+                                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                              >
+                                {p.name}
+                              </span>
+                              {j < row.players.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
+                            </span>
+                          ))
+                        )}
+                      </td>
                     )}
-                  </td>
-                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.wins}</td>
-                  <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.losses}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{pct(row.wins, row.losses)}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsScored}</td>
-                  <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsAllowed}</td>
-                  <td style={{
-                    ...dataCell,
-                    fontWeight: 600,
-                    color: row.runDiff > 0 ? '#2e7d32' : row.runDiff < 0 ? '#c62828' : ESPN.gray900,
-                    background: rowBg,
-                    borderBottom: '1px solid #E5E5E5',
-                  }}>
-                    {row.runDiff > 0 ? '+' : ''}{row.runDiff}
-                  </td>
-                </tr>
+                    <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.wins}</td>
+                    <td style={{ ...dataCell, fontWeight: 600, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.losses}</td>
+                    <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{pct(row.wins, row.losses)}</td>
+                    {!isMobile && <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsScored}</td>}
+                    {!isMobile && <td style={{ ...dataCell, background: rowBg, borderBottom: '1px solid #E5E5E5' }}>{row.runsAllowed}</td>}
+                    <td style={{
+                      ...dataCell,
+                      fontWeight: 600,
+                      color: row.runDiff > 0 ? '#2e7d32' : row.runDiff < 0 ? '#c62828' : ESPN.gray900,
+                      background: rowBg,
+                      borderBottom: '1px solid #E5E5E5',
+                    }}>
+                      {row.runDiff > 0 ? '+' : ''}{row.runDiff}
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={colCount} style={{ padding: '8px 12px', background: ESPN.gray50, borderBottom: '1px solid #E5E5E5', fontSize: 12, color: ESPN.gray500 }}>
+                        {row.players.length === 0 ? (
+                          <span style={{ fontStyle: 'italic', color: ESPN.gray400 }}>No players</span>
+                        ) : (
+                          [...row.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, j) => (
+                            <span key={p.id}>
+                              <span
+                                onClick={(e) => { e.stopPropagation(); setCardPlayer(p); setShowCard(true); }}
+                                style={{ cursor: 'pointer', textDecoration: 'none', color: ESPN.blue }}
+                              >
+                                {p.name}
+                              </span>
+                              {j < row.players.length - 1 && <span style={{ color: ESPN.gray400 }}>, </span>}
+                            </span>
+                          ))
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
           </tbody>

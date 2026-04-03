@@ -21,6 +21,8 @@ function TabBar({ tabs, activeKey, onTabChange }: TabBarProps) {
 			borderBottom: '1px solid #D0D0D0',
 			backgroundColor: '#FFFFFF',
 			padding: '0 16px',
+			overflowX: 'auto',
+			whiteSpace: 'nowrap',
 		}}>
 			{tabs.map(tab => (
 				<button
@@ -37,6 +39,7 @@ function TabBar({ tabs, activeKey, onTabChange }: TabBarProps) {
 						cursor: 'pointer',
 						transition: 'color 0.15s',
 						textTransform: 'capitalize',
+						flexShrink: 0,
 					}}
 				>
 					{tab.label}

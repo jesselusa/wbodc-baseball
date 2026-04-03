@@ -27,6 +27,7 @@ import BaseballCard from '../../components/BaseballCard';
 import AvatarInitial from '../../components/AvatarInitial';
 import SettingsSelect from '../../components/SettingsSelect';
 import TabBar from '../../components/TabBar';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 
 interface ValidationError {
@@ -41,6 +42,8 @@ interface SaveStatus {
 }
 
 export default function AdminPage() {
+  const isMobile = useIsMobile();
+
   // Core state
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentTournamentId, setCurrentTournamentId] = useState<string>('e4d1b3ad-620d-4cee-9431-a1ac3be68ba9');
@@ -748,6 +751,7 @@ export default function AdminPage() {
               fontSize: 13,
               fontWeight: 600,
               cursor: currentTeams.length === 0 ? 'default' : 'pointer',
+              width: isMobile ? '100%' : undefined,
             }}
           >
             {startingTournament ? 'Starting...' : 'Start Tournament'}
@@ -761,7 +765,7 @@ export default function AdminPage() {
         <button
           onClick={handleResetTournament}
           disabled={startingTournament}
-          style={{ padding: '8px 16px', backgroundColor: ESPN.red, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '8px 16px', backgroundColor: ESPN.red, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           Reset
         </button>
@@ -777,6 +781,7 @@ export default function AdminPage() {
             fontSize: 13,
             fontWeight: 600,
             cursor: saving ? 'default' : 'pointer',
+            width: isMobile ? '100%' : undefined,
           }}
         >
           {saving ? 'Saving...' : 'Save All'}
@@ -840,8 +845,8 @@ export default function AdminPage() {
                     >
                       Player {sortBy === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Location</th>
-                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Hometown</th>
+                    {!isMobile && <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Location</th>}
+                    {!isMobile && <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Hometown</th>}
                     <th
                       onClick={() => handleSort('championships_won')}
                       style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'center', cursor: 'pointer' }}
@@ -868,8 +873,8 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.current_town || '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.hometown || '—'}</td>
+                      {!isMobile && <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.current_town || '—'}</td>}
+                      {!isMobile && <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.hometown || '—'}</td>}
                       <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray900, textAlign: 'center', fontWeight: 600 }}>{player.championships_won || 0}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                         <button
@@ -906,9 +911,9 @@ export default function AdminPage() {
                 No teams configured. Go to Settings tab to set number of teams, then come back here.
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1px 1fr', gap: 0 }}>
                 {/* Left: Player assignment list */}
-                <div style={{ padding: '0 16px 0 0' }}>
+                <div style={{ padding: isMobile ? '0 0 16px 0' : '0 16px 0 0' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 8 }}>
                     Assign Players
                   </div>
@@ -965,10 +970,10 @@ export default function AdminPage() {
                 </div>
 
                 {/* Vertical divider */}
-                <div style={{ backgroundColor: ESPN.gray200 }} />
+                {!isMobile && <div style={{ backgroundColor: ESPN.gray200 }} />}
 
                 {/* Right: Team viewer */}
-                <div style={{ padding: '0 0 0 16px' }}>
+                <div style={{ padding: isMobile ? '16px 0 0 0' : '0 0 0 16px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 12 }}>
                     Teams
                   </div>
@@ -1039,7 +1044,7 @@ export default function AdminPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Teams
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                 <SettingsSelect
                   label="Number of Teams"
                   value={tournamentSettings.num_teams}
@@ -1062,7 +1067,7 @@ export default function AdminPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Pool Play
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                 <SettingsSelect
                   label="Games per Team"
                   value={tournamentSettings.pool_play_games}
@@ -1085,7 +1090,7 @@ export default function AdminPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
                 Bracket Play
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 16 }}>
                 <SettingsSelect
                   label="Format"
                   value={tournamentSettings.bracket_type}
