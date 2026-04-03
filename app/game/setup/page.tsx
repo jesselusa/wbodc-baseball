@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GameSetup } from '../../../components/GameSetup';
 import BackButton from '../../../components/BackButton';
+import SectionHeader from '../../../components/SectionHeader';
+import { ESPN } from '../../../lib/utils';
 import { GameSetupData, GameStartEventPayload, GameEndEventPayload } from '../../../lib/types';
 import { createNewGame, submitEvent, fetchTeamPlayers } from '../../../lib/api';
 
@@ -138,26 +140,25 @@ export default function GameSetupPage() {
   if (error) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
+        style={{
+          backgroundColor: ESPN.gray100,
+          color: ESPN.black
         }}
       >
         <div className="text-center max-w-md">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Setup Error</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-5xl mb-4" style={{ color: ESPN.red }}>!</div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: ESPN.black }}>Setup Error</h1>
+          <p className="mb-4" style={{ color: ESPN.gray500 }}>{error}</p>
           <div className="space-y-2">
             <button
               onClick={() => setError(undefined)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: ESPN.red }}
             >
               Try Again
             </button>
             <button
               onClick={handleCancel}
-              className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              className="w-full px-4 py-2 text-white rounded-md" style={{ backgroundColor: ESPN.gray500 }}
             >
               Back to Home
             </button>
@@ -170,37 +171,36 @@ export default function GameSetupPage() {
   if (creatingGame) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
+        style={{
+          backgroundColor: ESPN.gray100,
+          color: ESPN.black
         }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Creating your game...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: ESPN.red }}></div>
+          <p className="mt-4" style={{ color: ESPN.gray500 }}>Creating your game...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen"
-      style={{ 
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#1c1b20',
-        paddingTop: '64px' // Account for fixed navbar
-      }}
-    >
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
+      <SectionHeader title="Game Setup" style={{ marginTop: 24 }} />
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderTop: 'none',
+        borderRadius: '0 0 10px 10px',
+        padding: '20px',
+        overflow: 'hidden',
+      }}>
         <GameSetup
-          gameId={null} // No game ID yet - will be created when setup is complete
+          gameId={null}
           onGameStarted={handleGameStarted}
           onCancel={handleCancel}
         />
       </div>
-    </main>
+    </div>
   );
 } 

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Player, TournamentSettingsFormData, TeamAssignment, TournamentConfig, TournamentAdminData, TeamDragDrop } from '../../lib/types';
+import { ESPN } from '../../lib/utils';
 import { 
   fetchPlayers, 
   savePlayer, 
@@ -23,9 +24,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_API_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 import PlayerActionsModal from '../../components/PlayerActionsModal';
 import BaseballCard from '../../components/BaseballCard';
-import TeamManager from '../../components/TeamManager';
-import TournamentSettings from '../../components/TournamentSettings';
-import PlayersTable from '../../components/PlayersTable';
+import AvatarInitial from '../../components/AvatarInitial';
+import SettingsSelect from '../../components/SettingsSelect';
+import TabBar from '../../components/TabBar';
+
 
 interface ValidationError {
   field: string;
@@ -64,7 +66,7 @@ export default function AdminPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [settingsLocked, setSettingsLocked] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+
   const [tournamentLive, setTournamentLive] = useState(false);
   const [startingTournament, setStartingTournament] = useState(false);
 
@@ -98,6 +100,28 @@ export default function AdminPage() {
     }
   }, [players, tournamentSettings, teamAssignments, loading]);
 
+  // Sync currentTeams when num_teams changes in settings
+  useEffect(() => {
+    if (loading) return;
+    const desired = tournamentSettings.num_teams;
+    const current = currentTeams.length;
+    if (desired === current) return;
+
+    if (desired > current) {
+      // Add new teams
+      const newTeams = [...currentTeams];
+      for (let i = current + 1; i <= desired; i++) {
+        newTeams.push({ id: `new-team-${i}-${Date.now()}`, name: `Team ${i}`, players: [], isLocked: false });
+      }
+      setCurrentTeams(newTeams);
+      setHasUnsavedChanges(true);
+    } else {
+      // Remove teams from the end (move their players to unassigned)
+      setCurrentTeams(currentTeams.slice(0, desired));
+      setHasUnsavedChanges(true);
+    }
+  }, [tournamentSettings.num_teams, loading]);
+
   // Auto-save status timer
   useEffect(() => {
     if (saveStatus.type && saveStatus.timestamp) {
@@ -108,16 +132,8 @@ export default function AdminPage() {
     }
   }, [saveStatus]);
 
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+
 
   const loadTournamentData = async () => {
     try {
@@ -282,6 +298,11 @@ export default function AdminPage() {
   };
 
   const handleSaveAll = async () => {
+    // Prevent modifying completed tournaments
+    if (tournamentLive) {
+      setSaveStatus({ type: 'error', message: 'Cannot modify a completed tournament', timestamp: Date.now() });
+      return;
+    }
     try {
       setSaving(true);
       setValidationErrors([]);
@@ -665,529 +686,498 @@ export default function AdminPage() {
 
 
 
+  // Filter and sort players
+  const filteredPlayers = useMemo(() => players
+    .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.nickname && p.nickname.toLowerCase().includes(searchQuery.toLowerCase())))
+    .sort((a, b) => {
+      const multiplier = sortOrder === 'asc' ? 1 : -1;
+      if (sortBy === 'name') return multiplier * a.name.localeCompare(b.name);
+      return multiplier * ((a.championships_won || 0) - (b.championships_won || 0));
+    }), [players, searchQuery, sortBy, sortOrder]);
+
   if (loading) {
     return (
-      <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e4e2e8',
-        padding: '64px 32px',
-        textAlign: 'center',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        marginTop: '64px'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          fontSize: '16px',
-          color: '#696775'
-        }}>
-          <div style={{
-            width: '24px',
-            height: '24px',
-            border: '3px solid #e4e2e8',
-            borderTop: '3px solid #8b8a94',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          Loading tournament administration...
-        </div>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading admin...</span>
       </div>
     );
   }
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      paddingTop: '64px'
-    }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+
+      {/* Section header */}
       <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-        borderRadius: '16px',
-        border: '1px solid #e4e2e8',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        maxWidth: '1200px',
-        margin: '32px auto'
+        backgroundColor: ESPN.gray900,
+        color: ESPN.white,
+        padding: '16px 20px',
+        marginTop: 24,
+        borderRadius: '10px 10px 0 0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
       }}>
-        {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1c1b20 0%, #2d2c32 100%)',
-          color: 'white',
-          padding: isMobile ? '24px' : '32px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Decorative elements */}
-          <div style={{
-            position: 'absolute',
-            top: '-50px',
-            right: '-50px',
-            width: '150px',
-            height: '150px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '50%'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-30px',
-            left: '-30px',
-            width: '100px',
-            height: '100px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '50%'
-          }} />
-
-          <div style={{ position: 'relative', zIndex: 5 }}>
-            <h1 style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }}>
-              Tournament Administration
-            </h1>
-            <p style={{
-              fontSize: '16px',
-              margin: '0',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              Configure tournament settings, manage teams and organize players
-            </p>
-          </div>
+        <span style={{ fontSize: 16, fontWeight: 700 }}>Tournament Admin</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: hasUnsavedChanges ? '#f59e0b' : '#22c55e' }} />
+          <span style={{ fontSize: 12, color: ESPN.gray400 }}>{hasUnsavedChanges ? 'Unsaved' : 'Saved'}</span>
         </div>
+      </div>
 
-        {/* Save Status Bar */}
-        {saveStatus.type && (
-          <div style={{
-            padding: isMobile ? '12px 20px' : '16px 32px',
-            background: saveStatus.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 
-                        saveStatus.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 
-                        'rgba(245, 158, 11, 0.1)',
-            borderBottom: '1px solid #e4e2e8',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <div style={{
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              background: saveStatus.type === 'success' ? '#22c55e' : 
-                         saveStatus.type === 'error' ? '#ef4444' : '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              {saveStatus.type === 'success' ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                </svg>
-              ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-                  <line x1="18" y1="6" x2="6" y2="18" stroke="white" strokeWidth="2"/>
-                  <line x1="6" y1="6" x2="18" y2="18" stroke="white" strokeWidth="2"/>
-                </svg>
-              )}
-            </div>
-            <span style={{
-              fontSize: '14px',
-              fontWeight: '500',
-              color: saveStatus.type === 'success' ? '#15803d' : 
-                     saveStatus.type === 'error' ? '#dc2626' : '#d97706'
-            }}>
-              {saveStatus.message}
-            </span>
-          </div>
+      {/* Action bar */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderTop: 'none',
+        padding: '12px 20px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: 8,
+        flexWrap: 'wrap',
+      }}>
+        {!tournamentLive ? (
+          <button
+            onClick={handleStartTournament}
+            disabled={startingTournament || currentTeams.length === 0}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: currentTeams.length === 0 ? ESPN.gray400 : '#059669',
+              color: ESPN.white,
+              border: 'none',
+              borderRadius: 4,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: currentTeams.length === 0 ? 'default' : 'pointer',
+            }}
+          >
+            {startingTournament ? 'Starting...' : 'Start Tournament'}
+          </button>
+        ) : (
+          <span style={{ fontSize: 13, color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e' }} />
+            Tournament Live
+          </span>
         )}
+        <button
+          onClick={handleResetTournament}
+          disabled={startingTournament}
+          style={{ padding: '8px 16px', backgroundColor: ESPN.red, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Reset
+        </button>
+        <button
+          onClick={handleSaveAll}
+          disabled={saving || validationErrors.length > 0}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: saving ? ESPN.gray400 : ESPN.gray900,
+            color: ESPN.white,
+            border: 'none',
+            borderRadius: 4,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: saving ? 'default' : 'pointer',
+          }}
+        >
+          {saving ? 'Saving...' : 'Save All'}
+        </button>
+      </div>
 
-        {/* Action Bar */}
-        <div style={{
-          padding: isMobile ? '16px 20px' : '24px 32px',
-          borderBottom: '1px solid #e4e2e8',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? '12px' : '16px',
-          background: 'rgba(248, 250, 252, 0.5)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div style={{
-              fontSize: '14px',
-              color: '#696775',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: hasUnsavedChanges ? '#f59e0b' : '#22c55e'
-              }} />
-              {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
-            </div>
-            {validationErrors.length > 0 && (
-              <div style={{
-                fontSize: '14px',
-                color: '#dc2626',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-                {validationErrors.length} validation error{validationErrors.length > 1 ? 's' : ''}
-              </div>
-            )}
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}>
-            {/* Tournament Control Buttons */}
-            {!tournamentLive ? (
-              <button
-                onClick={handleStartTournament}
-                disabled={startingTournament || currentTeams.length === 0}
+      {/* Tab bar */}
+      <TabBar tabs={[{key:'players',label:'Players'},{key:'settings',label:'Settings'},{key:'teams',label:'Teams'}]} activeKey={activeTab} onTabChange={(key) => setActiveTab(key as any)} />
+
+      {/* Tab content */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderTop: 'none',
+        borderRadius: '0 0 10px 10px',
+        overflow: 'hidden',
+      }}>
+        {activeTab === 'players' && (
+          <div style={{ padding: '20px' }}>
+            {/* Search + Add */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
-                  padding: '12px 24px',
-                  background: (currentTeams.length === 0) 
-                    ? '#e5e7eb' 
-                    : 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: (currentTeams.length === 0) ? '#9ca3af' : 'white',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: (startingTournament || currentTeams.length === 0) ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  opacity: startingTournament ? 0.7 : 1
+                  padding: '8px 12px',
+                  border: '1px solid #D0D0D0',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  width: 240,
+                  outline: 'none',
                 }}
-              >
-                {startingTournament && (
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                )}
-                {startingTournament ? 'Starting...' : 'Start Tournament'}
-              </button>
-            ) : (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                color: 'white',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}>
-                <span style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#22c55e',
-                  animation: 'pulse 2s infinite'
-                }}></span>
-                Tournament Live
-              </div>
-            )}
-            
-            <button
-              onClick={handleResetTournament}
-              disabled={startingTournament}
-              style={{
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: startingTournament ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                opacity: startingTournament ? 0.7 : 1
-              }}
-            >
-              {startingTournament ? 'Resetting...' : 'Reset Tournament'}
-            </button>
-
-            {/* Separator */}
-            <div style={{
-              width: '1px',
-              height: '40px',
-              background: '#e4e2e8',
-              margin: '0 8px'
-            }}></div>
-
-            {/* Data Management Buttons */}
-            <button
-              onClick={handleReset}
-              disabled={saving}
-              style={{
-                padding: '12px 24px',
-                background: '#f3f4f6',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#374151',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                opacity: saving ? 0.6 : 1
-              }}
-            >
-              Reset Data
-            </button>
-            <button
-              onClick={handleSaveAll}
-              disabled={saving || validationErrors.length > 0}
-              style={{
-                padding: '12px 24px',
-                background: saving ? '#8b8a94' : 
-                           validationErrors.length > 0 ? '#d1d5db' :
-                           'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: saving || validationErrors.length > 0 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              {saving && (
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '2px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-              )}
-              {saving ? 'Saving...' : 'Save All'}
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div style={{
-          display: 'flex',
-          borderBottom: '1px solid #e4e2e8',
-          background: 'white',
-          overflowX: isMobile ? 'auto' : 'visible'
-        }}>
-          {(['players', 'settings', 'teams'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            const errorCount = getTabErrors(tab);
-            
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: isMobile ? '12px 16px' : '16px 24px',
-                  background: isActive ? 'white' : 'transparent',
-                  border: 'none',
-                  borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
-                  color: isActive ? '#3b82f6' : '#696775',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: '600',
-                  textTransform: 'capitalize',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  position: 'relative',
-                  minWidth: isMobile ? 'auto' : '100px',
-                  flexShrink: 0
-                }}
-              >
-                {tab}
-                {errorCount > 0 && (
-                  <div style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    borderRadius: '10px',
-                    padding: '2px 6px',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    minWidth: '16px',
-                    height: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {errorCount}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab Content */}
-        <div style={{ padding: isMobile ? '20px' : '32px' }}>
-          {activeTab === 'players' && (
-            <div>
-              {/* Players Tab Header */}
-              <div style={{ marginBottom: '24px' }}>
-                <h2 style={{
-                  fontSize: '24px',
-                  fontWeight: '600',
-                  color: '#1c1b20',
-                  margin: '0 0 8px 0'
-                }}>
-                  Player Management
-                </h2>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#696775',
-                  margin: '0'
-                }}>
-                  Add, edit, and manage players for the tournament
-                </p>
-              </div>
-
-              {/* Players Table */}
-              <PlayersTable
-                players={players}
-                loading={false}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={handleSort}
-                onPlayerClick={handleShowCard}
-                onPlayerEdit={handleEditPlayer}
-                onAddPlayer={handleAddPlayer}
-                showAddButton={true}
-                showEditColumn={true}
-                showResultsCount={true}
-                isReadOnly={false}
-                playerTeamAssignments={playerTeamAssignments}
               />
+              <button
+                onClick={handleAddPlayer}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: ESPN.gray900,
+                  color: ESPN.white,
+                  border: 'none',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                + Add Player
+              </button>
             </div>
-          )}
 
-          {activeTab === 'teams' && (
-            <TeamManager
-              players={players}
-              teamSize={tournamentSettings.team_size}
-              numTeams={tournamentSettings.num_teams}
-              teams={currentTeams}
-              onTeamSizeChange={handleTeamSizeChange}
-              onTeamsChange={setCurrentTeams}
-              onSaveTeams={handleSaveTeams}
-              onClearTeams={handleClearTeams}
-
-              isLocked={isActive}
-              savingTeams={saving}
-            />
-          )}
-
-          {activeTab === 'settings' && (
-            <TournamentSettings
-              tournamentId={currentTournamentId}
-              players={players}
-              teams={currentTeams}
-              onSettingsChange={handleSettingsChange}
-              onReset={handleReset}
-              disabled={settingsLocked}
-              isActive={isActive}
-            />
-          )}
-        </div>
-
-        {/* Validation Errors Panel */}
-        {validationErrors.length > 0 && (
-          <div style={{
-            margin: isMobile ? '0 20px 20px' : '0 32px 32px',
-            padding: isMobile ? '16px' : '20px',
-            background: 'rgba(239, 68, 68, 0.05)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '8px'
-          }}>
-            <h3 style={{
-              margin: '0 0 12px 0',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#dc2626',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              Validation Errors
-            </h3>
-            <ul style={{
-              margin: '0',
-              padding: '0 0 0 20px',
-              color: '#7f1d1d'
-            }}>
-              {validationErrors.map((error, index) => (
-                <li key={index} style={{
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  lineHeight: '1.5'
-                }}>
-                  <strong style={{ textTransform: 'capitalize' }}>{error.field}:</strong> {error.message}
-                </li>
-              ))}
-            </ul>
+            {/* Players table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #E5E5E5' }}>
+                    <th
+                      onClick={() => handleSort('name')}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left', cursor: 'pointer' }}
+                    >
+                      Player {sortBy === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                    </th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Location</th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'left' }}>Hometown</th>
+                    <th
+                      onClick={() => handleSort('championships_won')}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'center', cursor: 'pointer' }}
+                    >
+                      Titles {sortBy === 'championships_won' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                    </th>
+                    <th style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: ESPN.gray900, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPlayers.map((player, i) => (
+                    <tr key={player.id} style={{ borderBottom: '1px solid #E5E5E5', backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white }}>
+                      <td style={{ padding: '10px 12px', fontSize: 13 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <AvatarInitial name={player.name} size={28} imageUrl={player.avatar_url} />
+                          <div>
+                            <span
+                              onClick={() => handleShowCard(player)}
+                              style={{ fontWeight: 600, color: ESPN.blue, cursor: 'pointer' }}
+                            >
+                              {player.name}
+                            </span>
+                            {player.nickname && <span style={{ marginLeft: 6, fontSize: 11, color: ESPN.gray400 }}>"{player.nickname}"</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.current_town || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray700 }}>{player.hometown || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 13, color: ESPN.gray900, textAlign: 'center', fontWeight: 600 }}>{player.championships_won || 0}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                        <button
+                          onClick={() => handleEditPlayer(player)}
+                          style={{ background: 'none', border: 'none', color: ESPN.blue, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div style={{ padding: '8px 12px', fontSize: 12, color: ESPN.gray400 }}>
+                {filteredPlayers.length} of {players.length} players
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Player Actions Modal */}
-        {showActionsModal && (
-          <PlayerActionsModal
-            player={selectedPlayer}
-            isOpen={showActionsModal}
-            onClose={() => setShowActionsModal(false)}
-            onPlayerUpdated={handlePlayerUpdated}
-            onPlayerDeleted={handlePlayerDeleted}
-          />
+        {activeTab === 'teams' && (
+          <div style={{ padding: '20px' }}>
+            {/* Action bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 14, color: ESPN.gray500 }}>{currentTeams.length} teams · {players.length} players</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleClearTeams} style={{ padding: '8px 16px', backgroundColor: ESPN.gray100, border: '1px solid #D0D0D0', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: ESPN.gray700 }}>Clear Teams</button>
+                <button onClick={() => handleSaveTeams(currentTeams)} disabled={saving} style={{ padding: '8px 16px', backgroundColor: ESPN.gray900, color: ESPN.white, border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Teams'}</button>
+              </div>
+            </div>
+
+            {currentTeams.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: ESPN.gray400, fontSize: 14, border: '1px dashed #D0D0D0', borderRadius: 10 }}>
+                No teams configured. Go to Settings tab to set number of teams, then come back here.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: 0 }}>
+                {/* Left: Player assignment list */}
+                <div style={{ padding: '0 16px 0 0' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 8 }}>
+                    Assign Players
+                  </div>
+                  {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((player, i) => {
+                    // Find which team this player is on
+                    const assignedTeam = currentTeams.find(t => t.players.some(p => p.id === player.id));
+                    return (
+                      <div key={player.id} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 120px',
+                        alignItems: 'center',
+                        padding: '6px 8px',
+                        borderBottom: '1px solid #F1F2F3',
+                        gap: 8,
+                        backgroundColor: i % 2 === 1 ? ESPN.gray50 : ESPN.white,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <AvatarInitial name={player.name} size={24} imageUrl={player.avatar_url} />
+                          <span onClick={() => { setCardPlayer(player); setShowCard(true); }} style={{ fontSize: 13, color: ESPN.blue, fontWeight: 500, cursor: 'pointer' }}>{player.name}</span>
+                        </div>
+                        <select
+                          value={assignedTeam?.id || ''}
+                          onChange={(e) => {
+                            const newTeams = currentTeams.map(t => ({
+                              ...t,
+                              players: t.players.filter(p => p.id !== player.id),
+                            }));
+                            if (e.target.value) {
+                              const targetTeam = newTeams.find(t => t.id === e.target.value);
+                              if (targetTeam) {
+                                targetTeam.players.push(player);
+                              }
+                            }
+                            setCurrentTeams(newTeams);
+                            setHasUnsavedChanges(true);
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            border: '1px solid #D0D0D0',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            backgroundColor: ESPN.white,
+                            color: assignedTeam ? ESPN.black : ESPN.gray400,
+                          }}
+                        >
+                          <option value="">Unassigned</option>
+                          {[...currentTeams].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Vertical divider */}
+                <div style={{ backgroundColor: ESPN.gray200 }} />
+
+                {/* Right: Team viewer */}
+                <div style={{ padding: '0 0 0 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 12 }}>
+                    Teams
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[...currentTeams].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(team => (
+                      <div key={team.id} style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
+                        <div style={{ backgroundColor: ESPN.gray900, color: ESPN.white, padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{team.name}</span>
+                          <span style={{ fontSize: 11, color: ESPN.gray400, fontWeight: 400 }}>{team.players.length}</span>
+                        </div>
+                        <div style={{ backgroundColor: ESPN.white }}>
+                          {team.players.length === 0 ? (
+                            <div style={{ padding: '12px', textAlign: 'center', color: ESPN.gray400, fontSize: 12 }}>Empty</div>
+                          ) : (
+                            [...team.players].sort((a, b) => a.name.localeCompare(b.name)).map((p, pi) => (
+                              <div
+                                key={p.id}
+                                onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                style={{ padding: '5px 12px', fontSize: 12, color: ESPN.blue, cursor: 'pointer', borderBottom: pi < team.players.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? ESPN.gray50 : ESPN.white }}
+                              >
+                                {p.name}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Unassigned box */}
+                    {(() => {
+                      const assignedIds = new Set(currentTeams.flatMap(t => t.players.map(p => p.id)));
+                      const unassigned = players.filter(p => !assignedIds.has(p.id)).sort((a, b) => a.name.localeCompare(b.name));
+                      return (
+                        <div style={{ border: '1px solid #D0D0D0', borderRadius: 8, overflow: 'hidden' }}>
+                          <div style={{ backgroundColor: ESPN.gray500, color: ESPN.white, padding: '8px 12px', fontSize: 13, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Unassigned</span>
+                            <span style={{ fontSize: 11, color: ESPN.gray200, fontWeight: 400 }}>{unassigned.length}</span>
+                          </div>
+                          <div style={{ backgroundColor: ESPN.white }}>
+                            {unassigned.length === 0 ? (
+                              <div style={{ padding: '12px', textAlign: 'center', color: ESPN.gray400, fontSize: 12 }}>All players assigned</div>
+                            ) : (
+                              unassigned.map((p, pi) => (
+                                <div
+                                  key={p.id}
+                                  onClick={() => { setCardPlayer(p); setShowCard(true); }}
+                                  style={{ padding: '5px 12px', fontSize: 12, color: ESPN.blue, cursor: 'pointer', borderBottom: pi < unassigned.length - 1 ? '1px solid #F1F2F3' : 'none', backgroundColor: pi % 2 === 1 ? ESPN.gray50 : ESPN.white }}
+                                >
+                                  {p.name}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Baseball Card */}
-        {cardPlayer && (
-          <BaseballCard
-            player={cardPlayer}
-            isOpen={showCard}
-            onClose={handleCloseCard}
-          />
+        {activeTab === 'settings' && (
+          <div style={{ padding: '20px' }}>
+            {/* Teams Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Teams
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <SettingsSelect
+                  label="Number of Teams"
+                  value={tournamentSettings.num_teams}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, num_teams: parseInt(v) })}
+                  options={[2,3,4,5,6,7,8].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Players per Team"
+                  value={tournamentSettings.team_size}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, team_size: parseInt(v) })}
+                  options={[2,3,4,5,6,7,8].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+              </div>
+            </div>
+
+            {/* Pool Play Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Pool Play
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <SettingsSelect
+                  label="Games per Team"
+                  value={tournamentSettings.pool_play_games}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, pool_play_games: parseInt(v) })}
+                  options={[1,2,3,4,5,6,7,8,9,10].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Innings per Game"
+                  value={tournamentSettings.pool_play_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, pool_play_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+              </div>
+            </div>
+
+            {/* Bracket Play Section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ESPN.gray900, textTransform: 'uppercase', letterSpacing: '0.05em', paddingBottom: 8, borderBottom: '2px solid #E5E5E5', marginBottom: 16 }}>
+                Bracket Play
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <SettingsSelect
+                  label="Format"
+                  value={tournamentSettings.bracket_type}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, bracket_type: v as 'single_elimination' | 'double_elimination' })}
+                  options={[{ value: 'single_elimination', label: 'Single Elimination' }, { value: 'double_elimination', label: 'Double Elimination' }]}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Bracket Innings"
+                  value={tournamentSettings.bracket_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, bracket_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+                <SettingsSelect
+                  label="Finals Innings"
+                  value={tournamentSettings.final_innings}
+                  onChange={(v) => handleSettingsChange({ ...tournamentSettings, final_innings: parseInt(v) })}
+                  options={[3,5,7,9].map(n => ({ value: n, label: String(n) }))}
+                  disabled={settingsLocked}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #E5E5E5', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleSaveAll}
+                disabled={saving || settingsLocked}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: saving || settingsLocked ? ESPN.gray400 : ESPN.gray900,
+                  color: ESPN.white,
+                  border: 'none',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: saving || settingsLocked ? 'default' : 'pointer',
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+
+            {settingsLocked && (
+              <div style={{ padding: '12px 16px', backgroundColor: ESPN.gray50, borderRadius: 4, fontSize: 13, color: ESPN.gray500, border: '1px solid #E5E5E5' }}>
+                Settings are locked while the tournament is active.
+              </div>
+            )}
+          </div>
         )}
       </div>
+
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <div style={{
+          marginTop: 12,
+          padding: '16px 20px',
+          backgroundColor: ESPN.white,
+          border: '1px solid #D0D0D0',
+          borderRadius: 10,
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: ESPN.red, marginBottom: 8 }}>
+            Validation Errors ({validationErrors.length})
+          </div>
+          {validationErrors.map((err, i) => (
+            <div key={i} style={{ fontSize: 13, color: ESPN.gray700, padding: '4px 0' }}>
+              <strong style={{ textTransform: 'capitalize' }}>{err.field}:</strong> {err.message}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      {showActionsModal && (
+        <PlayerActionsModal
+          player={selectedPlayer}
+          isOpen={showActionsModal}
+          onClose={() => setShowActionsModal(false)}
+          onPlayerUpdated={handlePlayerUpdated}
+          onPlayerDeleted={handlePlayerDeleted}
+        />
+      )}
+
+      {cardPlayer && (
+        <BaseballCard
+          player={cardPlayer}
+          isOpen={showCard}
+          onClose={handleCloseCard}
+        />
+      )}
+
+      <div style={{ height: 32 }} />
     </div>
   );
-} 
+}

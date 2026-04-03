@@ -1,6 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Tournament } from '../components/YearSelector';
-import type { HistoricalGame } from '../components/GameResultsList';
+
+// Inlined types (were previously imported from deleted YearSelector and GameResultsList)
+interface Tournament {
+  id: string;
+  name: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  location?: string;
+  tournament_number?: number;
+}
+
+interface HistoricalGame {
+  id: string;
+  status: string;
+  total_innings: number;
+  started_at?: string;
+  completed_at?: string;
+  home_score: number;
+  away_score: number;
+  game_type?: 'round_robin' | 'bracket' | 'exhibition';
+  home_team: { id: string; name: string } | null;
+  away_team: { id: string; name: string } | null;
+  [key: string]: any;
+}
 
 interface UseHistoricalGamesReturn {
   // Selection state

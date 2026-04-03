@@ -1,14 +1,15 @@
 'use client';
 
-import { Metadata } from 'next';
-import { notFound, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { fetchGameById, getLiveGameStatus, fetchTeamPlayers, calculateInningScores, supabase } from '../../../lib/api';
 import { GameDisplayData, LiveGameStatus, GameSnapshot, Player } from '../../../lib/types';
 import { useViewerGameUpdates } from '../../../hooks/useViewerGameUpdates';
 import ScoreBoard from '../../../components/ScoreBoard';
-import BackButton from '../../../components/BackButton';
 import { ConnectionStatus } from '../../../components/ConnectionStatus';
+import TeamRosterPanel from '../../../components/TeamRosterPanel';
+import { ESPN } from '../../../lib/utils';
 
 interface GamePageProps {
   params: Promise<{ id: string }>;
@@ -20,8 +21,6 @@ export default function GamePage({ params }: GamePageProps) {
   const [liveStatus, setLiveStatus] = useState<LiveGameStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [homePlayers, setHomePlayers] = useState<Player[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
@@ -44,65 +43,10 @@ export default function GamePage({ params }: GamePageProps) {
     onError: (error) => console.error('Real-time error:', error)
   });
 
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Navigation helper
-  const handleTournamentClick = () => {
-    if (initialGame?.tournament) {
-      const gameDate = initialGame.scheduled_start || initialGame.actual_start;
-      if (gameDate) {
-        const year = new Date(gameDate).getFullYear();
-        const currentYear = new Date().getFullYear();
-        
-        // Route to /games for current year (2025), /results for historical years
-        if (year === currentYear) {
-          router.push('/games');
-        } else {
-          router.push(`/results?year=${year}`);
-        }
-      } else {
-        // Fallback to current year if no date available
-        const currentYear = new Date().getFullYear();
-        router.push('/games');
-      }
-    }
-  };
-
-  // Format game phase (same logic as results page)
-  const formatGamePhase = () => {
-    // For now, we'll use a simple heuristic based on game timing
-    // In a real implementation, you might want to store this data
-    if (!initialGame) return 'Tournament';
-    
-    // This is a simplified version - in reality you'd want to determine
-    // this based on tournament structure or explicit game phase data
-    const gameDate = new Date(initialGame.actual_start || initialGame.scheduled_start || '');
-    const hour = gameDate.getHours();
-    
-    // Simple heuristic: early games are pool play, later games are elimination
-    if (hour < 14) {
-      return 'Pool Play';
-    } else if (hour < 17) {
-      return 'Semifinal';
-    } else {
-      return 'Championship';
-    }
-  };
-
   // Fetch team players
   const fetchPlayersForGame = async () => {
     if (!initialGame) return;
-    
+
     setLoadingPlayers(true);
     try {
       const [homeResponse, awayResponse] = await Promise.all([
@@ -126,7 +70,7 @@ export default function GamePage({ params }: GamePageProps) {
   // Fetch inning scores for the game
   const fetchInningScores = async () => {
     if (!initialGame) return;
-    
+
     try {
       const scores = await calculateInningScores(initialGame.id);
       setInningScores(scores);
@@ -142,7 +86,7 @@ export default function GamePage({ params }: GamePageProps) {
       if (!tid) return;
       const res = await fetch(`/api/tournaments/${tid}/standings`);
       const data = await res.json();
-      const standings = (data?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number }>; 
+      const standings = (data?.data?.standings || []) as Array<{ teamId: string; wins: number; losses: number }>;
       const map = new Map<string, { wins: number; losses: number }>();
       standings.forEach((s) => {
         map.set(s.teamId, { wins: s.wins || 0, losses: s.losses || 0 });
@@ -182,7 +126,7 @@ export default function GamePage({ params }: GamePageProps) {
         }
 
         setInitialGame(gameResponse.data);
-        
+
         if (statusResponse) {
           setLiveStatus(statusResponse);
         }
@@ -270,745 +214,220 @@ export default function GamePage({ params }: GamePageProps) {
     return `${name} (${rec.wins}-${rec.losses})`;
   };
 
+  const isGameInProgress = currentState?.status === 'in_progress';
+
   if (loading) {
     return (
-      <main 
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
-        }}
-      >
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading game details...</p>
-        </div>
-      </main>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: ESPN.gray500, fontSize: 14 }}>Loading game...</span>
+      </div>
     );
   }
 
   if (error || !initialGame) {
     return (
-      <main 
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{ 
-          background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          color: '#1c1b20'
-        }}
-      >
-        <div className="text-center max-w-md">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Game Not Found</h1>
-          <p className="text-gray-600 mb-4">{error || 'The requested game could not be found.'}</p>
-          <BackButton />
-        </div>
-      </main>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+        <span style={{ color: ESPN.gray500, fontSize: 16, fontWeight: 600 }}>Game Not Found</span>
+        <span style={{ color: ESPN.gray400, fontSize: 14 }}>{error || 'The requested game could not be found.'}</span>
+        <button onClick={() => router.back()} style={{ marginTop: 8, color: ESPN.blue, background: 'none', border: 'none', fontSize: 14, cursor: 'pointer' }}>← Go back</button>
+      </div>
     );
   }
 
-  const isGameInProgress = currentState?.status === 'in_progress';
+  const awayScore = currentState?.score_away ?? initialGame.away_score;
+  const homeScore = currentState?.score_home ?? initialGame.home_score;
+  const awayWon = awayScore > homeScore;
+  const homeWon = homeScore > awayScore;
+  const statusText = initialGame.status === 'completed' ? 'Final' : initialGame.status === 'in_progress' ? 'Live' : 'Scheduled';
 
   return (
-    <div style={{
-        background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '16px 12px' : '32px 24px'
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+
+      {/* Breadcrumb */}
+      <div style={{ padding: '16px 0 0', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button onClick={() => router.back()} style={{ color: ESPN.blue, background: 'none', border: 'none', fontSize: 13, cursor: 'pointer', fontWeight: 500, padding: 0 }}>← Back</button>
+        <span style={{ color: ESPN.gray400 }}>/</span>
+        <span style={{ color: ESPN.gray500 }}>{initialGame.away_team.name} vs {initialGame.home_team.name}</span>
+      </div>
+
+      {/* Section 1: Matchup hero — separate white card */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        borderRadius: 10,
+        padding: '40px 24px 32px',
+        marginTop: 24,
+        border: '1px solid #D0D0D0',
       }}>
-        {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: '700',
-            color: '#1c1b20',
-            margin: '0 0 8px 0'
-          }}>
-            Game Details
-          </h1>
-          <p style={{
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#696775',
-            margin: '0',
-            fontWeight: '500'
-          }}>
-            Live game information and scoring details
-          </p>
-        </div>
-
-              {/* Breadcrumb Navigation */}
         <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: isMobile ? '0 12px 16px' : '0 24px 16px'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
-          <nav style={{ display: 'flex', alignItems: 'center', fontSize: '14px' }}>
-            <button
-              onClick={() => router.back()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'none',
-                border: 'none',
-                color: '#696775',
-                fontSize: '14px',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontFamily: 'inherit'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#f3f4f6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'none';
-              }}
-            >
-              ← Back
-            </button>
-            <span style={{ margin: '0 8px', color: '#696775' }}>/</span>
-            <span style={{ color: '#312f36' }}>Game Details</span>
-          </nav>
-        </div>
-
-        <div style={{
-          maxWidth: '800px',
-          margin: '0 auto',
-          width: '100%'
-        }}>
-        {/* Connection Status for Live Games */}
-        {isGameInProgress && (
-          <div style={{ 
-            marginBottom: '16px', 
-            display: 'flex', 
-            justifyContent: 'center' 
-          }}>
-            <ConnectionStatus 
-              status={connectionStatus}
-              onReconnect={reconnect}
-              size="small"
-            />
-          </div>
-        )}
-
-        {/* Game Card - Same Structure as Results Page */}
-        <section style={{ 
-          width: '100%', 
-          marginBottom: isMobile ? '24px' : '32px'
-        }}>
-          {initialGame && (
-            <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              border: '1px solid #e4e2e8',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              overflow: 'hidden',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              maxWidth: '1200px',
-              margin: '0 auto'
-            }}>
-              {/* Game Card Header */}
-              <div style={{ padding: '20px 24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                  <div>
-                    <span 
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        padding: '4px 8px',
-                        borderRadius: '9999px',
-                        background: '#dbeafe',
-                        color: '#1e40af',
-                        border: '1px solid #bfdbfe'
-                      }}
-                    >
-                      {formatGamePhase()}
-                    </span>
-                    {initialGame.tournament && (
-                      <button 
-                        onClick={handleTournamentClick}
-                        style={{ 
-                          marginLeft: '8px',
-                          fontSize: '12px',
-                          color: '#696775',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '2px 4px',
-                          borderRadius: '4px',
-                          fontFamily: 'inherit',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#f3f4f6';
-                          e.currentTarget.style.color = '#374151';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'none';
-                          e.currentTarget.style.color = '#696775';
-                        }}
-                      >
-                        {initialGame.tournament.name}
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span 
-                      style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        padding: '4px 8px',
-                        borderRadius: '9999px',
-                        background: initialGame.status === 'completed' ? '#f3f4f6' : initialGame.status === 'in_progress' ? '#dcfce7' : '#fefce8',
-                        color: initialGame.status === 'completed' ? '#374151' : initialGame.status === 'in_progress' ? '#166534' : '#a16207',
-                        border: `1px solid ${initialGame.status === 'completed' ? '#d1d5db' : initialGame.status === 'in_progress' ? '#bbf7d0' : '#fde047'}`
-                      }}
-                    >
-                      {initialGame.status === 'completed' ? 'Final' : initialGame.status === 'in_progress' ? 'Live' : 'Scheduled'}
-                    </span>
-                    <span 
-                      style={{ 
-                        fontSize: '12px',
-                        color: '#696775'
-                      }}
-                    >
-                      {(initialGame.actual_start || initialGame.scheduled_start)
-                        ? new Date(initialGame.actual_start || initialGame.scheduled_start!).toLocaleString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit'
-                          })
-                        : 'Time TBD'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Teams and Scores */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
-                  {/* Away Team */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div 
-                      style={{ 
-                        fontWeight: (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) ? '700' : '500',
-                        marginBottom: '8px',
-                        color: (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score) ? '#1c1b20' : '#374151'
-                      }}
-                    >
-                    {formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name)}
-                    {(initialGame.status === 'completed' || currentState?.status === 'completed') &&
-                      ( (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score)) && (
-                        <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
-                      )}
-                    </div>
-                    <div 
-                      style={{ 
-                        fontSize: '24px',
-                        fontWeight: '700',
-                        color: (initialGame.status === 'completed' || currentState?.status === 'completed') &&
-                               ( (currentState?.score_away ?? initialGame.away_score) > (currentState?.score_home ?? initialGame.home_score))
-                               ? '#059669' : '#1c1b20'
-                      }}
-                    >
-                      {currentState?.score_away ?? initialGame.away_score}
-                    </div>
-                  </div>
-
-                  {/* VS */}
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '14px', color: '#696775', fontWeight: '500' }}>VS</span>
-                  </div>
-
-                  {/* Home Team */}
-                  <div style={{ textAlign: 'center' }}>
-                    <div 
-                      style={{ 
-                        fontWeight: (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) ? '700' : '500',
-                        marginBottom: '8px',
-                        color: (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score) ? '#1c1b20' : '#374151'
-                      }}
-                    >
-                    {formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name)}
-                    {(initialGame.status === 'completed' || currentState?.status === 'completed') &&
-                      ( (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score)) && (
-                        <span style={{ marginLeft: '4px', color: '#059669' }}>👑</span>
-                      )}
-                    </div>
-                    <div 
-                      style={{ 
-                        fontSize: '24px',
-                        fontWeight: '700',
-                        color: (initialGame.status === 'completed' || currentState?.status === 'completed') &&
-                               ( (currentState?.score_home ?? initialGame.home_score) > (currentState?.score_away ?? initialGame.away_score))
-                               ? '#059669' : '#1c1b20'
-                      }}
-                    >
-                      {currentState?.score_home ?? initialGame.home_score}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Live Game State (for in-progress games) */}
-                {isGameInProgress && currentState && (
-                  <div style={{
-                    background: '#f0fdf4',
-                    border: '1px solid #bbf7d0',
-                    borderRadius: '8px',
-                    padding: '16px 20px',
-                    marginTop: '20px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '12px'
-                    }}>
-                      <div style={{
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        color: '#166534',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                      }}>
-                        🔴 Live Game State
-                      </div>
-                      <div style={{
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        color: '#166534'
-                      }}>
-                        {currentState.is_top_of_inning ? 'Top' : 'Bottom'} {currentState.current_inning}
-                      </div>
-                    </div>
-                    
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(100px, 1fr))',
-                      gap: '16px',
-                      fontSize: '0.875rem'
-                    }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', marginBottom: '4px' }}>Count</div>
-                        <div style={{ fontWeight: '600', color: '#166534', fontSize: '1.1rem' }}>
-                          {currentState.balls || 0}-{currentState.strikes || 0}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Balls-Strikes</div>
-                      </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ color: '#6b7280', marginBottom: '4px' }}>Outs</div>
-                        <div style={{ fontWeight: '600', color: '#166534', fontSize: '1.1rem' }}>
-                          {currentState.outs || 0}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Current Inning</div>
-                      </div>
-                      
-                      {currentState.base_runners && (currentState.base_runners.first || currentState.base_runners.second || currentState.base_runners.third) && (
-                        <div style={{ textAlign: 'center', gridColumn: isMobile ? 'span 2' : 'auto' }}>
-                          <div style={{ color: '#6b7280', marginBottom: '4px' }}>Runners on Base</div>
-                          <div style={{ 
-                            fontWeight: '600', 
-                            color: '#166534', 
-                            fontSize: '0.9rem',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            flexWrap: 'wrap'
-                          }}>
-                            {currentState.base_runners.first && (
-                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>1st</span>
-                            )}
-                            {currentState.base_runners.second && (
-                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>2nd</span>
-                            )}
-                            {currentState.base_runners.third && (
-                              <span style={{ padding: '2px 6px', background: '#166534', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>3rd</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Scoreboard Section */}
-              <div style={{ borderTop: '1px solid #e4e2e8', padding: '20px 24px' }}>
-                <ScoreBoard 
-                  data={{
-                    home_team: {
-                      name: formatNameWithRecord(initialGame.home_team.id, initialGame.home_team.name),
-                      total_runs: currentState?.score_home ?? initialGame.home_score
-                    },
-                    away_team: {
-                      name: formatNameWithRecord(initialGame.away_team.id, initialGame.away_team.name),
-                      total_runs: currentState?.score_away ?? initialGame.away_score
-                    },
-                    innings: inningScores,
-                    // Use computed innings count derived from tournament settings via calculateInningScores
-                    total_innings: Math.max(3, inningScores?.length || 5)
-                  }}
-                />
-              </div>
+          {/* Away team name + record */}
+          <div style={{ flex: 1, textAlign: 'right', paddingRight: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: awayWon ? ESPN.black : ESPN.gray400 }}>
+              {initialGame.away_team.name}
             </div>
-          )}
-        </section>
-
-        {/* Team Rosters section */}
-        <section style={{ 
-          width: '100%', 
-          marginBottom: isMobile ? '24px' : '32px'
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? '24px' : '32px',
-            maxWidth: '1200px',
-            margin: '0 auto'
-          }}>
-            {/* Away Team Players */}
-            <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              border: '1px solid #e4e2e8',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                background: '#f9fafb',
-                borderBottom: '1px solid #e4e2e8',
-                padding: '16px 20px'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: '0'
-                }}>
-                  {initialGame.away_team.name} Roster
-                </h3>
-              </div>
-              <div style={{ padding: '20px' }}>
-                {loadingPlayers ? (
-                  <div style={{ textAlign: 'center', color: '#6b7280' }}>
-                    Loading players...
-                  </div>
-                ) : awayPlayers.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {awayPlayers.map((player) => (
-                      <div key={player.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '8px 0',
-                        borderBottom: '1px solid #f3f4f6'
-                      }}>
-                        <div style={{
-                          position: 'relative',
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          flexShrink: 0
-                        }}>
-                          {player.avatar_url ? (
-                            <img
-                              src={player.avatar_url}
-                              alt={player.name}
-                              style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '1px solid #e4e2e8'
-                              }}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div style={{
-                            display: player.avatar_url ? 'none' : 'flex',
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: '#f3f4f6',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#374151',
-                            border: '1px solid #e4e2e8'
-                          }}>
-                            {player.name.charAt(0)}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#1f2937'
-                          }}>
-                            {player.name}
-                          </div>
-                          {player.nickname && (
-                            <div style={{
-                              fontSize: '12px',
-                              color: '#6b7280'
-                            }}>
-                              "{player.nickname}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', color: '#6b7280' }}>
-                    No players listed
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Home Team Players */}
-            <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              border: '1px solid #e4e2e8',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                background: '#f9fafb',
-                borderBottom: '1px solid #e4e2e8',
-                padding: '16px 20px'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: '0'
-                }}>
-                  {initialGame.home_team.name} Roster
-                </h3>
-              </div>
-              <div style={{ padding: '20px' }}>
-                {loadingPlayers ? (
-                  <div style={{ textAlign: 'center', color: '#6b7280' }}>
-                    Loading players...
-                  </div>
-                ) : homePlayers.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {homePlayers.map((player) => (
-                      <div key={player.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '8px 0',
-                        borderBottom: '1px solid #f3f4f6'
-                      }}>
-                        <div style={{
-                          position: 'relative',
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          flexShrink: 0
-                        }}>
-                          {player.avatar_url ? (
-                            <img
-                              src={player.avatar_url}
-                              alt={player.name}
-                              style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '1px solid #e4e2e8'
-                              }}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div style={{
-                            display: player.avatar_url ? 'none' : 'flex',
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: '#f3f4f6',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#374151',
-                            border: '1px solid #e4e2e8'
-                          }}>
-                            {player.name.charAt(0)}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#1f2937'
-                          }}>
-                            {player.name}
-                          </div>
-                          {player.nickname && (
-                            <div style={{
-                              fontSize: '12px',
-                              color: '#6b7280'
-                            }}>
-                              "{player.nickname}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', color: '#6b7280' }}>
-                    No players listed
-                  </div>
-                )}
-              </div>
+            <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
+              {(() => { const r = teamRecords.get(initialGame.away_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
             </div>
           </div>
-        </section>
 
-        {/* Real-time Status Indicator */}
-        {isGameInProgress && (
-          <section style={{ 
-            width: '100%', 
-            marginBottom: '24px'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '4px 12px',
-                borderRadius: '9999px',
-                fontSize: '14px',
-                background: isConnected 
-                  ? '#dcfce7' 
-                  : hasError 
-                    ? '#fef2f2'
-                    : '#fefce8',
-                color: isConnected 
-                  ? '#166534' 
-                  : hasError 
-                    ? '#991b1b'
-                    : '#a16207'
-              }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  marginRight: '8px',
-                  background: isConnected ? '#22c55e' : hasError ? '#ef4444' : '#eab308'
-                }}></div>
-                {isConnected ? 'Live Updates' : hasError ? 'Connection Error' : 'Connecting...'}
-              </div>
-              
-                             {lastUpdateTime && (
-                <p style={{
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  marginTop: '8px',
-                  margin: '8px 0 0 0'
-                }}>
-                   Last update: {lastUpdateTime.toLocaleTimeString()}
-                 </p>
-               )}
-            </div>
-          </section>
-        )}
-
-        {/* Error Messages */}
-        {hasError && (
-          <section style={{ 
-            width: '100%', 
-            marginBottom: '24px'
-          }}>
+          {/* Away score with triangle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <div style={{
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '8px',
-              padding: '16px'
+              fontSize: 36,
+              fontWeight: 700,
+              color: awayWon ? ESPN.black : ESPN.gray400,
+              fontVariantNumeric: 'tabular-nums',
+              minWidth: 44,
+              textAlign: 'center',
+              lineHeight: 1,
             }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                <div style={{ 
-                  color: '#f87171', 
-                  fontSize: '18px', 
-                  marginRight: '12px' 
-                }}>⚠️</div>
-                <div>
-                  <h3 style={{
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#991b1b',
-                    margin: '0 0 4px 0'
-                  }}>
-                    Connection Issues
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#b91c1c',
-                    margin: '0 0 12px 0'
-                  }}>
-                    {connectionStatus.error || 'Unable to connect to live updates'}
-                  </p>
-                  <div>
-                    <button
-                      onClick={reconnect}
-                      style={{
-                        fontSize: '14px',
-                        background: '#fef2f2',
-                        color: '#991b1b',
-                        padding: '4px 12px',
-                        borderRadius: '4px',
-                        border: '1px solid #fecaca',
-                        cursor: 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#fecaca';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#fef2f2';
-                      }}
-                    >
-                      Retry Connection
-                    </button>
-                  </div>
-                </div>
-              </div>
+              {awayScore}
             </div>
-          </section>
-        )}
+            {awayWon && initialGame.status === 'completed' && (
+              <span style={{ fontSize: 9, color: ESPN.black, lineHeight: 1 }}>◀</span>
+            )}
+          </div>
 
+          {/* Center: Status */}
+          <div style={{ padding: '0 20px', textAlign: 'center', minWidth: 70 }}>
+            {initialGame.status === 'in_progress' ? (
+              <span style={{ fontSize: 13, fontWeight: 700, color: ESPN.white, backgroundColor: ESPN.red, padding: '4px 12px', borderRadius: 3 }}>LIVE</span>
+            ) : (
+              <div style={{ fontSize: 15, fontWeight: 600, color: ESPN.black }}>{statusText}</div>
+            )}
+          </div>
 
+          {/* Home score with triangle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {homeWon && initialGame.status === 'completed' && (
+              <span style={{ fontSize: 9, color: ESPN.black, lineHeight: 1 }}>▶</span>
+            )}
+            <div style={{
+              fontSize: 36,
+              fontWeight: 700,
+              color: homeWon ? ESPN.black : ESPN.gray400,
+              fontVariantNumeric: 'tabular-nums',
+              minWidth: 44,
+              textAlign: 'center',
+              lineHeight: 1,
+            }}>
+              {homeScore}
+            </div>
+          </div>
 
-        {/* Navigation section */}
-        <nav style={{ marginTop: '32px', textAlign: 'center', width: '100%' }}>
-          <BackButton />
-        </nav>
+          {/* Home team name + record */}
+          <div style={{ flex: 1, textAlign: 'left', paddingLeft: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: homeWon ? ESPN.black : ESPN.gray400 }}>
+              {initialGame.home_team.name}
+            </div>
+            <div style={{ fontSize: 13, color: ESPN.gray400, marginTop: 2 }}>
+              {(() => { const r = teamRecords.get(initialGame.home_team.id); return r ? `${r.wins}-${r.losses}` : ''; })()}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Section 2: Tab bar — separate white card with gap above */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        borderRadius: '10px 10px 0 0',
+        border: '1px solid #D0D0D0',
+        borderBottom: 'none',
+        padding: '0 16px',
+        display: 'flex',
+        marginTop: 12,
+      }}>
+        <span style={{
+          padding: '12px 0',
+          fontSize: 14,
+          fontWeight: 700,
+          color: ESPN.black,
+          borderBottom: '2px solid #CC0000',
+        }}>
+          Box Score
+        </span>
+      </div>
+
+      {/* Section 3: Line score — continues from tab bar */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderTop: '1px solid #D0D0D0',
+        padding: '20px 16px',
+        borderRadius: isGameInProgress ? '0' : '0 0 10px 10px',
+      }}>
+        <ScoreBoard
+          data={{
+            home_team: {
+              name: initialGame.home_team.name,
+              total_runs: homeScore,
+            },
+            away_team: {
+              name: initialGame.away_team.name,
+              total_runs: awayScore,
+            },
+            innings: inningScores,
+            total_innings: Math.max(3, inningScores?.length || 3),
+          }}
+        />
+      </div>
+
+      {/* Live game state */}
+      {isGameInProgress && currentState && (
+        <div style={{
+          backgroundColor: ESPN.white,
+          border: '1px solid #D0D0D0',
+          borderTop: 'none',
+          padding: '16px',
+        }}>
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', fontSize: 14 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: ESPN.gray500, marginBottom: 2 }}>Inning</div>
+              <div style={{ fontWeight: 700, color: ESPN.black }}>
+                {currentState.is_top_of_inning ? 'Top' : 'Bot'} {currentState.current_inning}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: ESPN.gray500, marginBottom: 2 }}>Count</div>
+              <div style={{ fontWeight: 700, color: ESPN.black }}>{currentState.balls || 0}-{currentState.strikes || 0}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: ESPN.gray500, marginBottom: 2 }}>Outs</div>
+              <div style={{ fontWeight: 700, color: ESPN.black }}>{currentState.outs || 0}</div>
+            </div>
+          </div>
+          <ConnectionStatus status={connectionStatus} onReconnect={reconnect} size="small" />
+        </div>
+      )}
+
+      {/* Section 4: Team Rosters — side by side with vertical divider */}
+      <div style={{
+        backgroundColor: ESPN.white,
+        border: '1px solid #D0D0D0',
+        borderRadius: 10,
+        marginTop: 12,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1px 1fr',
+      }}>
+        {/* Away roster */}
+        <div style={{ padding: '16px 20px' }}>
+          <TeamRosterPanel teamName={initialGame.away_team.name} players={awayPlayers} loading={loadingPlayers} />
+        </div>
+
+        {/* Vertical divider */}
+        <div style={{ backgroundColor: ESPN.gray200 }} />
+
+        {/* Home roster */}
+        <div style={{ padding: '16px 20px' }}>
+          <TeamRosterPanel teamName={initialGame.home_team.name} players={homePlayers} loading={loadingPlayers} />
+        </div>
+      </div>
+
+      {/* Bottom spacing */}
+      <div style={{ height: 32 }} />
     </div>
   );
-} 
+}

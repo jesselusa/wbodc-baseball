@@ -2,186 +2,179 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import YearSelector from '../../components/YearSelector';
-import GameResultsList from '../../components/GameResultsList';
-import { useHistoricalGames } from '../../hooks/useHistoricalGames';
+import { supabase } from '../../lib/api';
+import { normalizeJoin, ESPN } from '../../lib/utils';
+import SectionHeader from '../../components/SectionHeader';
+import GameScoreRow from '../../components/GameScoreRow';
+import { TournamentRecord } from '../../lib/types';
 
-function ResultsContent() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const searchParams = useSearchParams();
-  
-  // Historical games state management
-  const {
-    selectedYear,
-    years,
-    tournament,
-    games,
-    loadingYears,
-    loadingGames,
-    error,
-    setSelectedYear,
-    refetch
-  } = useHistoricalGames();
-
-  // Handle URL parameters
-  useEffect(() => {
-    const yearParam = searchParams.get('year');
-    if (yearParam && !loadingYears && years.length > 0) {
-      // Only set if it's a valid year and different from current selection
-      if (years.includes(yearParam) && yearParam !== selectedYear) {
-        setSelectedYear(yearParam);
-      }
-    }
-  }, [searchParams, years, loadingYears, selectedYear, setSelectedYear]);
-
-  // Hydration-safe mobile detection
-  useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: isMobile ? '16px 12px' : '32px 24px'
-      }}>
-        {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: '700',
-            color: '#1c1b20',
-            margin: '0 0 8px 0',
-            lineHeight: isMobile ? '1.2' : '1.1'
-          }}>
-            Historical Results
-          </h1>
-          <p style={{
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#696775',
-            margin: '0',
-            fontWeight: '500',
-            lineHeight: isMobile ? '1.4' : '1.5'
-          }}>
-            View results and game history from past tournaments
-          </p>
-        </div>
-
-      {/* Year Selector */}
-      {!loadingYears && years.length > 0 && (
-        <YearSelector
-          selectedYear={selectedYear}
-          years={years}
-          tournament={tournament}
-          onYearChange={setSelectedYear}
-          loading={loadingYears}
-          className="mb-8"
-        />
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-          <div className="flex items-start">
-            <div className="text-red-400 text-lg mr-3">⚠️</div>
-            <div>
-              <h3 className="text-sm font-medium text-red-800 mb-1">
-                Error Loading Data
-              </h3>
-              <p className="text-sm text-red-700">
-                {error}
-              </p>
-              <button
-                onClick={refetch}
-                className="mt-2 text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200 transition-colors duration-200"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loadingYears && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-          <span className="text-lg font-medium" style={{ color: '#312f36' }}>
-            Loading tournaments...
-          </span>
-        </div>
-      )}
-
-      {/* Game Results */}
-      {selectedYear && tournament && (
-        <GameResultsList
-          games={games}
-          loading={loadingGames}
-          className="mb-8"
-        />
-      )}
-
-      {/* Instructions when no selection made */}
-      {!loadingYears && !selectedYear && years.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <div className="text-blue-600 text-4xl mb-4">📅</div>
-          <h3 className="text-lg font-medium text-blue-900 mb-2">
-            Select a Year to View Results
-          </h3>
-          <p className="text-blue-700">
-            Choose a year from the filter above to see tournament results and game history.
-          </p>
-        </div>
-      )}
-      </div>
-    </div>
-  );
+interface GameResult {
+	id: string;
+	status: string;
+	home_score: number;
+	away_score: number;
+	game_type: string;
+	home_team: { name: string } | null;
+	away_team: { name: string } | null;
 }
 
-function LoadingFallback() {
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #fdfcfe 0%, #f9f8fc 100%)',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#1c1b20',
-      paddingTop: '64px'
-    }}>
-      <div style={{ 
-        maxWidth: '1400px', 
-        margin: '0 auto', 
-        padding: '32px 24px'
-      }}>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-          <span className="text-lg font-medium" style={{ color: '#312f36' }}>
-            Loading results...
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+function ResultsContent() {
+	const searchParams = useSearchParams();
+	const [tournaments, setTournaments] = useState<TournamentRecord[]>([]);
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const [games, setGames] = useState<GameResult[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadingGames, setLoadingGames] = useState(false);
+
+	const yearParam = searchParams.get('year');
+
+	// Load all tournaments
+	useEffect(() => {
+		async function loadTournaments() {
+			const { data } = await supabase
+				.from('tournaments')
+				.select('*')
+				.neq('status', 'upcoming')
+				.order('tournament_number', { ascending: false });
+			setTournaments(data || []);
+			setLoading(false);
+
+			// Auto-select from URL param or most recent
+			if (yearParam && data) {
+				const match = data.find((t: any) =>
+					t.start_date && new Date(t.start_date).getFullYear().toString() === yearParam
+				);
+				if (match) setSelectedId(match.id);
+			} else if (data && data.length > 0) {
+				setSelectedId(data[0].id);
+			}
+		}
+		loadTournaments();
+	}, [yearParam]);
+
+	// Load games when tournament changes
+	useEffect(() => {
+		if (!selectedId) return;
+		async function loadGames() {
+			setLoadingGames(true);
+			const { data } = await supabase
+				.from('games')
+				.select(`
+					id, status, home_score, away_score, game_type,
+					home_team:teams!games_home_team_id_fkey(name),
+					away_team:teams!games_away_team_id_fkey(name)
+				`)
+				.eq('tournament_id', selectedId)
+				.order('started_at', { ascending: true });
+
+			const normalized = (data || []).map((g: any) => ({
+				...g,
+				home_team: normalizeJoin(g.home_team),
+				away_team: normalizeJoin(g.away_team),
+			}));
+			setGames(normalized);
+			setLoadingGames(false);
+		}
+		loadGames();
+	}, [selectedId]);
+
+	const selected = tournaments.find(t => t.id === selectedId);
+
+	return (
+		<div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px 48px' }}>
+			<SectionHeader title="Tournament History" style={{ marginTop: 24 }} />
+
+			{/* Tournament selector */}
+			<div style={{
+				backgroundColor: ESPN.white,
+				border: '1px solid #D0D0D0',
+				borderTop: 'none',
+				padding: '12px 16px',
+				display: 'flex',
+				flexWrap: 'wrap',
+				gap: 8,
+			}}>
+				{loading ? (
+					<span style={{ color: ESPN.gray500, fontSize: 13 }}>Loading...</span>
+				) : (
+					tournaments.map(t => (
+						<button
+							key={t.id}
+							onClick={() => setSelectedId(t.id)}
+							style={{
+								padding: '6px 12px',
+								fontSize: 13,
+								fontWeight: selectedId === t.id ? 700 : 400,
+								color: selectedId === t.id ? ESPN.white : ESPN.gray900,
+								backgroundColor: selectedId === t.id ? ESPN.red : ESPN.gray100,
+								border: 'none',
+								borderRadius: 4,
+								cursor: 'pointer',
+								transition: 'all 0.15s',
+							}}
+						>
+							{t.name}
+						</button>
+					))
+				)}
+			</div>
+
+			{/* Selected tournament info */}
+			{selected && (
+				<div style={{
+					backgroundColor: ESPN.white,
+					border: '1px solid #D0D0D0',
+					borderTop: 'none',
+					padding: '16px',
+					borderRadius: '0 0 10px 10px',
+				}}>
+					<h2 style={{ fontSize: 20, fontWeight: 700, color: ESPN.black, margin: '0 0 4px 0' }}>
+						{selected.name}
+					</h2>
+					<div style={{ fontSize: 13, color: ESPN.gray500 }}>
+						{selected.location}
+						{selected.start_date && ` · ${new Date(selected.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+						{selected.winner && (
+							<span style={{ marginLeft: 12, color: ESPN.red, fontWeight: 600 }}>
+								🏆 Champion: {selected.winner}
+							</span>
+						)}
+					</div>
+				</div>
+			)}
+
+			{/* Games list */}
+			{selectedId && (
+				<>
+					<SectionHeader title="Games" style={{ marginTop: 24 }} />
+
+					{loadingGames ? (
+						<div style={{ padding: 32, textAlign: 'center', color: ESPN.gray500, fontSize: 14, backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+							Loading games...
+						</div>
+					) : games.length === 0 ? (
+						<div style={{ padding: 32, textAlign: 'center', color: ESPN.gray500, fontSize: 14, backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+							No games recorded for this tournament
+						</div>
+					) : (
+						<div style={{ backgroundColor: ESPN.white, border: '1px solid #D0D0D0', borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+							{games.map((game, i) => (
+								<GameScoreRow key={game.id} game={game} showBorder={i < games.length - 1} />
+							))}
+						</div>
+					)}
+				</>
+			)}
+		</div>
+	);
 }
 
 export default function ResultsPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ResultsContent />
-    </Suspense>
-  );
-} 
+	return (
+		<Suspense fallback={
+			<div style={{ padding: 48, textAlign: 'center', color: ESPN.gray500 }}>Loading...</div>
+		}>
+			<ResultsContent />
+		</Suspense>
+	);
+}

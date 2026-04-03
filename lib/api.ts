@@ -2491,6 +2491,67 @@ export async function getAllTournaments(): Promise<ApiResponse<TournamentRecord[
   }
 }
 
+export async function getLatestCompletedTournament(): Promise<ApiResponse<TournamentRecord | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('status', 'completed')
+      .order('tournament_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return { data: null, success: false, error: error.message };
+    }
+
+    return { data: data || null, success: true };
+  } catch (error) {
+    console.error('Error fetching latest completed tournament:', error);
+    return { data: null, success: false, error: 'Failed to fetch latest completed tournament' };
+  }
+}
+
+export async function getUpcomingTournament(): Promise<ApiResponse<TournamentRecord | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('status', 'upcoming')
+      .order('tournament_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return { data: null, success: false, error: error.message };
+    }
+
+    return { data: data || null, success: true };
+  } catch (error) {
+    console.error('Error fetching upcoming tournament:', error);
+    return { data: null, success: false, error: 'Failed to fetch upcoming tournament' };
+  }
+}
+
+export async function getTournamentStandings(tournamentId: string): Promise<ApiResponse<any[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('tournament_standings')
+      .select('*, team:teams(id, name)')
+      .eq('tournament_id', tournamentId)
+      .order('wins', { ascending: false });
+
+    if (error) {
+      return { data: [], success: false, error: error.message };
+    }
+
+    return { data: data || [], success: true };
+  } catch (error) {
+    console.error('Error fetching tournament standings:', error);
+    return { data: [], success: false, error: 'Failed to fetch tournament standings' };
+  }
+}
+
 /**
  * Lock a tournament and save team assignments
  */
