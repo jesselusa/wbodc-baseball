@@ -15,7 +15,8 @@ import {
   loadTeamAssignments,
   fetchActiveTournament,
   getPlayerTeamAssignments,
-  getCurrentTournament
+  getCurrentTournament,
+  getUpcomingTournament
 } from '../../lib/api';
 
 // Initialize Supabase client
@@ -46,7 +47,7 @@ export default function AdminPage() {
 
   // Core state
   const [players, setPlayers] = useState<Player[]>([]);
-  const [currentTournamentId, setCurrentTournamentId] = useState<string>('e4d1b3ad-620d-4cee-9431-a1ac3be68ba9');
+  const [currentTournamentId, setCurrentTournamentId] = useState<string>('');
   const [tournamentSettings, setTournamentSettings] = useState<TournamentSettingsFormData>({
     pool_play_games: 2,
     pool_play_innings: 3,
@@ -156,16 +157,27 @@ export default function AdminPage() {
       }
 
       // Load fresh data from API
-      const [playersResponse, activeTournamentResponse, playerTeamResponse] = await Promise.all([
+      const [playersResponse, activeTournamentResponse, upcomingTournamentResponse, playerTeamResponse] = await Promise.all([
         fetchPlayers(),
         fetchActiveTournament(),
+        getUpcomingTournament(),
         getPlayerTeamAssignments()
       ]);
 
-      // Use the active tournament or the first available tournament
-      let tournamentId = 'e4d1b3ad-620d-4cee-9431-a1ac3be68ba9'; // Default to your current tournament
-      if (activeTournamentResponse.success && activeTournamentResponse.data) {
-        tournamentId = activeTournamentResponse.data.id;
+      // Prefer the tournament in progress, otherwise the next upcoming one.
+      const tournamentId =
+        (activeTournamentResponse.success && activeTournamentResponse.data?.id) ||
+        (upcomingTournamentResponse.success && upcomingTournamentResponse.data?.id) ||
+        '';
+
+      if (!tournamentId) {
+        setSaveStatus({
+          type: 'error',
+          message: 'No active or upcoming tournament found. Create one before configuring teams.',
+          timestamp: Date.now()
+        });
+        if (playersResponse.success) setPlayers(playersResponse.data);
+        return;
       }
       
       // Update the state with the current tournament ID
