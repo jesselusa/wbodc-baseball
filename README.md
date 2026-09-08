@@ -72,6 +72,11 @@ The complete WBDoc Baseball rulebook is documented in [`rules.md`](./rules.md), 
    -- Copy and paste contents of supabase/seed/001_test_data.sql
    -- into your Supabase SQL Editor
    ```
+4. Seed this year's attendee roster:
+   ```sql
+   -- Copy and paste contents of scripts/seed-2026-attendees.sql
+   -- into your Supabase SQL Editor (safe to re-run)
+   ```
 
 ### Frontend Setup (Coming Soon)
 ```bash
@@ -130,6 +135,8 @@ wbdoc-baseball/
 │   ├── migrations/             # SQL migrations
 │   ├── seed/                   # Test data
 │   └── database-schema.md      # Schema documentation
+├── scripts/                    # One-off SQL/maintenance scripts
+│   └── seed-2026-attendees.sql # 2026 baseball attendee roster
 ├── rules.md                    # WBDoc Baseball game rules
 └── README.md                   # This file
 ```
